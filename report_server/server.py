@@ -250,6 +250,67 @@ def pbi_build_page(name: str, visuals: list[dict],
 
 
 @mcp.tool()
+def pbi_style_page(page_id: str, background_color: str | None = None,
+                   background_transparency: float | None = None,
+                   wallpaper_color: str | None = None) -> dict:
+    """Style a page's canvas background and wallpaper (outspace).
+    Colors are '#hex'; transparency 0.0-1.0."""
+    return STATE.require().style_page(page_id, background_color,
+                                      background_transparency, wallpaper_color)
+
+
+@mcp.tool()
+def pbi_group_visuals(page_id: str, visual_ids: list, name: str = "Group") -> dict:
+    """Group visuals so they move and style as one block. Needs >= 2 ids."""
+    gid = STATE.require().group_visuals(page_id, visual_ids, name)
+    return {"ok": True, "page_id": page_id, "group_id": gid}
+
+
+@mcp.tool()
+def pbi_add_visual_raw(page_id: str, visual_json: dict,
+                       base: str = "visual") -> dict:
+    """Escape hatch: add a prebuilt visual.json (validated against the schema)
+    for third-party visuals this server doesn't model. Get a real one via
+    pbi_get_visual, tweak it, and pass it here."""
+    vid = STATE.require().add_visual_raw(page_id, visual_json, base)
+    return {"ok": True, "page_id": page_id, "visual_id": vid}
+
+
+@mcp.tool()
+def pbi_add_text(page_id: str, runs, position: dict | None = None,
+                 z: int | None = None) -> dict:
+    """Add a textbox (titles, headers, commentary). `runs` is a string or a
+    list of run dicts {text, bold, italic, size, color, font, align, url}.
+    Use a high z to keep text above backplates."""
+    vid = STATE.require().add_text(page_id, runs, position, z)
+    return {"ok": True, "page_id": page_id, "visual_id": vid}
+
+
+@mcp.tool()
+def pbi_add_image(page_id: str, image_path: str,
+                  position: dict | None = None, scaling: str | None = None,
+                  z: int | None = None) -> dict:
+    """Upload a local image into the report's resources and place it (logos,
+    icons, backgrounds). scaling in Fit|Fill|Normal."""
+    vid = STATE.require().add_image(page_id, image_path, position, scaling, z)
+    return {"ok": True, "page_id": page_id, "visual_id": vid}
+
+
+@mcp.tool()
+def pbi_add_shape(page_id: str, shape: str = "rectangle",
+                  fill: str | None = None, outline: str | None = None,
+                  outline_weight: float | None = None,
+                  position: dict | None = None, round_corners: bool = False,
+                  z: int | None = None) -> dict:
+    """Add a shape (rectangle/rectangleRounded/oval/line/arrow…): KPI
+    backplates, dividers, accent bars. fill/outline are '#hex'. Use a LOW z
+    to sit behind data visuals."""
+    vid = STATE.require().add_shape(page_id, shape, fill, outline,
+                                    outline_weight, position, round_corners, z)
+    return {"ok": True, "page_id": page_id, "visual_id": vid}
+
+
+@mcp.tool()
 def pbi_update_bindings(page_id: str, visual_id: str,
                         bindings: dict) -> dict:
     """Replace a visual's field bindings ({bucket: ["Table.Field",...]});

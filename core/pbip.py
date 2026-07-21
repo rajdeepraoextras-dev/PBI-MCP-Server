@@ -564,6 +564,156 @@ class PbipProject:
         self._write_json(meta_path, meta)
         return page_id
 
+    def _new_visual_id(self, page_id: str, base: str) -> tuple[Path, str]:
+        visuals_dir = (self._require_report() / "definition" / "pages"
+                       / page_id / "visuals")
+        existing = {p.name for p in visuals_dir.iterdir() if p.is_dir()} \
+            if visuals_dir.is_dir() else set()
+        vid, n = base, 1
+        while vid in existing:
+            n += 1
+            vid = f"{base}-{n}"
+        return visuals_dir, vid
+
+    def _add_raw_visual(self, page_id: str, base: str, obj: dict) -> str:
+        """Write a prebuilt visual.json dict; return the visualId."""
+        if page_id not in {p.id for p in self.list_pages()}:
+            raise KeyError(f"Page {page_id!r} not found")
+        visuals_dir, vid = self._new_visual_id(page_id, base)
+        obj["name"] = vid
+        self._write_json(visuals_dir / vid / "visual.json", obj)
+        return vid
+
+    def add_text(self, page_id: str, runs, position: dict | None = None,
+                 z: int | None = None) -> str:
+        from core.design import build_textbox
+
+        if z is not None:
+            position = {**(position or {}), "z": z, "tabOrder": z}
+        return self._add_raw_visual(page_id, "textbox",
+                                    build_textbox("textbox", runs, position))
+
+    def add_image(self, page_id: str, image_path: str,
+                  position: dict | None = None, scaling: str | None = None,
+                  z: int | None = None) -> str:
+        """Upload an image into RegisteredResources and place it on the page."""
+        import shutil
+
+        from core.design import build_image
+
+        src = Path(image_path)
+        if not src.exists():
+            raise FileNotFoundError(f"Image not found: {image_path}")
+        res_dir = (self._require_report() / "StaticResources"
+                   / "RegisteredResources")
+        res_dir.mkdir(parents=True, exist_ok=True)
+        # unique resource name in the package
+        resource_name = src.name
+        n = 1
+        while (res_dir / resource_name).exists():
+            n += 1
+            resource_name = f"{src.stem}-{n}{src.suffix}"
+        shutil.copy2(src, res_dir / resource_name)
+        if z is not None:
+            position = {**(position or {}), "z": z, "tabOrder": z}
+        obj = build_image("image", resource_name, position, scaling)
+        return self._add_raw_visual(page_id, "image", obj)
+
+    def add_shape(self, page_id: str, shape: str = "rectangle",
+                  fill: str | None = None, outline: str | None = None,
+                  outline_weight: float | None = None,
+                  position: dict | None = None, round_corners: bool = False,
+                  z: int | None = None) -> str:
+        from core.design import build_shape
+
+        if z is not None:
+            position = {**(position or {}), "z": z, "tabOrder": z}
+        obj = build_shape("shape", shape, fill, outline, outline_weight,
+                          position, round_corners)
+        return self._add_raw_visual(page_id, "shape", obj)
+
+    def add_visual_raw(self, page_id: str, visual_json: dict,
+                       base: str = "visual") -> str:
+        """Add a prebuilt, schema-validated visual.json (escape hatch).
+
+        For third-party visuals or shapes this server doesn't model. The dict
+        is validated against the visualContainer schema before writing.
+        """
+        return self._add_raw_visual(page_id, base, dict(visual_json))
+
+    def style_page(self, page_id: str, background_color: str | None = None,
+                   background_transparency: float | None = None,
+                   wallpaper_color: str | None = None) -> dict:
+        """Set page canvas background + wallpaper (outspace) styling."""
+        from core.formatting import build_objects_patch, merge_objects
+
+        page_json = (self._require_report() / "definition" / "pages"
+                     / page_id / "page.json")
+        if not page_json.exists():
+            raise FileNotFoundError(f"Page {page_id!r} not found")
+        data = json.loads(page_json.read_text(encoding="utf-8-sig"))
+
+        patch: dict = {}
+        bg: dict = {}
+        if background_color is not None:
+            bg["color"] = background_color
+        if background_transparency is not None:
+            bg["transparency"] = background_transparency
+        if bg:
+            patch["background"] = bg
+        if wallpaper_color is not None:
+            patch["outspace"] = {"color": wallpaper_color}
+        if not patch:
+            raise ValueError("Nothing to style — pass a color/transparency")
+
+        data["objects"] = merge_objects(data.get("objects", {}),
+                                        build_objects_patch(patch))
+        self._write_json(page_json, data)
+        return {"ok": True, "page_id": page_id, "styled": sorted(patch)}
+
+    def group_visuals(self, page_id: str, visual_ids: list[str],
+                      name: str = "Group") -> str:
+        """Group visuals so they move/style as one. Returns the group id."""
+        if len(visual_ids) < 2:
+            raise ValueError("Grouping needs at least two visuals")
+        pages_dir = self._require_report() / "definition" / "pages"
+        members = []
+        for vid in visual_ids:
+            vf = pages_dir / page_id / "visuals" / vid / "visual.json"
+            if not vf.exists():
+                raise FileNotFoundError(f"Visual {vid!r} not found")
+            members.append((vf, json.loads(vf.read_text(encoding="utf-8-sig"))))
+
+        # bounding box of members
+        xs = [m[1].get("position", {}).get("x", 0) for m in members]
+        ys = [m[1].get("position", {}).get("y", 0) for m in members]
+        x2 = [m[1].get("position", {}).get("x", 0)
+              + m[1].get("position", {}).get("width", 0) for m in members]
+        y2 = [m[1].get("position", {}).get("y", 0)
+              + m[1].get("position", {}).get("height", 0) for m in members]
+        z_min = min(m[1].get("position", {}).get("z", 0) for m in members)
+
+        visuals_dir, gid = self._new_visual_id(page_id, "group")
+        group = {
+            "$schema": self._VC_SCHEMA_URL,
+            "name": gid,
+            "position": {"x": min(xs), "y": min(ys), "z": z_min,
+                         "width": max(x2) - min(xs),
+                         "height": max(y2) - min(ys), "tabOrder": z_min},
+            "visualGroup": {"displayName": name, "groupMode": "ScaleMode"},
+        }
+        self._write_json(visuals_dir / gid / "visual.json", group,
+                         validate=False)  # group container has no 'visual'
+        for vf, data in members:
+            data["parentGroupName"] = gid
+            self._write_json(vf, data)
+        return gid
+
+    @property
+    def _VC_SCHEMA_URL(self) -> str:
+        from core.pbir import _VC_SCHEMA
+        return _VC_SCHEMA
+
     def add_visual(self, page_id: str, spec: dict) -> str:
         """Add a visual from a spec; return its visualId.
 
