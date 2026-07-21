@@ -18,6 +18,15 @@ def capabilities() -> dict:
             "note": "Measures vs columns are resolved automatically. Field "
                     "names must exist in the semantic model. Buckets are "
                     "per-visual-type — see visual_types below.",
+            "aggregation": "Wrap a column to aggregate it: 'Sum(Table.Col)', "
+                           "'Average(Table.Col)', 'Count(Table.Col)', etc.",
+        },
+        "interactivity": {
+            "pbi_sort_visual": "sort a visual by a field (pairs with TopN)",
+            "pbi_add_nav_button": "page-navigation button (build a nav bar)",
+            "pbi_set_page_role": "make a page drillthrough or tooltip",
+            "pbi_set_visual_interactions": "cross-filter behavior per pair",
+            "pbi_create_bookmark": "capture current page + filter state",
         },
         "visual_types": {
             vt: {"required_buckets": spec["required"],

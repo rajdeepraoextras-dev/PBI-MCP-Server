@@ -86,10 +86,14 @@ def _validate_refs_exist(project: PbipProject,
     measures = {(m.table, m.name) for m in project.list_measures()}
     columns = {(t.name, c.name) for t in project.list_tables()
                for c in t.columns}
+    import re as _re
+    agg = _re.compile(r"^\w+\(([^)]+)\)$")
     bad = []
     for refs in bindings.values():
         for ref in refs:
-            entity, _, prop = ref.partition(".")
+            m = agg.match(ref.strip())
+            target = m.group(1) if m else ref
+            entity, _, prop = target.partition(".")
             if (entity, prop) not in measures and (entity, prop) not in columns:
                 bad.append(ref)
     if bad:
@@ -395,6 +399,53 @@ def pbi_update_bindings(page_id: str, visual_id: str,
         validate_bindings(v.visual_type, bindings)
     _validate_refs_exist(project, bindings)
     return project.update_bindings(page_id, visual_id, bindings)
+
+
+@mcp.tool()
+def pbi_sort_visual(page_id: str, visual_id: str, field: str,
+                    direction: str = "Descending",
+                    is_measure: bool = True) -> dict:
+    """Sort a visual by a field (Ascending|Descending). Pairs with a TopN
+    filter to make a real top-N chart."""
+    return STATE.require().sort_visual(page_id, visual_id, field,
+                                       direction, is_measure)
+
+
+@mcp.tool()
+def pbi_add_nav_button(page_id: str, label: str, target_page_id: str,
+                       position: dict | None = None, fill: str = "#1F3A5F",
+                       text_color: str = "#FFFFFF") -> dict:
+    """Add a page-navigation button (click -> go to target_page_id). Build a
+    nav bar by adding one per page."""
+    vid = STATE.require().add_nav_button(page_id, label, target_page_id,
+                                         position, fill, text_color)
+    return {"ok": True, "page_id": page_id, "visual_id": vid}
+
+
+@mcp.tool()
+def pbi_set_page_role(page_id: str, role: str,
+                      tooltip_width: int = 320,
+                      tooltip_height: int = 240) -> dict:
+    """Make a page a drillthrough or tooltip page. role in
+    drillthrough|tooltip|default."""
+    size = (tooltip_width, tooltip_height) if role == "tooltip" else None
+    return STATE.require().set_page_role(page_id, role, size)
+
+
+@mcp.tool()
+def pbi_set_visual_interactions(page_id: str, source_visual: str,
+                                interactions: dict) -> dict:
+    """Control cross-filtering: interactions = {target_visual_id:
+    'Filter'|'Highlight'|'NoFilter'} for clicks on source_visual."""
+    return STATE.require().set_visual_interactions(page_id, source_visual,
+                                                   interactions)
+
+
+@mcp.tool()
+def pbi_create_bookmark(name: str, display_name: str | None = None,
+                        page_id: str | None = None) -> dict:
+    """Capture the current report state (active page + filters) as a bookmark."""
+    return STATE.require().create_bookmark(name, display_name, page_id)
 
 
 @mcp.tool()

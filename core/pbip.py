@@ -806,6 +806,128 @@ class PbipProject:
         return {"ok": True, "action": "deleted", "page_id": page_id,
                 "visual_id": visual_id, "recoverable_at": str(trash)}
 
+    def sort_visual(self, page_id: str, visual_id: str, field: str,
+                    direction: str = "Descending", is_measure: bool = True) -> dict:
+        """Set a visual's sort field + direction."""
+        from core.interact import build_sort_definition
+
+        vfile = self._visual_file(page_id, visual_id)
+        data = json.loads(vfile.read_text(encoding="utf-8-sig"))
+        data.setdefault("visual", {}).setdefault("query", {})[
+            "sortDefinition"] = build_sort_definition(field, direction, is_measure)
+        self._write_json(vfile, data)
+        return {"ok": True, "visual_id": visual_id, "sort": field,
+                "direction": direction}
+
+    def add_nav_button(self, page_id: str, label: str, target_page_id: str,
+                       position: dict | None = None, fill: str = "#1F3A5F",
+                       text_color: str = "#FFFFFF") -> str:
+        """Add a page-navigation button; returns its visualId."""
+        from core.interact import build_nav_button
+
+        if target_page_id not in {p.id for p in self.list_pages()}:
+            raise KeyError(f"Target page {target_page_id!r} not found")
+        obj = build_nav_button("navbutton", label, target_page_id,
+                               position, fill, text_color)
+        return self._add_raw_visual(page_id, "navbutton", obj)
+
+    def set_page_role(self, page_id: str, role: str,
+                      tooltip_size: tuple[int, int] | None = None) -> dict:
+        """Mark a page as a drillthrough or tooltip page (pageBinding)."""
+        roles = {"drillthrough": "Drillthrough", "tooltip": "Tooltip",
+                 "default": "Default"}
+        if role not in roles:
+            raise ValueError(f"role must be one of {sorted(roles)}")
+        page_json = (self._require_report() / "definition" / "pages"
+                     / page_id / "page.json")
+        if not page_json.exists():
+            raise FileNotFoundError(f"Page {page_id!r} not found")
+        data = json.loads(page_json.read_text(encoding="utf-8-sig"))
+        data["pageBinding"] = {"name": page_id, "type": roles[role],
+                               "parameters": []}
+        if role == "tooltip":
+            w, h = tooltip_size or (320, 240)
+            data["width"], data["height"] = w, h
+            data["displayOption"] = "ActualSize"
+        self._write_json(page_json, data)
+        return {"ok": True, "page_id": page_id, "role": roles[role]}
+
+    def set_visual_interactions(self, page_id: str, source_visual: str,
+                                interactions: dict) -> dict:
+        """Set how a source visual cross-filters others.
+
+        interactions: {target_visual_id: "Filter"|"Highlight"|"NoFilter"}
+        stored on page.json visualInteractions[] (schema string enum).
+        """
+        types = {"Filter": "DataFilter", "Highlight": "HighlightFilter",
+                 "NoFilter": "NoFilter", "Default": "Default"}
+        page_json = (self._require_report() / "definition" / "pages"
+                     / page_id / "page.json")
+        if not page_json.exists():
+            raise FileNotFoundError(f"Page {page_id!r} not found")
+        data = json.loads(page_json.read_text(encoding="utf-8-sig"))
+        existing = {(i.get("source"), i.get("target")): i
+                    for i in data.get("visualInteractions", [])}
+        for target, mode in interactions.items():
+            if mode not in types:
+                raise ValueError(f"interaction must be one of {sorted(types)}")
+            existing[(source_visual, target)] = {
+                "source": source_visual, "target": target,
+                "type": types[mode]}
+        data["visualInteractions"] = list(existing.values())
+        self._write_json(page_json, data)
+        return {"ok": True, "page_id": page_id, "source": source_visual,
+                "interactions": interactions}
+
+    def create_bookmark(self, name: str, display_name: str | None = None,
+                        page_id: str | None = None) -> dict:
+        """Capture the current report state as a bookmark.
+
+        Captures active page + each page's filter state (page/visual filters
+        already on disk). Registers it in bookmarks/bookmarks.json.
+        """
+        import re as _re
+        import uuid
+
+        report_def = self._require_report() / "definition"
+        bookmarks_dir = report_def / "bookmarks"
+        bookmarks_dir.mkdir(exist_ok=True)
+
+        pages = self.list_pages()
+        active = page_id or (pages[0].id if pages else None)
+        sections = {}
+        for pg in pages:
+            page_json = report_def / "pages" / pg.id / "page.json"
+            pdata = json.loads(page_json.read_text(encoding="utf-8-sig"))
+            sections[pg.id] = {"visualContainers": {}}
+            if pdata.get("filterConfig"):
+                sections[pg.id]["filters"] = pdata["filterConfig"]
+
+        bm_id = "Bookmark" + uuid.uuid4().hex[:20]
+        slug = _re.sub(r"[^a-zA-Z0-9]+", "_", name).strip("_") or bm_id
+        bookmark = {
+            "$schema": "https://developer.microsoft.com/json-schemas/fabric/"
+                       "item/report/definition/bookmark/1.0.0/schema.json",
+            "displayName": display_name or name,
+            "name": bm_id,
+            "options": {"targetVisualNames": []},
+            "explorationState": {"version": "1.3", "activeSection": active,
+                                 "sections": sections},
+        }
+        self._write_json(bookmarks_dir / f"{slug}.json", bookmark,
+                         validate=False)
+
+        # register in bookmarks metadata
+        meta_path = bookmarks_dir / "bookmarks.json"
+        meta = json.loads(meta_path.read_text(encoding="utf-8-sig")) \
+            if meta_path.exists() else {
+                "$schema": "https://developer.microsoft.com/json-schemas/fabric/"
+                           "item/report/definition/bookmarksMetadata/1.0.0/schema.json",
+                "items": []}
+        meta.setdefault("items", []).append({"name": slug})
+        self._write_json(meta_path, meta, validate=False)
+        return {"ok": True, "bookmark": bm_id, "name": name, "file": f"{slug}.json"}
+
     def format_visual(self, page_id: str, visual_id: str, target: str,
                       objects: dict) -> dict:
         """Merge formatting properties into a visual.

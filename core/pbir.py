@@ -141,11 +141,23 @@ def slugify(name: str, *, fallback: str = "item") -> str:
     return slug or fallback
 
 
+_AGG_RE = re.compile(r"^(Sum|Average|Avg|Count|DistinctCount|Min|Max|Median)"
+                     r"\(([^)]+)\)$", re.IGNORECASE)
+
+
 def _field_ref(query_ref: str, is_measure: Callable[[str, str], bool]) -> dict:
     """Build a queryState projection for `Entity.Property`.
 
     Picks Measure vs Column so Power BI binds the field to the right role.
+    Also accepts an aggregation form `Sum(Table.Column)` / `Average(...)`.
     """
+    agg = _AGG_RE.match(query_ref.strip())
+    if agg:
+        from core.interact import build_aggregation_projection
+
+        func, inner = agg.group(1), agg.group(2)
+        return build_aggregation_projection(inner, func)
+
     entity, _, prop = query_ref.partition(".")
     kind = "Measure" if is_measure(entity, prop) else "Column"
     return {
