@@ -33,7 +33,8 @@ MANIFEST = {
     ),
     "author": "Rajdeep Rao",
     "license": "MIT",
-    "requirements": {"python": ">=3.11", "pip": ["mcp>=1.2.0", "pydantic>=2.6"]},
+    "requirements": {"python": ">=3.11",
+                     "pip": ["mcp>=1.2.0", "pydantic>=2.6", "jsonschema>=4.20"]},
     "mcpServers": {
         "pbi-model": {
             "command": "python",
@@ -58,7 +59,8 @@ INSTALL_MD = """\
 ## Option A — plugin bundle (drag-drop)
 Drop `pbi-mcp.plugin` onto a plugin-aware MCP host (e.g. Cowork).
 The manifest registers two servers: `pbi-model` and `pbi-report`.
-The host machine needs Python 3.11+ with `pip install mcp pydantic`.
+The host machine needs Python 3.11+ with:
+`pip install mcp pydantic jsonschema`
 
 ## Option B — Claude Desktop (manual)
 1. Unzip the bundle (or clone the repo) somewhere permanent.
