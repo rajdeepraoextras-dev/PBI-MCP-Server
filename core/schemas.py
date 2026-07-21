@@ -16,7 +16,9 @@ class Column(BaseModel):
     name: str
     data_type: str | None = None
     summarize_by: str | None = None
+    data_category: str | None = None
     is_hidden: bool = False
+    is_key: bool = False
 
 
 class Measure(BaseModel):

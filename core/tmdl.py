@@ -203,7 +203,9 @@ def _parse_column(lines: list[str], i: int) -> tuple[Column, int]:
 
     data_type: str | None = None
     summarize_by: str | None = None
+    data_category: str | None = None
     hidden = False
+    is_key = False
 
     while i < len(lines):
         line = lines[i]
@@ -219,15 +221,21 @@ def _parse_column(lines: list[str], i: int) -> tuple[Column, int]:
                 data_type = s.split(":", 1)[1].strip()
             elif s.startswith("summarizeBy:"):
                 summarize_by = s.split(":", 1)[1].strip()
+            elif s.startswith("dataCategory:"):
+                data_category = s.split(":", 1)[1].strip()
             elif s == "isHidden":
                 hidden = True
+            elif s == "isKey":
+                is_key = True
         i += 1
 
     column = Column(
         name=name,
         data_type=data_type,
         summarize_by=summarize_by,
+        data_category=data_category,
         is_hidden=hidden,
+        is_key=is_key,
     )
     return column, i
 

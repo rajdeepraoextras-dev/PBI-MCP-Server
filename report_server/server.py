@@ -373,6 +373,69 @@ def pbi_add_shape(page_id: str, shape: str = "rectangle",
     return {"ok": True, "page_id": page_id, "visual_id": vid}
 
 
+def scaffold_report(state: ReportState, accent: str = "#1F3A5F",
+                    max_detail_pages: int = 3, dry_run: bool = False,
+                    theme: bool = True) -> dict:
+    """Profile the model and build (or propose) a full designed report."""
+    from core.profile import profile_model
+    from core.scaffold import propose_report
+
+    project = state.require()
+    profile = profile_model(project)
+    proposal = propose_report(profile, accent=accent,
+                              max_detail_pages=max_detail_pages)
+    if dry_run:
+        return {"ok": True, "dry_run": True, "proposal": proposal,
+                "profile_summary": profile["summary"]}
+
+    if theme:
+        from core.theme import generate_theme
+        project.set_report_theme(generate_theme(accent, name="Scaffold Theme",
+                                                 mode=proposal["theme_mode"]))
+
+    built_pages = []
+    for spec in proposal["pages"]:
+        res = build_designed_page(
+            state, spec["name"], spec["title"], spec.get("subtitle"),
+            kpis=spec["kpis"], charts=spec["charts"], accent=accent)
+        built_pages.append(res["page_id"])
+
+    # a simple nav bar of buttons across the top of each page
+    if proposal["add_nav_bar"] and len(built_pages) > 1:
+        for pid in built_pages:
+            x = 16
+            for target, spec in zip(built_pages, proposal["pages"]):
+                if target == pid:
+                    x += 150
+                    continue
+                project.add_nav_button(pid, spec["name"], target,
+                                       position={"x": x, "y": 8, "width": 140,
+                                                 "height": 32}, fill=accent)
+                x += 150
+
+    return {"ok": True, "pages": built_pages,
+            "profile_summary": profile["summary"]}
+
+
+@mcp.tool()
+def pbi_scaffold_report(accent: str = "#1F3A5F", max_detail_pages: int = 3,
+                        dry_run: bool = False, theme: bool = True) -> dict:
+    """AUTOPILOT: profile the model and build a full designed report — themed
+    overview page (KPI strip + trend + breakdown + table) plus per-dimension
+    detail pages with a nav bar. dry_run=true returns the proposal to edit
+    first. This is the fastest path from a raw model to an epic report."""
+    return scaffold_report(STATE, accent, max_detail_pages, dry_run, theme)
+
+
+@mcp.tool()
+def pbi_profile_model() -> dict:
+    """Classify the model (fact/dimension/date tables, measure roles, grouping
+    columns) — the analysis that drives pbi_scaffold_report."""
+    from core.profile import profile_model
+
+    return profile_model(STATE.require())
+
+
 @mcp.tool()
 def pbi_build_designed_page(name: str, title: str, subtitle: str | None = None,
                             kpis: list | None = None, charts: list | None = None,
