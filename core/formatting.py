@@ -134,21 +134,15 @@ def build_filter(field_ref: str, *, is_measure: bool = False,
             "Right": {"Literal": {"Value": encode_literal(comparison_value)}},
         }}
     elif filter_type == "TopN":
-        if not top_n or not order_by:
-            raise ValueError("TopN filter needs top_n and order_by")
-        ob_entity, _, ob_prop = order_by.partition(".")
-        ob_alias = "ob"
-        from_clause.append({"Name": ob_alias, "Entity": ob_entity, "Type": 0})
-        condition = {"Top": {
-            "Expressions": [_source_ref(entity, alias, prop)],
-            "OrderBy": [{
-                "Direction": 2,  # descending
-                "Expression": {"Measure": {
-                    "Expression": {"SourceRef": {"Source": ob_alias}},
-                    "Property": ob_prop}},
-            }],
-            "Count": top_n,
-        }}
+        # Schema truth (semanticquery 1.2.0, confirmed by Desktop's own
+        # validation): the condition is VisualTopN with ONLY ItemCount, and
+        # FilterDefinition allows only Version/From/Where — no OrderBy.
+        # The ranking measure is taken from the visual's own value field, so
+        # `order_by` is accepted for API compatibility but not serialized;
+        # bind that measure in the visual (e.g. its Y bucket).
+        if not top_n:
+            raise ValueError("TopN filter needs top_n")
+        condition = {"VisualTopN": {"ItemCount": top_n}}
     elif filter_type == "Passthrough":
         if not raw_condition:
             raise ValueError("Passthrough filter needs raw_condition")

@@ -651,7 +651,23 @@ class PbipProject:
         data = json.loads(report_json.read_text(encoding="utf-8-sig")) \
             if report_json.exists() else {}
         tc = data.setdefault("themeCollection", {})
-        tc["customTheme"] = {"name": file_name, "type": "RegisteredResources"}
+        # reportVersionAtImport is REQUIRED (Desktop schema). Real files show
+        # it's an object of layer versions — reuse the project's own if any
+        # theme already records one, else a current-era default.
+        version_at_import = None
+        for existing in tc.values():
+            if isinstance(existing, dict) and \
+                    existing.get("reportVersionAtImport"):
+                version_at_import = existing["reportVersionAtImport"]
+                break
+        if version_at_import is None:
+            version_at_import = {"visual": "2.9.0", "report": "3.3.0",
+                                 "page": "2.3.1"}
+        tc["customTheme"] = {
+            "name": file_name,
+            "reportVersionAtImport": version_at_import,
+            "type": "RegisteredResources",
+        }
         self._write_json(report_json, data)
         return {"ok": True, "theme": theme_name, "resource": file_name}
 

@@ -1,4 +1,19 @@
-# pbi-mcp v1.0.0 — release notes & portfolio write-up
+# pbi-mcp — release notes & portfolio write-up
+
+## v1.0.1 (schema-compliance fix)
+
+Desktop's PBIR schema validation of the v1.0.0 demo artifact surfaced two
+invalid shapes; both fixed against the published Fabric schemas + real files:
+
+- `themeCollection.customTheme` now includes the required
+  `reportVersionAtImport` (an object of layer versions in real Desktop
+  files, despite the schema calling it a string — real files win).
+- TopN filters now emit the schema's `VisualTopN {ItemCount}` condition;
+  the previous `Top {Expressions, OrderBy, Count}` tree was rejected.
+  FilterDefinition carries only `Version/From/Where` — the ranking measure
+  comes from the visual's own value field.
+
+## v1.0.0
 
 **What it is.** Two MCP servers (25 tools) that let an LLM read and write
 Power BI Project files directly on disk — the semantic model (TMDL) and the

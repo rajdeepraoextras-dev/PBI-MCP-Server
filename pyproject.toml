@@ -1,6 +1,6 @@
 [project]
 name = "pbi-mcp"
-version = "1.0.0"
+version = "1.0.1"
 description = "MCP server for local-file Power BI Project (.pbip) automation — model (TMDL) + report (PBIR) layers."
 readme = "README.md"
 requires-python = ">=3.11"

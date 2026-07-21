@@ -146,8 +146,11 @@ def test_set_report_theme(state):
         == ["#1F3A5F", "#5B8DB8"]
     report = json.loads((report_dir / "definition" / "report.json")
                         .read_text(encoding="utf-8-sig"))
-    assert report["themeCollection"]["customTheme"] == {
-        "name": "MCP Corporate.json", "type": "RegisteredResources"}
+    ct = report["themeCollection"]["customTheme"]
+    assert ct["name"] == "MCP Corporate.json"
+    assert ct["type"] == "RegisteredResources"
+    # required by the report schema; object of layer versions in real files
+    assert set(ct["reportVersionAtImport"]) == {"visual", "report", "page"}
 
 
 def test_theme_requires_name(state):
@@ -198,16 +201,15 @@ def test_topn_filter_visual_scope(state):
         "visual_type": "clusteredBarChart",
         "bindings": {"Category": ["Date.Year"], "Y": ["Sales.Net Revenue"]},
     }])
-    entry = build_filter("Date.Year", filter_type="TopN", top_n=5,
-                         order_by="Sales.Net Revenue")
+    entry = build_filter("Date.Year", filter_type="TopN", top_n=5)
     state.project.add_filter("visual", entry, page_id=page["page_id"],
                              visual_id=res["visual_ids"][0])
     raw = _raw(state, page["page_id"], res["visual_ids"][0])
-    top = raw["filterConfig"]["filters"][0]["filter"]["Where"][0] \
-        ["Condition"]["Top"]
-    assert top["Count"] == 5
-    assert top["OrderBy"][0]["Expression"]["Measure"]["Property"] \
-        == "Net Revenue"
+    fdef = raw["filterConfig"]["filters"][0]["filter"]
+    # schema-exact: condition is VisualTopN/ItemCount; FilterDefinition
+    # carries only Version/From/Where (Desktop rejected our earlier "Top")
+    assert fdef["Where"][0]["Condition"] == {"VisualTopN": {"ItemCount": 5}}
+    assert set(fdef) <= {"Version", "From", "Where"}
 
 
 def test_filter_fields_count_as_direct_usage(state):
