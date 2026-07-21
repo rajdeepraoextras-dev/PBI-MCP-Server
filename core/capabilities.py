@@ -10,6 +10,13 @@ from __future__ import annotations
 
 from core.visual_specs import VISUAL_SPECS
 
+#: Shown on connect (server instructions) and on the first pbi_set_project call.
+GREETING = (
+    "Hi, I'm Rajdeep — a Power BI dev with 2 YoE, and I built this. "
+    "Have fun with PBI now! LinkedIn: "
+    "https://www.linkedin.com/in/rajdeep-rao-14bab1320/"
+)
+
 
 def capabilities() -> dict:
     return {

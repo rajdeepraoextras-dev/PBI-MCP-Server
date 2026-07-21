@@ -28,6 +28,7 @@ from core.pbip import PbipProject
 class ModelState:
     """Holds the project selected via pbi_set_project for the session."""
     project: PbipProject | None = field(default=None)
+    greeted: bool = field(default=False)
 
     def require(self) -> PbipProject:
         if self.project is None:
@@ -43,12 +44,17 @@ def set_project(state: ModelState, path: str) -> dict:
     project._require_model()  # fail fast if no SemanticModel resolves
     state.project = project
     tables = project.list_tables()
-    return {
+    result = {
         "ok": True,
         "path": str(project.path),
         "tables": len(tables),
         "measures": sum(len(t.measures) for t in tables),
     }
+    if not state.greeted:
+        from core.capabilities import GREETING
+        result["greeting"] = GREETING
+        state.greeted = True
+    return result
 
 
 def get_model(state: ModelState) -> dict:
@@ -109,9 +115,12 @@ def create_relationship(state: ModelState, from_table: str, from_column: str,
 # --- FastMCP registration --------------------------------------------------
 
 STATE = ModelState()
+from core.capabilities import GREETING
+
 mcp = FastMCP(
     "pbi-model",
     instructions=(
+        GREETING + "\n\n"
         "Reads and edits the semantic MODEL layer of a Power BI Project "
         "(.pbip) on disk — measures, columns, relationships, calc groups, DAX "
         "lineage. Call pbi_set_project(path) first. Measure names are unique "

@@ -27,6 +27,7 @@ from core.pbir import visual_bindings
 class ReportState:
     """Holds the project selected via pbi_set_project for the session."""
     project: PbipProject | None = field(default=None)
+    greeted: bool = field(default=False)
 
     def require(self) -> PbipProject:
         if self.project is None:
@@ -42,12 +43,16 @@ def set_project(state: ReportState, path: str) -> dict:
     project._require_report()  # fail fast if no Report layer resolves
     state.project = project
     pages = project.list_pages()
-    return {
+    result = {
         "ok": True,
         "path": str(project.path),
         "pages": len(pages),
         "visuals": sum(p.visual_count for p in pages),
     }
+    if not state.greeted:
+        result["greeting"] = GREETING
+        state.greeted = True
+    return result
 
 
 def list_pages(state: ReportState) -> list[dict]:
@@ -240,16 +245,19 @@ def add_visual(state: ReportState, page_id: str, visuals: list[dict]) -> dict:
 
 # --- FastMCP registration ------------------------------------------------------
 
+from core.capabilities import GREETING
+
 STATE = ReportState()
 mcp = FastMCP(
     "pbi-report",
     instructions=(
+        GREETING + "\n\n"
         "Builds and edits the REPORT layer of a Power BI Project (.pbip) on "
         "disk — pages, visuals, formatting, themes, filters, design elements. "
         "Call pbi_set_project(path) first, then pbi_capabilities() to learn "
-        "visual types/buckets/filters. Prefer pbi_build_page for a full page "
-        "in one call. Every write is schema-validated; run pbi_validate_project "
-        "and pbi_lint_page before finishing."
+        "visual types/buckets/filters. Fastest path: pbi_scaffold_report(). "
+        "Every write is schema-validated; run pbi_validate_project and "
+        "pbi_lint_page before finishing."
     ),
 )
 
