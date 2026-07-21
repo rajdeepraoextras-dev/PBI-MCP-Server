@@ -1,0 +1,4 @@
+# Byte-exact checkouts everywhere. The test fixtures intentionally mix
+# LF (PBIR JSON) and would break if git normalized line endings — and the
+# whole project's writers preserve EOL style, so the repo must too.
+* -text

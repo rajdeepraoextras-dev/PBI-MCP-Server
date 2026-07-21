@@ -1,0 +1,55 @@
+table Sales
+	lineageTag: 11111111-1111-1111-1111-111111111111
+
+	measure 'Net Revenue' = SUM(Sales[Amount])
+		formatString: #,0
+		displayFolder: KPIs
+
+	measure 'Margin %' = DIVIDE([Net Revenue] - SUM(Sales[Cost]), [Net Revenue])
+		formatString: 0.0%
+		displayFolder: KPIs
+
+	measure 'Complex Measure' =
+			VAR _rev = [Net Revenue]
+			RETURN
+				DIVIDE(_rev, [Order Count])
+		formatString: #,0
+
+	measure 'Fenced Measure' = ```
+			CALCULATE(
+				[Net Revenue],
+				ALL(Date)
+			)
+			```
+		formatString: #,0
+
+	measure 'Hidden Helper' = 1
+		isHidden
+
+	column Amount
+		dataType: double
+		summarizeBy: sum
+		sourceColumn: Amount
+
+	column Cost
+		dataType: double
+		summarizeBy: sum
+		sourceColumn: Cost
+
+	column OrderDate
+		dataType: dateTime
+		summarizeBy: none
+		sourceColumn: OrderDate
+
+	column 'Order Count'
+		dataType: int64
+		summarizeBy: sum
+		isHidden
+
+	partition Sales = m
+		mode: import
+		source =
+				let
+					Source = Csv.Document(File.Contents("sales.csv"))
+				in
+					Source

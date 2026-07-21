@@ -1,0 +1,131 @@
+# pbi-mcp
+
+**MCP servers for local-file Power BI Project (`.pbip`) automation** — model
+(TMDL) and report (PBIR) layers. No Power BI API, no auth, no cloud: the
+tools read and write the on-disk project files Power BI Desktop itself uses.
+
+Build a correctly-bound, themed, filtered, multi-page report — or bulk-author
+hundreds of measures — from a prompt, in minutes.
+
+> **Scope honesty.** This builds **structure, speed, consistency**. It does
+> **not** do custom Deneb/Vega visuals, AppSource visual sourcing, or replace
+> design taste. It's a fast report *builder*, not an autonomous report
+> *designer*.
+
+## Safety model (the part that matters)
+
+The one unforgivable bug for a tool like this is producing a project Desktop
+refuses to open. Every mutation therefore goes through:
+
+- **atomic writes** (temp file + rename — a crash never leaves a half file)
+- **backup-once-per-file** snapshots (`*.bak-<timestamp>`), with
+  `pbi_list_backups` / `pbi_restore_backup` to recover
+- **surgical text edits** for TMDL — the parsed model is never re-emitted, so
+  partitions, annotations, and M source are preserved byte-for-byte
+- **style preservation** — each file keeps its exact line endings + BOM
+  (Desktop mixes CRLF and LF across file types)
+- **deletion fail-safes** — deleting a measure that other measures, visuals,
+  or filters depend on is refused (transitive DAX lineage + report usage);
+  `force=true` overrides, `dry_run=true` previews
+- **recoverable visual deletes** — removed visuals move to
+  `Report/.pbi/mcp-trash/`, which Desktop ignores
+
+## Quickstart
+
+```bash
+git clone <repo> && cd pbi-mcp
+python -m venv .venv
+.venv\Scripts\pip install -e ".[dev]"
+.venv\Scripts\python -m pytest          # green suite = good to go
+```
+
+Register in Claude Desktop: run `scripts/package.py`, then merge
+`dist/claude_desktop_config.snippet.json` into your
+`claude_desktop_config.json` and restart. Or drag-drop `dist/pbi-mcp.plugin`
+into a plugin-aware host. Details: `INSTALL.md` inside the bundle.
+
+**Every session starts with `pbi_set_project(path)`** — point it at a `.pbip`
+saved with Desktop's PBIP preview format (enable *Power BI Project (.pbip)
+save option* + *PBIR enhanced metadata* in Options → Preview features).
+
+## Tool reference
+
+### `pbi-model` server (semantic model / TMDL)
+
+| Tool | What it does |
+|------|--------------|
+| `pbi_set_project(path)` | Select the project; returns table/measure counts |
+| `pbi_get_model()` | Tables, columns, measures, relationships snapshot |
+| `pbi_list_measures(table?)` | Measures with DAX + format string |
+| `pbi_model_lineage(measure?)` | DAX dependency graph; per-measure deps + direct/transitive dependents |
+| `pbi_create_measure(table, name, dax, format?, display_folder?)` | Create (name must be unique model-wide) |
+| `pbi_update_measure(table, name, dax?, format?, display_folder?)` | Partial update; omitted fields kept |
+| `pbi_delete_measure(table, name, force?, dry_run?)` | Delete with lineage + report-usage guards |
+| `pbi_create_column(table, name, data_type, summarize_by?, source_column?, dax?)` | Data column, or calculated column with `dax` |
+| `pbi_create_relationship(from_table, from_column, to_table, to_column, ...)` | Endpoints validated; duplicates detected |
+| `pbi_create_calc_group(name, precedence, items)` | Full calc-group table + model.tmdl registration |
+| `pbi_bulk_create_measures(measures)` | Batch create; whole batch validated before any write |
+| `pbi_list_backups()` / `pbi_restore_backup(backup)` | Recovery |
+
+### `pbi-report` server (report / PBIR)
+
+| Tool | What it does |
+|------|--------------|
+| `pbi_set_project(path)` | Select the project; returns page/visual counts |
+| `pbi_list_pages()` | Pages: id, name, size, visual count, hidden |
+| `pbi_list_visuals(page_id)` | Visuals with type, position, title, bindings |
+| `pbi_get_visual(page_id, visual_id)` | Full config incl. raw visual.json |
+| `pbi_model_usage()` | Classify every field **direct / indirect / unused** — the deletion fail-safe |
+| `pbi_create_page(name, width?, height?)` | New page, registered in pages.json |
+| `pbi_add_visual(page_id, visuals[])` | Batch add; buckets + model refs validated before any write |
+| `pbi_build_page(name, visuals[])` | One call: page + visuals + auto-layout (KPI row, 2-col grid) |
+| `pbi_update_bindings(page_id, visual_id, bindings)` | Rebind; formatting/position preserved |
+| `pbi_move_visual(page_id, visual_id, x?, y?, width?, height?)` | Partial move/resize |
+| `pbi_delete_visual(page_id, visual_id)` | Recoverable delete (→ .pbi/mcp-trash) |
+| `pbi_format_visual(page_id, visual_id, target, objects)` | `container` (title/background/border) or `visual` (labels/legend/axes); plain values auto-encoded |
+| `pbi_set_report_theme(theme)` | Install + activate a standard PBI theme JSON |
+| `pbi_add_filter(scope, field, ...)` | Categorical / Advanced / TopN at report, page, or visual scope |
+
+### Binding format
+
+Bindings are `{bucket: ["Table.Field", ...]}`. Measures vs columns are
+resolved automatically. Bucket names are per-visual-type and validated from
+`core/visual_specs.py`, whose contents were **surveyed from real Desktop
+exports** (150+ visuals) — notably: the Legend bucket is `Series`, combo
+charts use `Y` + `Y2`, donut charts have no `Category`.
+
+```jsonc
+// a bar chart spec for pbi_add_visual / pbi_build_page
+{
+  "visual_type": "clusteredBarChart",
+  "bindings": {"Category": ["Date.Year"], "Y": ["Sales.Net Revenue"]},
+  "title": "Revenue by Year",
+  "position": {"x": 40, "y": 40, "width": 600, "height": 360}  // optional
+}
+```
+
+## Layout
+
+```
+pbi-mcp/
+  core/            # PbipProject + TMDL/PBIR read-write, specs, lineage,
+                   # usage classifier, formatting/filter builders, safe I/O
+  model_server/    # MCP server: pbi-model
+  report_server/   # MCP server: pbi-report
+  scripts/         # smoke test, M5 demo, packager
+  tests/           # 220+ tests; fixtures/ (synthetic + real, gitignored)
+```
+
+## Testing
+
+Fixture-based + golden files + fuzz. The suite runs against a synthetic PBIP
+project (committed) and any real exports dropped under `tests/fixtures/real/`
+(auto-discovered, never committed). Golden snapshots of emitted `visual.json`
+live in `tests/goldens/` (regenerate deliberately with
+`PBI_MCP_REGEN_GOLDENS=1`). A seeded 60-op fuzz storm asserts the project
+always reloads parseable. The reopen-in-Desktop check stays a manual gate
+before each release.
+
+## License
+
+MIT.

@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+
+# Local backups produced by io_safe
+*.bak-*
+
+# Keep fixtures dir but not local exports (add specific fixtures explicitly)
+tests/fixtures/*
+!tests/fixtures/.gitkeep
+# Synthetic fixture is generated + safe to commit; real Sample.pbip stays local
+!tests/fixtures/synthetic/
+tests/fixtures/synthetic/**/.pbi/

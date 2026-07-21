@@ -1,0 +1,21 @@
+table Date
+	lineageTag: 22222222-2222-2222-2222-222222222222
+	dataCategory: Time
+
+	measure 'Days In Period' = COUNTROWS(Date)
+		formatString: 0
+
+	column Date
+		dataType: dateTime
+		isKey
+		summarizeBy: none
+		sourceColumn: Date
+
+	column Year
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: Year
+
+	partition Date = calculated
+		mode: import
+		source = CALENDAR(DATE(2020,1,1), DATE(2025,12,31))

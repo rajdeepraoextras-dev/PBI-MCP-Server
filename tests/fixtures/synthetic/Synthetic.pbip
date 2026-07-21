@@ -1,0 +1,7 @@
+{
+  "version": "1.0",
+  "artifacts": [
+    { "report": { "path": "Synthetic.Report" } }
+  ],
+  "settings": {}
+}
