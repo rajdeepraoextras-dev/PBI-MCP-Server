@@ -178,7 +178,26 @@ def add_visual(state: ReportState, page_id: str, visuals: list[dict]) -> dict:
 # --- FastMCP registration ------------------------------------------------------
 
 STATE = ReportState()
-mcp = FastMCP("pbi-report")
+mcp = FastMCP(
+    "pbi-report",
+    instructions=(
+        "Builds and edits the REPORT layer of a Power BI Project (.pbip) on "
+        "disk — pages, visuals, formatting, themes, filters, design elements. "
+        "Call pbi_set_project(path) first, then pbi_capabilities() to learn "
+        "visual types/buckets/filters. Prefer pbi_build_page for a full page "
+        "in one call. Every write is schema-validated; run pbi_validate_project "
+        "and pbi_lint_page before finishing."
+    ),
+)
+
+
+@mcp.tool()
+def pbi_capabilities() -> dict:
+    """What this server can build: visual types + buckets, filters, formatting,
+    design elements, workflow, and a worked example. Call after set_project."""
+    from core.capabilities import capabilities
+
+    return capabilities()
 
 
 @mcp.tool()
@@ -281,12 +300,14 @@ def pbi_add_filter(scope: str, field: str, filter_type: str = "Categorical",
                    values: list | None = None,
                    comparison: str | None = None, comparison_value=None,
                    top_n: int | None = None, order_by: str | None = None,
+                   last_n: int | None = None, relative_unit: str | None = None,
                    page_id: str | None = None,
                    visual_id: str | None = None,
                    is_measure: bool = False) -> dict:
     """Add a filter at report/page/visual scope. field='Table.Field'.
     Categorical: values=[...]. Advanced: comparison in eq|gt|ge|lt|le +
-    comparison_value. TopN: top_n + order_by='Table.Measure'."""
+    comparison_value. TopN: top_n (rank by the visual's value field).
+    RelativeDate: last_n + relative_unit in day|week|month|year."""
     from core.formatting import build_filter
 
     project = STATE.require()
@@ -295,8 +316,16 @@ def pbi_add_filter(scope: str, field: str, filter_type: str = "Categorical",
                          filter_type=filter_type, values=values,
                          comparison=comparison,
                          comparison_value=comparison_value,
-                         top_n=top_n, order_by=order_by)
+                         top_n=top_n, order_by=order_by,
+                         last_n=last_n, relative_unit=relative_unit)
     return project.add_filter(scope, entry, page_id, visual_id)
+
+
+@mcp.tool()
+def pbi_validate_project() -> dict:
+    """Validate every report JSON against the official Fabric schemas.
+    Returns {ok, checked, errors[]}. Catches shapes Desktop would reject."""
+    return STATE.require().validate_project()
 
 
 @mcp.tool()

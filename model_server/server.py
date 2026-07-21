@@ -109,7 +109,16 @@ def create_relationship(state: ModelState, from_table: str, from_column: str,
 # --- FastMCP registration --------------------------------------------------
 
 STATE = ModelState()
-mcp = FastMCP("pbi-model")
+mcp = FastMCP(
+    "pbi-model",
+    instructions=(
+        "Reads and edits the semantic MODEL layer of a Power BI Project "
+        "(.pbip) on disk — measures, columns, relationships, calc groups, DAX "
+        "lineage. Call pbi_set_project(path) first. Measure names are unique "
+        "model-wide. Deletes are guarded by lineage + report usage; use "
+        "dry_run to preview and pbi_list_backups/pbi_restore_backup to recover."
+    ),
+)
 
 
 @mcp.tool()

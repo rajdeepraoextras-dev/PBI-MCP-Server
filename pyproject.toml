@@ -9,6 +9,7 @@ authors = [{ name = "Rajdeep Rao" }]
 dependencies = [
     "mcp>=1.2.0",
     "pydantic>=2.6",
+    "jsonschema>=4.20",
 ]
 
 [project.optional-dependencies]
@@ -26,6 +27,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["core", "model_server", "report_server"]
+
+[tool.setuptools.package-data]
+"*" = ["resources/schemas/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

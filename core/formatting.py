@@ -101,6 +101,8 @@ def build_filter(field_ref: str, *, is_measure: bool = False,
                  comparison_value=None,
                  top_n: int | None = None,
                  order_by: str | None = None,
+                 last_n: int | None = None,
+                 relative_unit: str | None = None,
                  raw_condition: dict | None = None,
                  name: str | None = None) -> dict:
     """Build one filterConfig entry (shape verified from real exports).
@@ -143,6 +145,26 @@ def build_filter(field_ref: str, *, is_measure: bool = False,
         if not top_n:
             raise ValueError("TopN filter needs top_n")
         condition = {"VisualTopN": {"ItemCount": top_n}}
+    elif filter_type == "RelativeDate":
+        # "last N <unit>": column >= DateAdd(DateSpan(Now, unit), -N, unit).
+        # Built entirely from schema primitives (DateSpan/DateAdd/Now) so it
+        # validates without a vendored RelativeDate filter definition.
+        units = {"day": 0, "week": 1, "month": 2, "year": 3}
+        if last_n is None or relative_unit not in units:
+            raise ValueError(
+                "RelativeDate needs last_n and relative_unit in "
+                f"{sorted(units)}")
+        u = units[relative_unit]
+        anchor = {"DateSpan": {"TimeUnit": u,
+                               "Expression": {"Now": {}}}}
+        lower = {"DateAdd": {"Amount": -abs(last_n), "TimeUnit": u,
+                             "Expression": anchor}}
+        condition = {"Comparison": {
+            "ComparisonKind": 2,  # >=
+            "Left": _source_ref(entity, alias, prop),
+            "Right": lower,
+        }}
+        filter_type = "Advanced"
     elif filter_type == "Passthrough":
         if not raw_condition:
             raise ValueError("Passthrough filter needs raw_condition")

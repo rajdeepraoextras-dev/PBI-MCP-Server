@@ -33,7 +33,10 @@ class PbipProject:
         self.semantic_model_dir: Path | None = None
         self.report_dir: Path | None = None
         self.backups = backups
+        self.preflight = True   # pre-flight schema validation on writes (E1)
         self._backed_up: set[Path] = set()
+        #: str(path) -> ((path, mtime_ns, size), Table) — mtime-keyed cache
+        self._table_cache: dict = {}
         # Lazily resolve so constructing with a non-existent path (e.g. in a
         # unit test) doesn't raise — resolution happens on first real access.
         if self.path.exists():
@@ -74,14 +77,29 @@ class PbipProject:
 
     # --- read -------------------------------------------------------------
 
-    def list_tables(self) -> list[Table]:
+    def _parse_table_cached(self, path: Path) -> Table:
+        """Parse a table file, memoized by (path, mtime, size).
+
+        A write changes mtime, so the cache self-invalidates — never stale.
+        Keeps repeated tool calls from reparsing the whole model each time.
+        """
         from core.tmdl import parse_table_file
 
+        stat = path.stat()
+        key = (str(path), stat.st_mtime_ns, stat.st_size)
+        cached = self._table_cache.get(str(path))
+        if cached is not None and cached[0] == key:
+            return cached[1]
+        table = parse_table_file(path)
+        self._table_cache[str(path)] = (key, table)
+        return table
+
+    def list_tables(self) -> list[Table]:
         tables_dir = self._require_model() / "definition" / "tables"
         if not tables_dir.is_dir():
             return []
         return [
-            parse_table_file(f)
+            self._parse_table_cached(f)
             for f in sorted(tables_dir.glob("*.tmdl"))
         ]
 
@@ -183,7 +201,28 @@ class PbipProject:
             self._backed_up.add(path)
         io_safe.atomic_write(path, text, encoding=encoding, newline=newline)
 
-    def _write_json(self, path: Path, obj: dict) -> None:
+    #: report-layer filenames -> schema kind for pre-flight validation
+    _SCHEMA_KIND = {
+        "visual.json": "visualContainer",
+        "page.json": "page",
+        "pages.json": "pagesMetadata",
+        "report.json": "report",
+    }
+
+    def _write_json(self, path: Path, obj: dict, *,
+                    validate: bool = True) -> None:
+        """Write JSON, pre-flight validated against the vendored Fabric schema.
+
+        A malformed report shape is rejected here — before it can reach disk
+        and before Desktop ever sees it. Set validate=False for non-schema
+        files (theme resources, bookmarks handled separately).
+        """
+        if validate and self.preflight:
+            kind = self._SCHEMA_KIND.get(path.name)
+            if kind is not None:
+                from core import schema_validate
+
+                schema_validate.assert_valid(kind, obj, context=str(path.name))
         self._write_text(path, json.dumps(obj, indent=2))
 
     def _table_file(self, table: str) -> Path:
@@ -513,8 +552,10 @@ class PbipProject:
 
         # Register the page in pages.json (order + keep/assign active page).
         meta_path = pages_dir / "pages.json"
+        from core.pbir import _PAGES_SCHEMA
+
         meta = json.loads(meta_path.read_text(encoding="utf-8-sig")) \
-            if meta_path.exists() else {"$schema": "", "pageOrder": []}
+            if meta_path.exists() else {"$schema": _PAGES_SCHEMA, "pageOrder": []}
         order = meta.get("pageOrder", [])
         if page_id not in order:
             order.append(page_id)
@@ -700,6 +741,40 @@ class PbipProject:
         self._write_json(target, data)
         return {"ok": True, "scope": scope,
                 "filter": filter_entry["name"], "file": target.name}
+
+    def validate_project(self) -> dict:
+        """Validate every report-layer JSON against the Fabric schemas.
+
+        Returns {ok, checked, errors: [{file, messages}]}. Read-only.
+        """
+        from core import schema_validate
+
+        if not schema_validate.is_available():
+            return {"ok": True, "checked": 0, "errors": [],
+                    "note": "jsonschema/schemas unavailable — validation skipped"}
+        report_def = self._require_report() / "definition"
+        problems = []
+        checked = 0
+        targets = [(report_def / "report.json", "report")]
+        pages_dir = report_def / "pages"
+        if (pages_dir / "pages.json").exists():
+            targets.append((pages_dir / "pages.json", "pagesMetadata"))
+        if pages_dir.is_dir():
+            for pj in pages_dir.glob("*/page.json"):
+                targets.append((pj, "page"))
+            for vj in pages_dir.glob("*/visuals/*/visual.json"):
+                targets.append((vj, "visualContainer"))
+        for path, kind in targets:
+            if not path.exists():
+                continue
+            checked += 1
+            data = json.loads(path.read_text(encoding="utf-8-sig"))
+            errs = schema_validate.validate(kind, data)
+            if errs:
+                problems.append({
+                    "file": str(path.relative_to(report_def)),
+                    "kind": kind, "messages": errs[:10]})
+        return {"ok": not problems, "checked": checked, "errors": problems}
 
     def save(self) -> None:
         """No-op checkpoint: mutations are already applied atomically on call.

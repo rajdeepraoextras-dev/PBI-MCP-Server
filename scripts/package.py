@@ -97,6 +97,9 @@ def main() -> None:
                     if "__pycache__" in f.parts:
                         continue
                     zf.write(f, f.relative_to(REPO).as_posix())
+        # vendored Fabric schemas (needed for offline pre-flight validation)
+        for f in sorted((REPO / "resources" / "schemas").glob("*.json")):
+            zf.write(f, f.relative_to(REPO).as_posix())
 
     snippet = {
         "mcpServers": {

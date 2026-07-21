@@ -1,0 +1,12 @@
+{
+  "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/bookmark/1.0.0/schema.json": "bookmark_1_0_0_schema_json.json",
+  "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/formattingObjectDefinitions/1.0.0/schema.json": "formattingObjectDefinitions_1_0_0_schema_json.json",
+  "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/semanticQuery/1.0.0/schema.json": "semanticQuery_1_0_0_schema_json.json",
+  "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/filterConfiguration/1.0.0/schema.json": "filterConfiguration_1_0_0_schema_json.json",
+  "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/semanticQuery/1.2.0/schema.json": "semanticQuery_1_2_0_schema_json.json",
+  "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/formattingObjectDefinitions/1.2.0/schema.json": "formattingObjectDefinitions_1_2_0_schema_json.json",
+  "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json": "visualContainer_1_0_0_schema_json.json",
+  "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/pagesMetadata/1.0.0/schema.json": "pagesMetadata_1_0_0_schema_json.json",
+  "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/1.0.0/schema.json": "page_1_0_0_schema_json.json",
+  "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/report/1.0.0/schema.json": "report_1_0_0_schema_json.json"
+}
