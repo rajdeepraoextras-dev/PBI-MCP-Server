@@ -7,6 +7,10 @@ build/
 dist/
 .pytest_cache/
 
+# PyInstaller
+*.spec
+/build/
+
 # Local backups produced by io_safe
 *.bak-*
 
