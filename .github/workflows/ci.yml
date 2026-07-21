@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Test (real-fixture tests skip cleanly in CI)
+        run: pytest -q
+      - name: Verify emitted output validates against Fabric schemas
+        run: |
+          python - <<'PY'
+          from core.pbir import build_visual_json, build_page_json
+          from core import schema_validate as sv
+          ism = lambda e, p: p in ("M",)
+          assert sv.validate("visualContainer",
+              build_visual_json("c", "card", {"Values": ["S.M"]}, ism)) == []
+          assert sv.validate("page", build_page_json("p", "P", 1280, 720)) == []
+          print("emitted output is schema-valid")
+          PY

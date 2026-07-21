@@ -1,5 +1,46 @@
 # pbi-mcp — release notes & portfolio write-up
 
+## v2.0.0 — "Epic Reports"
+
+A major upgrade from a correct report *builder* to a report *designer*. 56 MCP
+tools across the two servers; 300+ tests.
+
+**Correctness (E1).** Every report write is now pre-flight validated against
+the official Microsoft Fabric JSON schemas (vendored offline, transitive
+closure). Calibrated on 140 real Desktop files — 138 clean, 2 documented
+version-drift exceptions. This eliminates the class of bug Desktop caught in
+v1.0.1. Plus schema-built relativeDate filters, an mtime-keyed parse cache
+(2.2× on the real model), and a `pbi_capabilities` self-description so an LLM
+can build without trial-and-error.
+
+**Design layer (E2).** The thing that makes reports look designed, not
+generated: textboxes, images (with resource upload), shapes/backplates/
+dividers, page backgrounds + wallpaper, z-order, visual groups, and a raw
+escape hatch for third-party visuals — every shape copied from real exports.
+
+**Design system (E3).** `pbi_generate_theme` (brand color → coherent palette +
+text classes, light/dark); a 12-column grid layout engine with a KPI band and
+auto page-height; `pbi_build_designed_page` (header band + KPI strip on rounded
+backplates + chart grid in one call); and `pbi_lint_page` for overlaps,
+off-canvas, and misalignment.
+
+**Interactivity (E4).** Sorting, `Sum()/Average()` column aggregations, page-
+navigation buttons, drillthrough/tooltip page roles, cross-filter interactions,
+and bookmarks.
+
+**Intelligence (E5).** `pbi_profile_model` classifies the model (fact/dimension/
+date tables, measure roles, grouping columns); `pbi_scaffold_report` turns a
+raw model into a themed, navigable, multi-page designed report in **one call** —
+verified building a 4-page, 105-file, fully schema-valid report from the HR
+sample.
+
+**Lifecycle (E6).** Page rename/hide/reorder/delete/duplicate, filter list/
+remove, recoverable visual/page trash + restore, `pbi_project_diff`, and CI.
+
+---
+
+# pbi-mcp v1.x — release notes & portfolio write-up
+
 ## v1.0.1 (schema-compliance fix)
 
 Desktop's PBIR schema validation of the v1.0.0 demo artifact surfaced two

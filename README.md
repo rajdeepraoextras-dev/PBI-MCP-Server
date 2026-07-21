@@ -5,7 +5,14 @@
 tools read and write the on-disk project files Power BI Desktop itself uses.
 
 Build a correctly-bound, themed, filtered, multi-page report — or bulk-author
-hundreds of measures — from a prompt, in minutes.
+hundreds of measures — from a prompt, in minutes. **56 tools** across two MCP
+servers; every report write is pre-flight validated against the official
+Fabric schemas.
+
+**Fastest path:** `pbi_set_project(path)` → `pbi_scaffold_report()` profiles
+the model and builds a themed, navigable, multi-page designed report in one
+call (use `dry_run=true` to review the proposal first). Or compose it yourself
+with `pbi_build_designed_page`, the design elements, and the theme generator.
 
 > **Scope honesty.** This builds **structure, speed, consistency**. It does
 > **not** do custom Deneb/Vega visuals, AppSource visual sourcing, or replace
@@ -84,7 +91,27 @@ save option* + *PBIR enhanced metadata* in Options → Preview features).
 | `pbi_delete_visual(page_id, visual_id)` | Recoverable delete (→ .pbi/mcp-trash) |
 | `pbi_format_visual(page_id, visual_id, target, objects)` | `container` (title/background/border) or `visual` (labels/legend/axes); plain values auto-encoded |
 | `pbi_set_report_theme(theme)` | Install + activate a standard PBI theme JSON |
-| `pbi_add_filter(scope, field, ...)` | Categorical / Advanced / TopN at report, page, or visual scope |
+| `pbi_add_filter(scope, field, ...)` | Categorical / Advanced / TopN / RelativeDate at report, page, or visual scope |
+
+### `pbi-report` — design, intelligence & lifecycle (v2)
+
+| Tool | What it does |
+|------|--------------|
+| `pbi_capabilities()` | Machine-readable spec: visual types, buckets, filters, examples |
+| `pbi_scaffold_report(...)` | **Autopilot**: profile the model → themed multi-page designed report (dry_run to review) |
+| `pbi_profile_model()` | Classify fact/dimension/date tables, measure roles, grouping columns |
+| `pbi_build_designed_page(...)` | Header band + KPI strip on backplates + chart grid, one call |
+| `pbi_generate_theme(brand, mode)` | Brand color → coherent theme (palette, text classes, light/dark) |
+| `pbi_add_text / pbi_add_image / pbi_add_shape` | Design elements: titles, logos, backplates, dividers |
+| `pbi_style_page(page_id, ...)` | Canvas background + wallpaper |
+| `pbi_group_visuals / pbi_add_visual_raw` | Group as one block; raw escape hatch for any visual |
+| `pbi_sort_visual / pbi_add_nav_button` | Sort; page-navigation buttons |
+| `pbi_set_page_role / pbi_set_visual_interactions` | Drillthrough/tooltip pages; cross-filter control |
+| `pbi_create_bookmark` | Capture page + filter state |
+| `pbi_rename/hide/reorder/delete/duplicate_page` | Page lifecycle (delete is recoverable) |
+| `pbi_list_filters / pbi_remove_filter / pbi_list_trash / pbi_restore_visual` | Filter + trash management |
+| `pbi_validate_project() / pbi_lint_page(id)` | Schema validation + design lint |
+| `pbi_project_diff(other) / pbi_project_summary()` | Diff vs another project/backup; overview |
 
 ### Binding format
 

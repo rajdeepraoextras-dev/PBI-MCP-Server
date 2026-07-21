@@ -288,6 +288,64 @@ def pbi_get_visual(page_id: str, visual_id: str) -> dict:
 
 
 @mcp.tool()
+def pbi_rename_page(page_id: str, new_name: str) -> dict:
+    """Rename a page's display name."""
+    return STATE.require().rename_page(page_id, new_name)
+
+
+@mcp.tool()
+def pbi_hide_page(page_id: str, hidden: bool = True) -> dict:
+    """Hide or show a page in view mode."""
+    return STATE.require().hide_page(page_id, hidden)
+
+
+@mcp.tool()
+def pbi_reorder_pages(order: list) -> dict:
+    """Set page order (list of page ids). Omitted pages keep their order after."""
+    return STATE.require().reorder_pages(order)
+
+
+@mcp.tool()
+def pbi_delete_page(page_id: str) -> dict:
+    """Delete a page (recoverable via .pbi/mcp-trash)."""
+    return STATE.require().delete_page(page_id)
+
+
+@mcp.tool()
+def pbi_duplicate_page(page_id: str, new_name: str | None = None) -> dict:
+    """Duplicate a page and its visuals; returns the new page id."""
+    nid = STATE.require().duplicate_page(page_id, new_name)
+    return {"ok": True, "page_id": nid}
+
+
+@mcp.tool()
+def pbi_list_filters(scope: str, page_id: str | None = None,
+                     visual_id: str | None = None) -> list:
+    """List filters at report/page/visual scope."""
+    return STATE.require().list_filters(scope, page_id, visual_id)
+
+
+@mcp.tool()
+def pbi_remove_filter(scope: str, filter_name: str,
+                      page_id: str | None = None,
+                      visual_id: str | None = None) -> dict:
+    """Remove a filter by name (from pbi_list_filters)."""
+    return STATE.require().remove_filter(scope, filter_name, page_id, visual_id)
+
+
+@mcp.tool()
+def pbi_list_trash() -> list:
+    """List recoverable deleted pages/visuals in .pbi/mcp-trash."""
+    return STATE.require().list_trash()
+
+
+@mcp.tool()
+def pbi_restore_visual(trash_path: str) -> dict:
+    """Restore a deleted visual (path from pbi_list_trash) back onto its page."""
+    return STATE.require().restore_visual(trash_path)
+
+
+@mcp.tool()
 def pbi_create_page(name: str, width: float = 1280,
                     height: float = 720) -> dict:
     """Create a report page; returns page_id."""
@@ -579,6 +637,36 @@ def pbi_add_filter(scope: str, field: str, filter_type: str = "Categorical",
                          top_n=top_n, order_by=order_by,
                          last_n=last_n, relative_unit=relative_unit)
     return project.add_filter(scope, entry, page_id, visual_id)
+
+
+@mcp.tool()
+def pbi_project_diff(other_path: str) -> dict:
+    """Diff the current project against another .pbip (or a backup dir):
+    measures/pages/visuals/relationships added/removed/changed."""
+    from core.diff import diff_projects
+
+    return diff_projects(STATE.require(), PbipProject(other_path))
+
+
+@mcp.tool()
+def pbi_project_summary() -> dict:
+    """A compact overview: tables, measures, relationships, pages, visuals,
+    and field-usage counts."""
+    project = STATE.require()
+    tables = project.list_tables()
+    pages = project.list_pages()
+    from core.usage import classify_usage
+    usage = classify_usage(project)
+    return {
+        "path": str(project.path),
+        "model": {"tables": len(tables),
+                  "measures": sum(len(t.measures) for t in tables),
+                  "columns": sum(len(t.columns) for t in tables),
+                  "relationships": len(project.list_relationships())},
+        "report": {"pages": len(pages),
+                   "visuals": sum(p.visual_count for p in pages)},
+        "usage": usage["counts"],
+    }
 
 
 @mcp.tool()

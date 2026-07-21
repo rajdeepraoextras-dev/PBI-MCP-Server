@@ -714,6 +714,171 @@ class PbipProject:
         from core.pbir import _VC_SCHEMA
         return _VC_SCHEMA
 
+    # --- page lifecycle -----------------------------------------------------
+
+    def _pages_meta(self) -> tuple[Path, dict]:
+        meta_path = (self._require_report() / "definition" / "pages"
+                     / "pages.json")
+        meta = json.loads(meta_path.read_text(encoding="utf-8-sig")) \
+            if meta_path.exists() else {"pageOrder": []}
+        return meta_path, meta
+
+    def rename_page(self, page_id: str, new_name: str) -> dict:
+        page_json = (self._require_report() / "definition" / "pages"
+                     / page_id / "page.json")
+        if not page_json.exists():
+            raise FileNotFoundError(f"Page {page_id!r} not found")
+        data = json.loads(page_json.read_text(encoding="utf-8-sig"))
+        data["displayName"] = new_name
+        self._write_json(page_json, data)
+        return {"ok": True, "page_id": page_id, "name": new_name}
+
+    def hide_page(self, page_id: str, hidden: bool = True) -> dict:
+        page_json = (self._require_report() / "definition" / "pages"
+                     / page_id / "page.json")
+        if not page_json.exists():
+            raise FileNotFoundError(f"Page {page_id!r} not found")
+        data = json.loads(page_json.read_text(encoding="utf-8-sig"))
+        data["visibility"] = "HiddenInViewMode" if hidden else "AlwaysVisible"
+        self._write_json(page_json, data)
+        return {"ok": True, "page_id": page_id, "hidden": hidden}
+
+    def reorder_pages(self, order: list[str]) -> dict:
+        meta_path, meta = self._pages_meta()
+        on_disk = {p.id for p in self.list_pages()}
+        unknown = [p for p in order if p not in on_disk]
+        if unknown:
+            raise KeyError(f"Unknown page(s): {unknown}")
+        # keep any pages the caller omitted, appended in their current order
+        meta["pageOrder"] = order + [p for p in meta.get("pageOrder", [])
+                                     if p not in order and p in on_disk]
+        self._write_json(meta_path, meta)
+        return {"ok": True, "order": meta["pageOrder"]}
+
+    def delete_page(self, page_id: str) -> dict:
+        """Delete a page (recoverable: moved to Report/.pbi/mcp-trash/pages)."""
+        import shutil
+        import time
+
+        pages_dir = self._require_report() / "definition" / "pages"
+        pdir = pages_dir / page_id
+        if not pdir.is_dir():
+            raise FileNotFoundError(f"Page {page_id!r} not found")
+        trash = (self._require_report() / ".pbi" / "mcp-trash" / "pages"
+                 / f"{page_id}-{time.strftime('%Y%m%d-%H%M%S')}")
+        trash.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(pdir), str(trash))
+        meta_path, meta = self._pages_meta()
+        meta["pageOrder"] = [p for p in meta.get("pageOrder", []) if p != page_id]
+        if meta.get("activePageName") == page_id:
+            meta["activePageName"] = meta["pageOrder"][0] if meta["pageOrder"] else None
+        self._write_json(meta_path, meta)
+        return {"ok": True, "deleted": page_id, "recoverable_at": str(trash)}
+
+    def duplicate_page(self, page_id: str, new_name: str | None = None) -> str:
+        """Copy a page (and its visuals) to a new page; returns new page id."""
+        import shutil
+
+        from core.pbir import slugify
+
+        pages_dir = self._require_report() / "definition" / "pages"
+        src = pages_dir / page_id
+        if not src.is_dir():
+            raise FileNotFoundError(f"Page {page_id!r} not found")
+        src_data = json.loads((src / "page.json").read_text(encoding="utf-8-sig"))
+        name = new_name or f"{src_data.get('displayName', page_id)} copy"
+        existing = {p.name for p in pages_dir.iterdir() if p.is_dir()}
+        new_id, n = slugify(name, fallback="page"), 1
+        while new_id in existing:
+            n += 1
+            new_id = f"{slugify(name)}-{n}"
+        shutil.copytree(src, pages_dir / new_id)
+        # fix the copied page.json name/displayName
+        pj = pages_dir / new_id / "page.json"
+        data = json.loads(pj.read_text(encoding="utf-8-sig"))
+        data["name"] = new_id
+        data["displayName"] = name
+        self._write_json(pj, data)
+        meta_path, meta = self._pages_meta()
+        meta.setdefault("pageOrder", []).append(new_id)
+        self._write_json(meta_path, meta)
+        return new_id
+
+    # --- filter + visual lifecycle -----------------------------------------
+
+    def list_filters(self, scope: str, page_id: str | None = None,
+                     visual_id: str | None = None) -> list[dict]:
+        report_def = self._require_report() / "definition"
+        if scope == "report":
+            target = report_def / "report.json"
+        elif scope == "page":
+            target = report_def / "pages" / page_id / "page.json"
+        elif scope == "visual":
+            target = self._visual_file(page_id, visual_id)
+        else:
+            raise ValueError("scope must be report | page | visual")
+        if not target.exists():
+            return []
+        data = json.loads(target.read_text(encoding="utf-8-sig"))
+        return [{"name": f.get("name"), "type": f.get("type"),
+                 "field": f.get("field")}
+                for f in data.get("filterConfig", {}).get("filters", [])]
+
+    def remove_filter(self, scope: str, filter_name: str,
+                      page_id: str | None = None,
+                      visual_id: str | None = None) -> dict:
+        report_def = self._require_report() / "definition"
+        if scope == "report":
+            target = report_def / "report.json"
+        elif scope == "page":
+            target = report_def / "pages" / page_id / "page.json"
+        elif scope == "visual":
+            target = self._visual_file(page_id, visual_id)
+        else:
+            raise ValueError("scope must be report | page | visual")
+        data = json.loads(target.read_text(encoding="utf-8-sig"))
+        filters = data.get("filterConfig", {}).get("filters", [])
+        kept = [f for f in filters if f.get("name") != filter_name]
+        if len(kept) == len(filters):
+            raise KeyError(f"Filter {filter_name!r} not found")
+        data["filterConfig"]["filters"] = kept
+        self._write_json(target, data)
+        return {"ok": True, "removed": filter_name, "remaining": len(kept)}
+
+    def list_trash(self) -> list[dict]:
+        trash = self._require_report() / ".pbi" / "mcp-trash"
+        if not trash.is_dir():
+            return []
+        out = []
+        for kind in ("pages",):
+            for d in (trash / kind).glob("*") if (trash / kind).is_dir() else []:
+                out.append({"kind": "page", "path": str(d), "name": d.name})
+        # trashed visuals live under mcp-trash/<pageId>/<visualId-ts>
+        for pdir in trash.iterdir():
+            if pdir.name == "pages" or not pdir.is_dir():
+                continue
+            for vd in pdir.glob("*"):
+                out.append({"kind": "visual", "page": pdir.name,
+                            "path": str(vd), "name": vd.name})
+        return out
+
+    def restore_visual(self, trash_path: str) -> dict:
+        """Restore a visual folder from mcp-trash back onto its page."""
+        import shutil
+
+        src = Path(trash_path)
+        if not src.is_dir() or not (src / "visual.json").exists():
+            raise FileNotFoundError(f"No trashed visual at {trash_path}")
+        page_id = src.parent.name
+        # strip the -timestamp suffix to recover the original id
+        original = src.name.rsplit("-", 2)[0]
+        dest = (self._require_report() / "definition" / "pages" / page_id
+                / "visuals" / original)
+        if dest.exists():
+            raise ValueError(f"{original} already exists on page {page_id}")
+        shutil.move(str(src), str(dest))
+        return {"ok": True, "restored": original, "page_id": page_id}
+
     def add_visual(self, page_id: str, spec: dict) -> str:
         """Add a visual from a spec; return its visualId.
 

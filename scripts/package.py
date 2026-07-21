@@ -21,7 +21,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 DIST = REPO / "dist"
 
-VERSION = "1.0.0"
+VERSION = "2.0.0"
 
 MANIFEST = {
     "name": "pbi-mcp",
