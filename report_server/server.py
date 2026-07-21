@@ -143,12 +143,71 @@ def auto_layout(visuals: list[dict], width: float = 1280,
 
 def build_page(state: ReportState, name: str, visuals: list[dict],
                width: float = 1280, height: float = 720) -> dict:
-    """One-call flow: create a page and add visuals with auto-layout."""
-    page = create_page(state, name, width, height)
-    auto_layout(visuals, width, height)
+    """One-call flow: create a page and add visuals with grid auto-layout.
+
+    Uses the 12-column layout engine (KPI band + body grid, page auto-extends)
+    for visuals without an explicit position.
+    """
+    from core.layout import layout_page
+
+    _, page_height = layout_page(visuals, width=width, height=height)
+    page = create_page(state, name, width, page_height)
     res = add_visual(state, page["page_id"], visuals)
     return {"ok": True, "page_id": page["page_id"],
-            "visual_ids": res["visual_ids"]}
+            "visual_ids": res["visual_ids"], "page_height": page_height}
+
+
+def build_designed_page(state: ReportState, name: str, title: str,
+                        subtitle: str | None = None,
+                        kpis: list[dict] | None = None,
+                        charts: list[dict] | None = None,
+                        template: str = "exec-summary",
+                        accent: str = "#1F3A5F",
+                        width: float = 1280) -> dict:
+    """Compose a designed page from a template: header band, KPI strip on
+    backplates, chart grid. Executes the plan through validated primitives."""
+    from core.templates import TEMPLATES
+
+    if template not in TEMPLATES:
+        raise ValueError(f"Unknown template {template!r}; have {sorted(TEMPLATES)}")
+    project = state.require()
+    kpis = kpis or []
+    charts = charts or []
+
+    # validate chart specs + refs up front (fail before creating anything)
+    for c in charts:
+        from core.visual_specs import validate_bindings
+        validate_bindings(c["visual_type"], c.get("bindings", {}))
+        _validate_refs_exist(project, c.get("bindings", {}))
+    for k in kpis:
+        _validate_refs_exist(project, {"_": [k["measure"]]})
+
+    steps, page_height = TEMPLATES[template](
+        title, subtitle, kpis, charts, width=width, accent=accent)
+    page_id = project.create_page(name, width, page_height)
+
+    made = {"shapes": 0, "texts": 0, "visuals": []}
+    for step in steps:
+        op = step["op"]
+        if op == "style_page":
+            project.style_page(page_id,
+                               background_color=step.get("background_color"),
+                               wallpaper_color=step.get("wallpaper_color"))
+        elif op == "shape":
+            project.add_shape(page_id, step.get("shape", "rectangle"),
+                              fill=step.get("fill"),
+                              round_corners=step.get("round_corners", False),
+                              position=step.get("position"), z=step.get("z"))
+            made["shapes"] += 1
+        elif op == "text":
+            project.add_text(page_id, step["runs"],
+                             position=step.get("position"), z=step.get("z"))
+            made["texts"] += 1
+        elif op == "visual":
+            vid = project.add_visual(page_id, step["spec"])
+            made["visuals"].append(vid)
+    return {"ok": True, "page_id": page_id, "page_height": page_height,
+            "elements": made}
 
 
 def add_visual(state: ReportState, page_id: str, visuals: list[dict]) -> dict:
@@ -311,6 +370,19 @@ def pbi_add_shape(page_id: str, shape: str = "rectangle",
 
 
 @mcp.tool()
+def pbi_build_designed_page(name: str, title: str, subtitle: str | None = None,
+                            kpis: list | None = None, charts: list | None = None,
+                            template: str = "exec-summary",
+                            accent: str = "#1F3A5F") -> dict:
+    """Build a fully DESIGNED page in one call: header band, KPI strip on
+    rounded backplates, and a chart grid — themed and laid out.
+    kpis: [{"measure": "Table.M", "title": "..."}]. charts: normal visual
+    specs (positions auto-assigned). accent is the header/brand '#hex'."""
+    return build_designed_page(STATE, name, title, subtitle, kpis, charts,
+                               template, accent)
+
+
+@mcp.tool()
 def pbi_update_bindings(page_id: str, visual_id: str,
                         bindings: dict) -> dict:
     """Replace a visual's field bindings ({bucket: ["Table.Field",...]});
@@ -357,6 +429,19 @@ def pbi_set_report_theme(theme: dict) -> dict:
 
 
 @mcp.tool()
+def pbi_generate_theme(brand: str = "#1F3A5F", name: str = "MCP Brand Theme",
+                       mode: str = "light", install: bool = True) -> dict:
+    """Generate a coherent Power BI theme from a brand color (palette + text
+    classes + visual styles, light|dark). install=True applies it now."""
+    from core.theme import generate_theme
+
+    theme = generate_theme(brand, name, mode)
+    if install:
+        STATE.require().set_report_theme(theme)
+    return {"ok": True, "installed": install, "theme": theme}
+
+
+@mcp.tool()
 def pbi_add_filter(scope: str, field: str, filter_type: str = "Categorical",
                    values: list | None = None,
                    comparison: str | None = None, comparison_value=None,
@@ -380,6 +465,21 @@ def pbi_add_filter(scope: str, field: str, filter_type: str = "Categorical",
                          top_n=top_n, order_by=order_by,
                          last_n=last_n, relative_unit=relative_unit)
     return project.add_filter(scope, entry, page_id, visual_id)
+
+
+@mcp.tool()
+def pbi_lint_page(page_id: str) -> dict:
+    """Design lint a page: overlaps, off-canvas visuals, too-small visuals,
+    near-misaligned edges. Returns {ok, findings[]}."""
+    from core.lint import lint_page
+
+    project = STATE.require()
+    pages = {p.id: p for p in project.list_pages()}
+    if page_id not in pages:
+        raise KeyError(f"Page {page_id!r} not found")
+    findings = lint_page(pages[page_id], project.list_visuals(page_id))
+    return {"ok": not any(f["severity"] == "warning" for f in findings),
+            "findings": findings}
 
 
 @mcp.tool()
