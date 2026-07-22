@@ -47,6 +47,32 @@ touched. Call `pbi_set_project(path)` first.
 - **`pbi_profile_model()`** classifies fact/dimension/date tables and measure
   roles (ratio/currency/time-intelligence) — useful context before building.
 
+## DAX that Power BI REJECTS — avoid these
+
+The server writes exactly the DAX you give it and returns a `warnings` list
+when it spots a likely error, but Power BI is the real validator. Write it
+right the first time:
+
+- **No measure inside a CALCULATE boolean filter.** `CALCULATE([X],
+  Table[Col] = [SomeMeasure])` fails with *"a function 'PLACEHOLDER' has been
+  used in a True/False expression…"*. Wrap it in FILTER:
+  `CALCULATE([X], FILTER(ALL(Table[Col]), Table[Col] = [SomeMeasure]))`.
+  A boolean filter may only compare a **column** to a **constant**
+  (`Sales[Region] = "West"`, `Sales[Year] = 2024`).
+- **No empty/omitted arguments.** `TOPN(1, tbl, [Sales], , DESC)` fails
+  (*"special flag not allowed as argument 5"*). Write
+  `TOPN(1, tbl, [Sales], DESC)` — no `,,`.
+- **Time-intelligence needs a real Date table** marked as a date table, and a
+  `Date` column: `CALCULATE([Sales], SAMEPERIODLASTYEAR('Date'[Date]))`,
+  `TOTALYTD([Sales], 'Date'[Date])`. Don't filter on a fact-table year column
+  with a measure — compare against the date dimension.
+- **Prior-year the safe way:** define `PrevYear = MAX('Date'[Year]) - 1` as a
+  helper only if you then use it inside FILTER over the Date table, or better,
+  use `SAMEPERIODLASTYEAR` / `DATEADD`.
+- Reference measures bare (`[Revenue]`); columns qualified (`Sales[Amount]`).
+- If the tool returns `warnings` on a create/bulk call, fix those measures
+  before moving on — they will error in Desktop.
+
 ## Rules of thumb
 
 - Measure names are globally unique; columns disambiguate by table.

@@ -259,6 +259,15 @@ class PbipProject:
                 return m
         return None
 
+    def _lint_dax(self, dax: str, extra_names: set[str] | None = None) -> list[str]:
+        """Best-effort DAX warnings (non-blocking)."""
+        from core.dax_lint import lint_dax
+
+        names = {m.name for m in self.list_measures()}
+        if extra_names:
+            names |= extra_names
+        return lint_dax(dax, names)
+
     def create_measure(
         self, table: str, name: str, dax: str, fmt: str | None = None,
         display_folder: str | None = None,
@@ -275,7 +284,11 @@ class PbipProject:
             )
         self._table_file(table)  # validate the table exists before writing
         self.upsert_measure(table, name, dax, fmt, display_folder)
-        return {"ok": True, "action": "created", "table": table, "name": name}
+        result = {"ok": True, "action": "created", "table": table, "name": name}
+        warnings = self._lint_dax(dax)
+        if warnings:
+            result["warnings"] = warnings
+        return result
 
     def update_measure(
         self, table: str, name: str, dax: str | None = None,
@@ -293,13 +306,17 @@ class PbipProject:
             raise ValueError(
                 f"Measure {name!r} lives in table {existing.table!r}, not {table!r}"
             )
+        new_dax = dax if dax is not None else existing.dax
         self.upsert_measure(
-            table, name,
-            dax if dax is not None else existing.dax,
+            table, name, new_dax,
             fmt if fmt is not None else existing.format_string,
             display_folder if display_folder is not None else existing.display_folder,
         )
-        return {"ok": True, "action": "updated", "table": table, "name": name}
+        result = {"ok": True, "action": "updated", "table": table, "name": name}
+        warnings = self._lint_dax(new_dax)
+        if warnings:
+            result["warnings"] = warnings
+        return result
 
     def list_backups(self) -> list[dict]:
         """All .bak-* snapshots in the project, newest first."""
@@ -529,9 +546,22 @@ class PbipProject:
                     text, s["name"], s["dax"],
                     s.get("format"), s.get("display_folder"))
             self._write_text(path, text)
-        return {"ok": True, "action": "created",
-                "count": len(measures),
-                "tables": sorted(by_table)}
+
+        # DAX lint across the batch (names include the whole batch)
+        batch_names = existing | seen
+        flagged = {}
+        for spec in measures:
+            w = self._lint_dax(spec["dax"], batch_names)
+            if w:
+                flagged[spec["name"]] = w
+        result = {"ok": True, "action": "created",
+                  "count": len(measures), "tables": sorted(by_table)}
+        if flagged:
+            result["warnings"] = flagged
+            result["warning_note"] = (
+                f"{len(flagged)} of {len(measures)} measures have likely DAX "
+                f"errors Power BI will reject — review and fix these.")
+        return result
 
     def create_page(self, name: str, width: float = 1280,
                     height: float = 720) -> str:
