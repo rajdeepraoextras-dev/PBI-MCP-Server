@@ -63,7 +63,9 @@ def plugin_manifest() -> dict:
         "description": ("Build Power BI reports and models from natural "
                         "language — pages, visuals, themes, layouts, measures, "
                         "lineage. Local-file PBIP format. Self-contained: no "
-                        "Python or dependencies needed on the host."),
+                        "Python or dependencies needed on the host. "
+                        "By Rajdeep Rao — "
+                        "https://www.linkedin.com/in/rajdeep-rao-14bab1320/"),
         "author": {"name": "Rajdeep Rao"},
         "keywords": ["power-bi", "powerbi", "report", "pbir", "tmdl",
                      "data-visualization", "dashboard"],
