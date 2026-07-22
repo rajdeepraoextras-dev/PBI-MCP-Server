@@ -114,6 +114,10 @@ def main() -> None:
         zf.writestr("INSTALL.md", INSTALL.format(platform=tag))
         zf.write(exe, EXE_NAME)
         zf.write(REPO / "README.md", "README.md")
+        # bundled skills (workflow guidance, invokable via /name in chat)
+        skills_dir = REPO / "skills"
+        for f in sorted(skills_dir.rglob("*.md")):
+            zf.write(f, f.relative_to(REPO).as_posix())
 
     mb = bundle.stat().st_size / 1_048_576
     print(f"built {bundle.name} ({mb:.1f} MB) — self-contained, no host deps")
