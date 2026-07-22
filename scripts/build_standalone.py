@@ -55,32 +55,30 @@ def freeze() -> Path:
     return exe
 
 
-def manifest() -> dict:
+def plugin_manifest() -> dict:
+    """`.claude-plugin/plugin.json` — metadata only (matches Claude's format)."""
     return {
         "name": "pbi-mcp",
-        "displayName": "Power BI Project MCP (standalone)",
         "version": VERSION,
-        "description": ("Local-file Power BI Project (.pbip) automation over "
-                        "MCP. Self-contained — no Python or dependencies "
-                        "needed on the host."),
-        "author": "Rajdeep Rao",
-        "authorUrl": "https://www.linkedin.com/in/rajdeep-rao-14bab1320/",
+        "description": ("Build Power BI reports and models from natural "
+                        "language — pages, visuals, themes, layouts, measures, "
+                        "lineage. Local-file PBIP format. Self-contained: no "
+                        "Python or dependencies needed on the host."),
+        "author": {"name": "Rajdeep Rao"},
+        "keywords": ["power-bi", "powerbi", "report", "pbir", "tmdl",
+                     "data-visualization", "dashboard"],
         "license": "MIT",
-        "platform": f"{sys.platform}-{platform.machine()}",
+    }
+
+
+def mcp_config() -> dict:
+    """`.mcp.json` — the MCP servers, launched from the bundled executable."""
+    exe = "${CLAUDE_PLUGIN_ROOT}/" + EXE_NAME
+    return {
         "mcpServers": {
-            "pbi-model": {
-                "command": "${bundleRoot}/" + EXE_NAME,
-                "args": ["model"],
-                "description": "Semantic model tools (measures, columns, "
-                               "relationships, calc groups, lineage).",
-            },
-            "pbi-report": {
-                "command": "${bundleRoot}/" + EXE_NAME,
-                "args": ["report"],
-                "description": "Report tools (pages, visuals, design layer, "
-                               "themes, filters, scaffold).",
-            },
-        },
+            "pbi-model": {"command": exe, "args": ["model"]},
+            "pbi-report": {"command": exe, "args": ["report"]},
+        }
     }
 
 
@@ -110,14 +108,16 @@ def main() -> None:
         bundle.unlink()
 
     with zipfile.ZipFile(bundle, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("plugin.json", json.dumps(manifest(), indent=2))
+        zf.writestr(".claude-plugin/plugin.json",
+                    json.dumps(plugin_manifest(), indent=2))
+        zf.writestr(".mcp.json", json.dumps(mcp_config(), indent=2))
         zf.writestr("INSTALL.md", INSTALL.format(platform=tag))
         zf.write(exe, EXE_NAME)
         zf.write(REPO / "README.md", "README.md")
 
     mb = bundle.stat().st_size / 1_048_576
     print(f"built {bundle.name} ({mb:.1f} MB) — self-contained, no host deps")
-    print(f"  executable: {exe}")
+    print(f"  structure: .claude-plugin/plugin.json + .mcp.json + {EXE_NAME}")
 
 
 if __name__ == "__main__":
