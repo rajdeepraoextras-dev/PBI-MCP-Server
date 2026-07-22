@@ -84,8 +84,9 @@ def build_nav_button(visual_id: str, label: str, target_page_id: str,
         },
         "drillFilterOtherVisuals": True,
     }
-    return {"$schema": "https://developer.microsoft.com/json-schemas/fabric/"
-            "item/report/definition/visualContainer/2.10.0/schema.json",
+    from core.pbir import _VC_SCHEMA
+
+    return {"$schema": _VC_SCHEMA,
             "name": visual_id, "position": pos, "visual": visual}
 
 

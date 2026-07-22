@@ -58,7 +58,7 @@ def freeze() -> Path:
 def plugin_manifest() -> dict:
     """`.claude-plugin/plugin.json` — metadata only (matches Claude's format)."""
     return {
-        "name": "pbi-mcp",
+        "name": "power-bi-mcp-server",
         "version": VERSION,
         "description": ("Build Power BI reports and models from natural "
                         "language — pages, visuals, themes, layouts, measures, "

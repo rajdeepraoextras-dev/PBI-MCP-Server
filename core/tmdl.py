@@ -22,9 +22,9 @@ expression continuation line is indented *deeper* (>= member_indent + 2) than
 the member's properties (member_indent + 1). Fenced bodies (` ``` `) are also
 supported.
 
-TODO(Day 4): implement emit (write valid tab-indented TMDL).
-
-Leverage: PBICompass model parser informs this (Part G).
+Writes are surgical text edits (upsert_measure_text, insert_column_text, …),
+never a full re-emit from the parsed model — that would drop partitions,
+annotations, and M source.
 """
 
 from __future__ import annotations

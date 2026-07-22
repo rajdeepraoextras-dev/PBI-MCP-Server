@@ -23,34 +23,35 @@ DIST = REPO / "dist"
 
 VERSION = "2.0.0"
 
-MANIFEST = {
-    "name": "pbi-mcp",
-    "displayName": "Power BI Project MCP",
+# Claude plugin metadata (goes in .claude-plugin/plugin.json — same format as
+# the standalone bundle, minus the frozen exe: this variant needs host Python).
+PLUGIN_JSON = {
+    "name": "power-bi-mcp-server",
     "version": VERSION,
     "description": (
-        "Local-file Power BI Project (.pbip) automation over MCP — "
-        "model (TMDL) and report (PBIR) layers. No Power BI API, no auth."
+        "Build Power BI reports and models from natural language — local-file "
+        "PBIP (TMDL + PBIR). Source bundle: needs Python 3.11+ with "
+        "mcp/pydantic/jsonschema on the host (use the standalone build for "
+        "zero-setup)."
     ),
-    "author": "Rajdeep Rao",
+    "author": {"name": "Rajdeep Rao"},
+    "keywords": ["power-bi", "powerbi", "report", "pbir", "tmdl", "dashboard"],
     "license": "MIT",
-    "requirements": {"python": ">=3.11",
-                     "pip": ["mcp>=1.2.0", "pydantic>=2.6", "jsonschema>=4.20"]},
+}
+
+MCP_JSON = {
     "mcpServers": {
         "pbi-model": {
             "command": "python",
             "args": ["-m", "model_server.server"],
-            "cwd": "${bundleRoot}",
-            "description": "Semantic model tools (measures, columns, "
-                           "relationships, calc groups, lineage).",
+            "cwd": "${CLAUDE_PLUGIN_ROOT}",
         },
         "pbi-report": {
             "command": "python",
             "args": ["-m", "report_server.server"],
-            "cwd": "${bundleRoot}",
-            "description": "Report tools (pages, visuals, formatting, "
-                           "theme, filters, field-usage fail-safe).",
+            "cwd": "${CLAUDE_PLUGIN_ROOT}",
         },
-    },
+    }
 }
 
 INSTALL_MD = """\
@@ -88,7 +89,9 @@ def main() -> None:
         bundle.unlink()
 
     with zipfile.ZipFile(bundle, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("plugin.json", json.dumps(MANIFEST, indent=2))
+        zf.writestr(".claude-plugin/plugin.json",
+                    json.dumps(PLUGIN_JSON, indent=2))
+        zf.writestr(".mcp.json", json.dumps(MCP_JSON, indent=2))
         zf.writestr("INSTALL.md", INSTALL_MD)
         for item in INCLUDE:
             src = REPO / item
@@ -101,6 +104,9 @@ def main() -> None:
                     zf.write(f, f.relative_to(REPO).as_posix())
         # vendored Fabric schemas (needed for offline pre-flight validation)
         for f in sorted((REPO / "resources" / "schemas").glob("*.json")):
+            zf.write(f, f.relative_to(REPO).as_posix())
+        # bundled skills
+        for f in sorted((REPO / "skills").rglob("*.md")):
             zf.write(f, f.relative_to(REPO).as_posix())
 
     snippet = {

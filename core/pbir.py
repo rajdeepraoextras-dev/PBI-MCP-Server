@@ -20,8 +20,8 @@ Reads `*.Report/definition/`:
 
 The whole dict is kept on `Visual.raw` so a round-trip never drops keys we
 don't model. Bucket names differ per visual type — see `visual_specs.py`.
-
-TODO(Day 19+): implement write (create_page, add_visual).
+Write builders (build_visual_json, build_page_json, …) live below; PbipProject
+persists them.
 """
 
 from __future__ import annotations

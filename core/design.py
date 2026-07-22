@@ -12,9 +12,7 @@ visuals); labels/logos get HIGH z (on top). Callers pass z via position.
 from __future__ import annotations
 
 from core.formatting import _expr_literal, encode_property
-
-_VC_SCHEMA = ("https://developer.microsoft.com/json-schemas/fabric/item/"
-              "report/definition/visualContainer/2.10.0/schema.json")
+from core.pbir import _VC_SCHEMA
 
 
 def _container(visual_id: str, visual: dict, position: dict | None) -> dict:

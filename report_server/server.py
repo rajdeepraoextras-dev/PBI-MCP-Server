@@ -113,43 +113,6 @@ def create_page(state: ReportState, name: str,
     return {"ok": True, "page_id": page_id, "name": name}
 
 
-_CARD_TYPES = {"card", "cardVisual", "multiRowCard", "gauge"}
-
-
-def auto_layout(visuals: list[dict], width: float = 1280,
-                height: float = 720, margin: float = 16) -> list[dict]:
-    """Assign positions to specs that lack one: KPI cards in a top row,
-    everything else on a 2-column grid below."""
-    cards = [v for v in visuals if v["visual_type"] in _CARD_TYPES
-             and "position" not in v]
-    charts = [v for v in visuals if v["visual_type"] not in _CARD_TYPES
-              and "position" not in v]
-
-    y = margin
-    if cards:
-        card_w = (width - margin * (len(cards) + 1)) / max(len(cards), 1)
-        x = margin
-        for v in cards:
-            v["position"] = {"x": round(x), "y": y,
-                             "width": round(card_w), "height": 120}
-            x += card_w + margin
-        y += 120 + margin
-
-    if charts:
-        cols = 2 if len(charts) > 1 else 1
-        rows = -(-len(charts) // cols)
-        chart_w = (width - margin * (cols + 1)) / cols
-        chart_h = max((height - y - margin * rows) / rows, 200)
-        for i, v in enumerate(charts):
-            r, c = divmod(i, cols)
-            v["position"] = {
-                "x": round(margin + c * (chart_w + margin)),
-                "y": round(y + r * (chart_h + margin)),
-                "width": round(chart_w), "height": round(chart_h),
-            }
-    return visuals
-
-
 def build_page(state: ReportState, name: str, visuals: list[dict],
                width: float | None = None, height: float | None = None) -> dict:
     """One-call flow: create a page and add visuals with grid auto-layout.
@@ -176,12 +139,15 @@ def build_designed_page(state: ReportState, name: str, title: str,
                         charts: list[dict] | None = None,
                         template: str = "exec-summary",
                         accent: str | None = None,
-                        width: float | None = None) -> dict:
+                        width: float | None = None,
+                        match_page: str | None = None) -> dict:
     """Compose a designed page from a template: header band, KPI strip on
     backplates, chart grid. Executes the plan through validated primitives.
 
     When `accent`/`width` are omitted they are inherited from the report's
-    existing theme + page size, so the page matches the rest of the report.
+    existing theme + page size. Pass `match_page` (an existing page id) to also
+    copy its header/KPI composition (band height + color, title font, card
+    height, backplate) so the new page matches it closely.
     """
     from core.templates import TEMPLATES
 
@@ -190,6 +156,14 @@ def build_designed_page(state: ReportState, name: str, title: str,
     project = state.require()
     kpis = kpis or []
     charts = charts or []
+
+    page_style = None
+    if match_page is not None:
+        from core.page_style import extract_page_style
+        page_style = extract_page_style(project, match_page)
+        if accent is None and page_style.get("header", {}).get("fill"):
+            accent = page_style["header"]["fill"]
+
     if accent is None:
         accent = project.report_accent() or "#1F3A5F"
     if width is None:
@@ -204,7 +178,8 @@ def build_designed_page(state: ReportState, name: str, title: str,
         _validate_refs_exist(project, {"_": [k["measure"]]})
 
     steps, page_height = TEMPLATES[template](
-        title, subtitle, kpis, charts, width=width, accent=accent)
+        title, subtitle, kpis, charts, width=width, accent=accent,
+        style=page_style)
     page_id = project.create_page(name, width, page_height)
 
     made = {"shapes": 0, "texts": 0, "visuals": []}
@@ -531,15 +506,27 @@ def pbi_profile_model() -> dict:
 def pbi_build_designed_page(name: str, title: str, subtitle: str | None = None,
                             kpis: list | None = None, charts: list | None = None,
                             template: str = "exec-summary",
-                            accent: str | None = None) -> dict:
+                            accent: str | None = None,
+                            match_page: str | None = None) -> dict:
     """Build a fully DESIGNED page in one call: header band, KPI strip on
     rounded backplates, and a chart grid — themed and laid out.
     kpis: [{"measure": "Table.M", "title": "..."}]. charts: normal visual
     specs (positions auto-assigned). accent is the header/brand '#hex' —
-    omit it to inherit the report's existing theme color and match other
-    pages; page size is inherited too."""
+    omit it to inherit the report's existing theme color; page size is
+    inherited too. Pass match_page=<existing page id> to copy that page's
+    header/KPI composition so the new page matches it closely."""
     return build_designed_page(STATE, name, title, subtitle, kpis, charts,
-                               template, accent)
+                               template, accent, match_page=match_page)
+
+
+@mcp.tool()
+def pbi_page_style(page_id: str) -> dict:
+    """Inspect a page's header/KPI composition (band height+color, title font,
+    card height, backplate) — what pbi_build_designed_page(match_page=...)
+    copies."""
+    from core.page_style import extract_page_style
+
+    return extract_page_style(STATE.require(), page_id)
 
 
 @mcp.tool()
