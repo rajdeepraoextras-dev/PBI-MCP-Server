@@ -5,6 +5,11 @@ __pycache__/
 *.egg-info/
 build/
 dist/
+!dist/
+dist/*
+!dist/pbi-mcp.plugin
+!dist/pbi-mcp-standalone-win32-amd64.plugin
+!dist/claude_desktop_config.snippet.json
 .pytest_cache/
 
 # PyInstaller

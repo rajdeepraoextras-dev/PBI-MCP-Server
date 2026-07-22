@@ -37,6 +37,18 @@ refuses to open. Every mutation therefore goes through:
 - **recoverable visual deletes** — removed visuals move to
   `Report/.pbi/mcp-trash/`, which Desktop ignores
 
+## Download the plugin
+
+For the easiest install, download one of the bundles from `dist/`:
+
+- `pbi-mcp-standalone-win32-amd64.plugin` - self-contained Windows build; no
+  local Python setup required.
+- `pbi-mcp.plugin` - source plugin bundle; requires Python 3.11+ and the
+  package dependencies on the host.
+
+Drag the `.plugin` file into a plugin-aware MCP host, then call
+`pbi_set_project(path)` first in both `pbi-model` and `pbi-report` sessions.
+
 ## Quickstart
 
 ```bash

@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "pbi-model": {
+      "command": "C:\\Users\\resod\\OneDrive\\Desktop\\PBI MCP Server v1.0\\pbi-mcp\\.venv\\Scripts\\python.exe",
+      "args": [
+        "-m",
+        "model_server.server"
+      ],
+      "cwd": "C:\\Users\\resod\\OneDrive\\Desktop\\PBI MCP Server v1.0\\pbi-mcp"
+    },
+    "pbi-report": {
+      "command": "C:\\Users\\resod\\OneDrive\\Desktop\\PBI MCP Server v1.0\\pbi-mcp\\.venv\\Scripts\\python.exe",
+      "args": [
+        "-m",
+        "report_server.server"
+      ],
+      "cwd": "C:\\Users\\resod\\OneDrive\\Desktop\\PBI MCP Server v1.0\\pbi-mcp"
+    }
+  }
+}
