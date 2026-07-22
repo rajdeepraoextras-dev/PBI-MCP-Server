@@ -9,7 +9,22 @@ Charts alone read as "generated." Layered backplates, header bands, logos, a
 coherent theme, and a real grid read as "designed." Use the pbi-report design
 layer to close that gap. Call `pbi_set_project(path)` first.
 
-## Start with a theme
+## Adding to an EXISTING report — match it, don't reinvent
+
+When the report already has pages, a new page must look like it belongs:
+- **Page size / orientation is inherited automatically.** `pbi_create_page`,
+  `pbi_build_page`, and `pbi_build_designed_page` default to the existing
+  pages' dimensions — don't pass a width unless you deliberately want a
+  different size.
+- **Theme is inherited too.** Omit `accent` on `pbi_build_designed_page` /
+  `pbi_scaffold_report` and it uses the report's existing theme color;
+  scaffold will NOT overwrite an installed theme. Only call
+  `pbi_generate_theme` on a fresh report, or when the user explicitly wants a
+  new look.
+- Match the existing pages' header/KPI pattern by eye: open one with
+  `pbi_get_visual` / `pbi_list_visuals` first if unsure.
+
+## Start with a theme (fresh reports)
 
 **`pbi_generate_theme(brand="#RRGGBB", mode="light"|"dark")`** turns one brand
 color into a full, coherent theme — categorical palette, text classes, visual

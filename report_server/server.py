@@ -151,14 +151,18 @@ def auto_layout(visuals: list[dict], width: float = 1280,
 
 
 def build_page(state: ReportState, name: str, visuals: list[dict],
-               width: float = 1280, height: float = 720) -> dict:
+               width: float | None = None, height: float | None = None) -> dict:
     """One-call flow: create a page and add visuals with grid auto-layout.
 
     Uses the 12-column layout engine (KPI band + body grid, page auto-extends)
-    for visuals without an explicit position.
+    for visuals without an explicit position. Width/height default to the
+    existing pages' size so a new page matches the report's orientation.
     """
     from core.layout import layout_page
 
+    dw, dh = state.require().default_page_size()
+    width = width or dw
+    height = height or dh
     _, page_height = layout_page(visuals, width=width, height=height)
     page = create_page(state, name, width, page_height)
     res = add_visual(state, page["page_id"], visuals)
@@ -171,10 +175,14 @@ def build_designed_page(state: ReportState, name: str, title: str,
                         kpis: list[dict] | None = None,
                         charts: list[dict] | None = None,
                         template: str = "exec-summary",
-                        accent: str = "#1F3A5F",
-                        width: float = 1280) -> dict:
+                        accent: str | None = None,
+                        width: float | None = None) -> dict:
     """Compose a designed page from a template: header band, KPI strip on
-    backplates, chart grid. Executes the plan through validated primitives."""
+    backplates, chart grid. Executes the plan through validated primitives.
+
+    When `accent`/`width` are omitted they are inherited from the report's
+    existing theme + page size, so the page matches the rest of the report.
+    """
     from core.templates import TEMPLATES
 
     if template not in TEMPLATES:
@@ -182,6 +190,10 @@ def build_designed_page(state: ReportState, name: str, title: str,
     project = state.require()
     kpis = kpis or []
     charts = charts or []
+    if accent is None:
+        accent = project.report_accent() or "#1F3A5F"
+    if width is None:
+        width = project.default_page_size()[0]
 
     # validate chart specs + refs up front (fail before creating anything)
     for c in charts:
@@ -354,9 +366,10 @@ def pbi_restore_visual(trash_path: str) -> dict:
 
 
 @mcp.tool()
-def pbi_create_page(name: str, width: float = 1280,
-                    height: float = 720) -> dict:
-    """Create a report page; returns page_id."""
+def pbi_create_page(name: str, width: float | None = None,
+                    height: float | None = None) -> dict:
+    """Create a report page; returns page_id. Size defaults to the existing
+    pages' dimensions so orientation matches the rest of the report."""
     return create_page(STATE, name, width, height)
 
 
@@ -371,10 +384,12 @@ def pbi_add_visual(page_id: str, visuals: list[dict]) -> dict:
 
 @mcp.tool()
 def pbi_build_page(name: str, visuals: list[dict],
-                   width: float = 1280, height: float = 720) -> dict:
+                   width: float | None = None,
+                   height: float | None = None) -> dict:
     """Create a page AND add visuals in one call. Visuals without a
     "position" get an automatic layout (KPI cards top row, charts on a
-    2-column grid). Same visual spec shape as pbi_add_visual."""
+    2-column grid). Size defaults to the existing pages' dimensions.
+    Same visual spec shape as pbi_add_visual."""
     return build_page(STATE, name, visuals, width, height)
 
 
@@ -439,14 +454,21 @@ def pbi_add_shape(page_id: str, shape: str = "rectangle",
     return {"ok": True, "page_id": page_id, "visual_id": vid}
 
 
-def scaffold_report(state: ReportState, accent: str = "#1F3A5F",
+def scaffold_report(state: ReportState, accent: str | None = None,
                     max_detail_pages: int = 3, dry_run: bool = False,
                     theme: bool = True) -> dict:
-    """Profile the model and build (or propose) a full designed report."""
+    """Profile the model and build (or propose) a full designed report.
+
+    If the report already has a custom theme, its color is inherited and the
+    theme is NOT overwritten, so new pages match the existing look.
+    """
     from core.profile import profile_model
     from core.scaffold import propose_report
 
     project = state.require()
+    existing_accent = project.report_accent()
+    if accent is None:
+        accent = existing_accent or "#1F3A5F"
     profile = profile_model(project)
     proposal = propose_report(profile, accent=accent,
                               max_detail_pages=max_detail_pages)
@@ -454,7 +476,9 @@ def scaffold_report(state: ReportState, accent: str = "#1F3A5F",
         return {"ok": True, "dry_run": True, "proposal": proposal,
                 "profile_summary": profile["summary"]}
 
-    if theme:
+    # Only install a theme when the report doesn't already have one — never
+    # clobber the user's existing theme.
+    if theme and existing_accent is None:
         from core.theme import generate_theme
         project.set_report_theme(generate_theme(accent, name="Scaffold Theme",
                                                  mode=proposal["theme_mode"]))
@@ -484,12 +508,13 @@ def scaffold_report(state: ReportState, accent: str = "#1F3A5F",
 
 
 @mcp.tool()
-def pbi_scaffold_report(accent: str = "#1F3A5F", max_detail_pages: int = 3,
+def pbi_scaffold_report(accent: str | None = None, max_detail_pages: int = 3,
                         dry_run: bool = False, theme: bool = True) -> dict:
     """AUTOPILOT: profile the model and build a full designed report — themed
     overview page (KPI strip + trend + breakdown + table) plus per-dimension
     detail pages with a nav bar. dry_run=true returns the proposal to edit
-    first. This is the fastest path from a raw model to an epic report."""
+    first. Omit accent to inherit the report's existing theme (won't overwrite
+    it). Fastest path from a raw model to an epic report."""
     return scaffold_report(STATE, accent, max_detail_pages, dry_run, theme)
 
 
@@ -506,11 +531,13 @@ def pbi_profile_model() -> dict:
 def pbi_build_designed_page(name: str, title: str, subtitle: str | None = None,
                             kpis: list | None = None, charts: list | None = None,
                             template: str = "exec-summary",
-                            accent: str = "#1F3A5F") -> dict:
+                            accent: str | None = None) -> dict:
     """Build a fully DESIGNED page in one call: header band, KPI strip on
     rounded backplates, and a chart grid — themed and laid out.
     kpis: [{"measure": "Table.M", "title": "..."}]. charts: normal visual
-    specs (positions auto-assigned). accent is the header/brand '#hex'."""
+    specs (positions auto-assigned). accent is the header/brand '#hex' —
+    omit it to inherit the report's existing theme color and match other
+    pages; page size is inherited too."""
     return build_designed_page(STATE, name, title, subtitle, kpis, charts,
                                template, accent)
 

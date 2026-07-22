@@ -563,10 +563,58 @@ class PbipProject:
                 f"errors Power BI will reject — review and fix these.")
         return result
 
-    def create_page(self, name: str, width: float = 1280,
-                    height: float = 720) -> str:
-        """Create a page; return its pageId."""
+    def default_page_size(self) -> tuple[float, float]:
+        """(width, height) of existing pages, so new pages match orientation.
+
+        Uses the most common size among current pages; falls back to 1280x720
+        for an empty report.
+        """
+        import collections
+
+        sizes = []
+        for p in self.list_pages():
+            if p.width and p.height:
+                sizes.append((float(p.width), float(p.height)))
+        if not sizes:
+            return (1280.0, 720.0)
+        return collections.Counter(sizes).most_common(1)[0][0]
+
+    def report_accent(self) -> str | None:
+        """Primary accent color of the report's active custom theme, if any.
+
+        Lets new pages match the existing look instead of imposing a new color.
+        Returns None when only a built-in base theme is set (colors not on disk).
+        """
+        report_dir = self._require_report()
+        report_json = report_dir / "definition" / "report.json"
+        if not report_json.exists():
+            return None
+        try:
+            data = json.loads(report_json.read_text(encoding="utf-8-sig"))
+            ct = data.get("themeCollection", {}).get("customTheme")
+            if not ct:
+                return None
+            theme_file = report_dir / "StaticResources" / "RegisteredResources" \
+                / ct["name"]
+            theme = json.loads(theme_file.read_text(encoding="utf-8-sig"))
+            colors = theme.get("dataColors") or []
+            return colors[0] if colors else theme.get("tableAccent")
+        except (KeyError, ValueError, OSError):
+            return None
+
+    def create_page(self, name: str, width: float | None = None,
+                    height: float | None = None) -> str:
+        """Create a page; return its pageId.
+
+        Width/height default to the existing pages' size so a new page matches
+        the report's orientation.
+        """
         from core.pbir import build_page_json, slugify
+
+        if width is None or height is None:
+            dw, dh = self.default_page_size()
+            width = width if width is not None else dw
+            height = height if height is not None else dh
 
         pages_dir = self._require_report() / "definition" / "pages"
         existing = {p.name for p in pages_dir.iterdir() if p.is_dir()} \
