@@ -11,35 +11,25 @@ How references are read from DAX:
 
 We rely on two model facts: measure names are globally unique in a Power BI
 model (so measures key by name), and columns disambiguate by their table.
-String literals and comments are stripped first so text inside them never
-looks like a reference.
+References come from the tokenizer in `core.dax_parser`, so text inside
+string literals and comments never looks like a reference, and keywords
+(`RETURN [X]`, `NOT [Flag]`) are never mistaken for table qualifiers.
 """
 
 from __future__ import annotations
 
-import re
-
-# Optional table qualifier (quoted or bare word) + a bracketed name.
-_REF = re.compile(r"(?:'([^']*)'|([A-Za-z_]\w*))?\s*\[([^\]]+)\]")
-_BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.DOTALL)
-_LINE_COMMENT = re.compile(r"(//|--)[^\n]*")
-_STRING = re.compile(r'"(?:[^"]|"")*"')
-
-
-def _strip_noise(dax: str) -> str:
-    dax = _BLOCK_COMMENT.sub(" ", dax)
-    dax = _LINE_COMMENT.sub(" ", dax)
-    dax = _STRING.sub('""', dax)
-    return dax
+from core.dax_parser import parse_references
 
 
 def extract_references(dax: str) -> list[tuple[str | None, str]]:
-    """Return (table_qualifier_or_None, bracketed_name) pairs found in `dax`."""
-    refs: list[tuple[str | None, str]] = []
-    for quoted, bare, name in _REF.findall(_strip_noise(dax)):
-        qualifier = quoted or bare or None
-        refs.append((qualifier, name.strip()))
-    return refs
+    """Return (table_qualifier_or_None, bracketed_name) pairs found in `dax`.
+
+    Qualified refs come first, then bare ones; each is listed once, sorted.
+    """
+    refs = parse_references(dax)
+    out: list[tuple[str | None, str]] = sorted(refs.columns)
+    out.extend((None, name) for name in sorted(refs.measures))
+    return out
 
 
 def build_lineage(tables, measures) -> dict[str, dict]:
