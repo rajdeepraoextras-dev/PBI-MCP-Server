@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 from core.mcp_compat import Server
 
 from core.pbip import PbipProject
+from core.tooling import load_tool_modules, make_tool, register_journal_tools
 from core.pbir import visual_bindings
 
 
@@ -247,9 +248,10 @@ mcp = Server(
         "pbi_lint_page before finishing."
     ),
 )
+tool = make_tool(mcp, STATE)
 
 
-@mcp.tool()
+@tool(read=True, idempotent=True)
 def pbi_capabilities() -> dict:
     """What this server can build: visual types + buckets, filters, formatting,
     design elements, workflow, and a worked example. Call after set_project."""
@@ -258,69 +260,69 @@ def pbi_capabilities() -> dict:
     return capabilities()
 
 
-@mcp.tool()
+@tool(read=True, idempotent=True)
 def pbi_set_project(path: str) -> dict:
     """Point the report server at a Power BI Project (.pbip). Call this first."""
     return set_project(STATE, path)
 
 
-@mcp.tool()
+@tool(read=True)
 def pbi_list_pages() -> list[dict]:
     """List report pages: id, display name, size, visual count, hidden flag."""
     return list_pages(STATE)
 
 
-@mcp.tool()
+@tool(read=True)
 def pbi_list_visuals(page_id: str) -> list[dict]:
     """List visuals on a page with type, position, title, and field bindings."""
     return list_visuals(STATE, page_id)
 
 
-@mcp.tool()
+@tool(read=True)
 def pbi_get_visual(page_id: str, visual_id: str) -> dict:
     """Full configuration of one visual (including raw visual.json)."""
     return get_visual(STATE, page_id, visual_id)
 
 
-@mcp.tool()
+@tool(write=True, idempotent=True)
 def pbi_rename_page(page_id: str, new_name: str) -> dict:
     """Rename a page's display name."""
     return STATE.require().rename_page(page_id, new_name)
 
 
-@mcp.tool()
+@tool(write=True, idempotent=True)
 def pbi_hide_page(page_id: str, hidden: bool = True) -> dict:
     """Hide or show a page in view mode."""
     return STATE.require().hide_page(page_id, hidden)
 
 
-@mcp.tool()
+@tool(write=True, idempotent=True)
 def pbi_reorder_pages(order: list) -> dict:
     """Set page order (list of page ids). Omitted pages keep their order after."""
     return STATE.require().reorder_pages(order)
 
 
-@mcp.tool()
+@tool(write=True, destructive=True)
 def pbi_delete_page(page_id: str) -> dict:
     """Delete a page (recoverable via .pbi/mcp-trash)."""
     return STATE.require().delete_page(page_id)
 
 
-@mcp.tool()
+@tool(write=True)
 def pbi_duplicate_page(page_id: str, new_name: str | None = None) -> dict:
     """Duplicate a page and its visuals; returns the new page id."""
     nid = STATE.require().duplicate_page(page_id, new_name)
     return {"ok": True, "page_id": nid}
 
 
-@mcp.tool()
+@tool(read=True)
 def pbi_list_filters(scope: str, page_id: str | None = None,
                      visual_id: str | None = None) -> list:
     """List filters at report/page/visual scope."""
     return STATE.require().list_filters(scope, page_id, visual_id)
 
 
-@mcp.tool()
+@tool(write=True, destructive=True)
 def pbi_remove_filter(scope: str, filter_name: str,
                       page_id: str | None = None,
                       visual_id: str | None = None) -> dict:
@@ -328,19 +330,19 @@ def pbi_remove_filter(scope: str, filter_name: str,
     return STATE.require().remove_filter(scope, filter_name, page_id, visual_id)
 
 
-@mcp.tool()
+@tool(read=True)
 def pbi_list_trash() -> list:
     """List recoverable deleted pages/visuals in .pbi/mcp-trash."""
     return STATE.require().list_trash()
 
 
-@mcp.tool()
+@tool(write=True)
 def pbi_restore_visual(trash_path: str) -> dict:
     """Restore a deleted visual (path from pbi_list_trash) back onto its page."""
     return STATE.require().restore_visual(trash_path)
 
 
-@mcp.tool()
+@tool(write=True)
 def pbi_create_page(name: str, width: float | None = None,
                     height: float | None = None) -> dict:
     """Create a report page; returns page_id. Size defaults to the existing
@@ -348,7 +350,7 @@ def pbi_create_page(name: str, width: float | None = None,
     return create_page(STATE, name, width, height)
 
 
-@mcp.tool()
+@tool(write=True)
 def pbi_add_visual(page_id: str, visuals: list[dict]) -> dict:
     """Add visuals to a page (batch). Each: {"visual_type", "bindings":
     {bucket: ["Table.Field",...]}, "position"?: {x,y,width,height},
@@ -357,7 +359,7 @@ def pbi_add_visual(page_id: str, visuals: list[dict]) -> dict:
     return add_visual(STATE, page_id, visuals)
 
 
-@mcp.tool()
+@tool(write=True)
 def pbi_build_page(name: str, visuals: list[dict],
                    width: float | None = None,
                    height: float | None = None) -> dict:
@@ -368,7 +370,7 @@ def pbi_build_page(name: str, visuals: list[dict],
     return build_page(STATE, name, visuals, width, height)
 
 
-@mcp.tool()
+@tool(write=True, idempotent=True)
 def pbi_style_page(page_id: str, background_color: str | None = None,
                    background_transparency: float | None = None,
                    wallpaper_color: str | None = None) -> dict:
@@ -378,14 +380,14 @@ def pbi_style_page(page_id: str, background_color: str | None = None,
                                       background_transparency, wallpaper_color)
 
 
-@mcp.tool()
+@tool(write=True)
 def pbi_group_visuals(page_id: str, visual_ids: list, name: str = "Group") -> dict:
     """Group visuals so they move and style as one block. Needs >= 2 ids."""
     gid = STATE.require().group_visuals(page_id, visual_ids, name)
     return {"ok": True, "page_id": page_id, "group_id": gid}
 
 
-@mcp.tool()
+@tool(write=True)
 def pbi_add_visual_raw(page_id: str, visual_json: dict,
                        base: str = "visual") -> dict:
     """Escape hatch: add a prebuilt visual.json (validated against the schema)
@@ -395,7 +397,7 @@ def pbi_add_visual_raw(page_id: str, visual_json: dict,
     return {"ok": True, "page_id": page_id, "visual_id": vid}
 
 
-@mcp.tool()
+@tool(write=True)
 def pbi_add_text(page_id: str, runs, position: dict | None = None,
                  z: int | None = None) -> dict:
     """Add a textbox (titles, headers, commentary). `runs` is a string or a
@@ -405,7 +407,7 @@ def pbi_add_text(page_id: str, runs, position: dict | None = None,
     return {"ok": True, "page_id": page_id, "visual_id": vid}
 
 
-@mcp.tool()
+@tool(write=True)
 def pbi_add_image(page_id: str, image_path: str,
                   position: dict | None = None, scaling: str | None = None,
                   z: int | None = None) -> dict:
@@ -415,7 +417,7 @@ def pbi_add_image(page_id: str, image_path: str,
     return {"ok": True, "page_id": page_id, "visual_id": vid}
 
 
-@mcp.tool()
+@tool(write=True)
 def pbi_add_shape(page_id: str, shape: str = "rectangle",
                   fill: str | None = None, outline: str | None = None,
                   outline_weight: float | None = None,
@@ -482,7 +484,7 @@ def scaffold_report(state: ReportState, accent: str | None = None,
             "profile_summary": profile["summary"]}
 
 
-@mcp.tool()
+@tool(write=True)
 def pbi_scaffold_report(accent: str | None = None, max_detail_pages: int = 3,
                         dry_run: bool = False, theme: bool = True) -> dict:
     """AUTOPILOT: profile the model and build a full designed report — themed
@@ -493,7 +495,7 @@ def pbi_scaffold_report(accent: str | None = None, max_detail_pages: int = 3,
     return scaffold_report(STATE, accent, max_detail_pages, dry_run, theme)
 
 
-@mcp.tool()
+@tool(read=True)
 def pbi_profile_model() -> dict:
     """Classify the model (fact/dimension/date tables, measure roles, grouping
     columns) — the analysis that drives pbi_scaffold_report."""
@@ -502,7 +504,7 @@ def pbi_profile_model() -> dict:
     return profile_model(STATE.require())
 
 
-@mcp.tool()
+@tool(write=True)
 def pbi_build_designed_page(name: str, title: str, subtitle: str | None = None,
                             kpis: list | None = None, charts: list | None = None,
                             template: str = "exec-summary",
@@ -519,7 +521,7 @@ def pbi_build_designed_page(name: str, title: str, subtitle: str | None = None,
                                template, accent, match_page=match_page)
 
 
-@mcp.tool()
+@tool(read=True)
 def pbi_page_style(page_id: str) -> dict:
     """Inspect a page's header/KPI composition (band height+color, title font,
     card height, backplate) — what pbi_build_designed_page(match_page=...)
@@ -529,7 +531,7 @@ def pbi_page_style(page_id: str) -> dict:
     return extract_page_style(STATE.require(), page_id)
 
 
-@mcp.tool()
+@tool(write=True, idempotent=True)
 def pbi_update_bindings(page_id: str, visual_id: str,
                         bindings: dict) -> dict:
     """Replace a visual's field bindings ({bucket: ["Table.Field",...]});
@@ -544,7 +546,7 @@ def pbi_update_bindings(page_id: str, visual_id: str,
     return project.update_bindings(page_id, visual_id, bindings)
 
 
-@mcp.tool()
+@tool(write=True, idempotent=True)
 def pbi_sort_visual(page_id: str, visual_id: str, field: str,
                     direction: str = "Descending",
                     is_measure: bool = True) -> dict:
@@ -554,7 +556,7 @@ def pbi_sort_visual(page_id: str, visual_id: str, field: str,
                                        direction, is_measure)
 
 
-@mcp.tool()
+@tool(write=True)
 def pbi_add_nav_button(page_id: str, label: str, target_page_id: str,
                        position: dict | None = None, fill: str = "#1F3A5F",
                        text_color: str = "#FFFFFF") -> dict:
@@ -565,7 +567,7 @@ def pbi_add_nav_button(page_id: str, label: str, target_page_id: str,
     return {"ok": True, "page_id": page_id, "visual_id": vid}
 
 
-@mcp.tool()
+@tool(write=True, idempotent=True)
 def pbi_set_page_role(page_id: str, role: str,
                       tooltip_width: int = 320,
                       tooltip_height: int = 240) -> dict:
@@ -575,7 +577,7 @@ def pbi_set_page_role(page_id: str, role: str,
     return STATE.require().set_page_role(page_id, role, size)
 
 
-@mcp.tool()
+@tool(write=True, idempotent=True)
 def pbi_set_visual_interactions(page_id: str, source_visual: str,
                                 interactions: dict) -> dict:
     """Control cross-filtering: interactions = {target_visual_id:
@@ -584,14 +586,14 @@ def pbi_set_visual_interactions(page_id: str, source_visual: str,
                                                    interactions)
 
 
-@mcp.tool()
+@tool(write=True)
 def pbi_create_bookmark(name: str, display_name: str | None = None,
                         page_id: str | None = None) -> dict:
     """Capture the current report state (active page + filters) as a bookmark."""
     return STATE.require().create_bookmark(name, display_name, page_id)
 
 
-@mcp.tool()
+@tool(write=True, idempotent=True)
 def pbi_move_visual(page_id: str, visual_id: str,
                     x: float | None = None, y: float | None = None,
                     width: float | None = None,
@@ -600,13 +602,13 @@ def pbi_move_visual(page_id: str, visual_id: str,
     return STATE.require().move_visual(page_id, visual_id, x, y, width, height)
 
 
-@mcp.tool()
+@tool(write=True, destructive=True)
 def pbi_delete_visual(page_id: str, visual_id: str) -> dict:
     """Delete a visual (recoverable: moved into the report's .pbi/mcp-trash)."""
     return STATE.require().delete_visual(page_id, visual_id)
 
 
-@mcp.tool()
+@tool(write=True, idempotent=True)
 def pbi_format_visual(page_id: str, visual_id: str, target: str,
                       objects: dict) -> dict:
     """Format a visual. target='container' (title, background, border) or
@@ -615,14 +617,14 @@ def pbi_format_visual(page_id: str, visual_id: str, target: str,
     return STATE.require().format_visual(page_id, visual_id, target, objects)
 
 
-@mcp.tool()
+@tool(write=True, destructive=True)
 def pbi_set_report_theme(theme: dict) -> dict:
     """Install a custom report theme (standard Power BI theme JSON with a
     'name' field) and activate it in report.json."""
     return STATE.require().set_report_theme(theme)
 
 
-@mcp.tool()
+@tool(read=True, idempotent=True)
 def pbi_generate_theme(brand: str = "#1F3A5F", name: str = "MCP Brand Theme",
                        mode: str = "light", install: bool = True) -> dict:
     """Generate a coherent Power BI theme from a brand color (palette + text
@@ -635,7 +637,7 @@ def pbi_generate_theme(brand: str = "#1F3A5F", name: str = "MCP Brand Theme",
     return {"ok": True, "installed": install, "theme": theme}
 
 
-@mcp.tool()
+@tool(write=True)
 def pbi_add_filter(scope: str, field: str, filter_type: str = "Categorical",
                    values: list | None = None,
                    comparison: str | None = None, comparison_value=None,
@@ -661,7 +663,7 @@ def pbi_add_filter(scope: str, field: str, filter_type: str = "Categorical",
     return project.add_filter(scope, entry, page_id, visual_id)
 
 
-@mcp.tool()
+@tool(read=True)
 def pbi_project_diff(other_path: str) -> dict:
     """Diff the current project against another .pbip (or a backup dir):
     measures/pages/visuals/relationships added/removed/changed."""
@@ -670,7 +672,7 @@ def pbi_project_diff(other_path: str) -> dict:
     return diff_projects(STATE.require(), PbipProject(other_path))
 
 
-@mcp.tool()
+@tool(read=True)
 def pbi_project_summary() -> dict:
     """A compact overview: tables, measures, relationships, pages, visuals,
     and field-usage counts."""
@@ -691,7 +693,7 @@ def pbi_project_summary() -> dict:
     }
 
 
-@mcp.tool()
+@tool(read=True)
 def pbi_lint_page(page_id: str) -> dict:
     """Design lint a page: overlaps, off-canvas visuals, too-small visuals,
     near-misaligned edges. Returns {ok, findings[]}."""
@@ -706,18 +708,21 @@ def pbi_lint_page(page_id: str) -> dict:
             "findings": findings}
 
 
-@mcp.tool()
+@tool(read=True)
 def pbi_validate_project() -> dict:
     """Validate every report JSON against the official Fabric schemas.
     Returns {ok, checked, errors[]}. Catches shapes Desktop would reject."""
     return STATE.require().validate_project()
 
 
-@mcp.tool()
+@tool(read=True)
 def pbi_model_usage() -> dict:
     """Classify model fields as direct (bound in report), indirect (needed by
     a bound measure or a relationship), or unused. The deletion fail-safe."""
     return model_usage(STATE)
+
+register_journal_tools(mcp, STATE, tool)
+load_tool_modules(__package__ or "report_server", mcp, STATE, tool)
 
 
 def main() -> None:

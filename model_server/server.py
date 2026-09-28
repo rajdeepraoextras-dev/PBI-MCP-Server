@@ -22,6 +22,7 @@ from dataclasses import dataclass, field
 from core.mcp_compat import Server
 
 from core.pbip import PbipProject
+from core.tooling import load_tool_modules, make_tool, register_journal_tools
 
 
 @dataclass
@@ -128,33 +129,34 @@ mcp = Server(
         "dry_run to preview and pbi_list_backups/pbi_restore_backup to recover."
     ),
 )
+tool = make_tool(mcp, STATE)
 
 
-@mcp.tool()
+@tool(read=True, idempotent=True)
 def pbi_set_project(path: str) -> dict:
     """Point the model server at a Power BI Project (.pbip). Call this first."""
     return set_project(STATE, path)
 
 
-@mcp.tool()
+@tool(read=True)
 def pbi_get_model() -> dict:
     """Return tables, columns, measures, and relationships for the project."""
     return get_model(STATE)
 
 
-@mcp.tool()
+@tool(read=True)
 def pbi_list_measures(table: str | None = None) -> list[dict]:
     """List measures with DAX and format; optionally filter to one table."""
     return list_measures(STATE, table)
 
 
-@mcp.tool()
+@tool(read=True)
 def pbi_model_lineage(measure: str | None = None) -> dict:
     """Dependency graph (who references whom). Pass a measure for its deps + dependents."""
     return model_lineage(STATE, measure)
 
 
-@mcp.tool()
+@tool(write=True)
 def pbi_create_measure(table: str, name: str, dax: str,
                        format: str | None = None,
                        display_folder: str | None = None) -> dict:
@@ -162,7 +164,7 @@ def pbi_create_measure(table: str, name: str, dax: str,
     return create_measure(STATE, table, name, dax, format, display_folder)
 
 
-@mcp.tool()
+@tool(write=True, idempotent=True)
 def pbi_update_measure(table: str, name: str, dax: str | None = None,
                        format: str | None = None,
                        display_folder: str | None = None) -> dict:
@@ -170,7 +172,7 @@ def pbi_update_measure(table: str, name: str, dax: str | None = None,
     return update_measure(STATE, table, name, dax, format, display_folder)
 
 
-@mcp.tool()
+@tool(write=True, destructive=True)
 def pbi_delete_measure(table: str, name: str, force: bool = False,
                        dry_run: bool = False) -> dict:
     """Delete a measure. Refuses if other measures OR the report depend on it
@@ -178,19 +180,19 @@ def pbi_delete_measure(table: str, name: str, force: bool = False,
     return delete_measure(STATE, table, name, force, dry_run)
 
 
-@mcp.tool()
+@tool(read=True)
 def pbi_list_backups() -> list[dict]:
     """List every .bak-* snapshot the server has written, newest first."""
     return STATE.require().list_backups()
 
 
-@mcp.tool()
+@tool(write=True, destructive=True)
 def pbi_restore_backup(backup: str) -> dict:
     """Restore a backup file (path from pbi_list_backups) over its original."""
     return STATE.require().restore_backup(backup)
 
 
-@mcp.tool()
+@tool(write=True)
 def pbi_create_column(table: str, name: str, data_type: str,
                       summarize_by: str | None = None,
                       source_column: str | None = None,
@@ -201,7 +203,7 @@ def pbi_create_column(table: str, name: str, data_type: str,
                          summarize_by, source_column, dax)
 
 
-@mcp.tool()
+@tool(write=True)
 def pbi_create_relationship(from_table: str, from_column: str,
                             to_table: str, to_column: str,
                             cardinality: str | None = None,
@@ -214,7 +216,7 @@ def pbi_create_relationship(from_table: str, from_column: str,
                                cardinality, cross_filter, is_active)
 
 
-@mcp.tool()
+@tool(write=True)
 def pbi_create_calc_group(name: str, precedence: int,
                           items: list[dict]) -> dict:
     """Create a calculation group table. items: [{"name","dax"}, ...] using
@@ -222,12 +224,15 @@ def pbi_create_calc_group(name: str, precedence: int,
     return STATE.require().create_calc_group(name, precedence, items)
 
 
-@mcp.tool()
+@tool(write=True)
 def pbi_bulk_create_measures(measures: list[dict]) -> dict:
     """Create many measures at once. measures: [{"table","name","dax",
     "format"?,"display_folder"?}, ...]. The whole batch is validated before
     any write happens."""
     return STATE.require().bulk_create_measures(measures)
+
+register_journal_tools(mcp, STATE, tool)
+load_tool_modules(__package__ or "model_server", mcp, STATE, tool)
 
 
 def main() -> None:

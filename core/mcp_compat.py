@@ -17,4 +17,25 @@ except ImportError:  # mcp 1.x
     from mcp.server.fastmcp import FastMCP as Server
     MCP_MAJOR = 1
 
-__all__ = ["Server", "MCP_MAJOR"]
+
+def tool_annotations(*, read_only: bool, destructive: bool = False,
+                     idempotent: bool = False, open_world: bool = False):
+    """Build ``ToolAnnotations`` for either major.
+
+    mcp 1.x names the fields ``readOnlyHint`` etc.; 2.x renamed them to
+    snake_case (``read_only_hint``). Everything here is local-file work, so
+    ``open_world`` defaults to False.
+    """
+    import mcp.types as types
+
+    fields = types.ToolAnnotations.model_fields
+    if "readOnlyHint" in fields:
+        return types.ToolAnnotations(
+            readOnlyHint=read_only, destructiveHint=destructive,
+            idempotentHint=idempotent, openWorldHint=open_world)
+    return types.ToolAnnotations(
+        read_only_hint=read_only, destructive_hint=destructive,
+        idempotent_hint=idempotent, open_world_hint=open_world)
+
+
+__all__ = ["Server", "MCP_MAJOR", "tool_annotations"]
