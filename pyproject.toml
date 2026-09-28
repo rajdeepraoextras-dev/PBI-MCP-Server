@@ -1,13 +1,13 @@
 [project]
 name = "pbi-mcp"
-version = "2.0.0"
+version = "2.0.1"
 description = "MCP server for local-file Power BI Project (.pbip) automation — model (TMDL) + report (PBIR) layers."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Rajdeep Rao" }]
 dependencies = [
-    "mcp>=1.2.0,<2",  # 2.x renamed FastMCP -> MCPServer; servers use the 1.x API
+    "mcp>=1.2.0,<3",  # 1.x (FastMCP) and 2.x (MCPServer) both supported, see core/mcp_compat.py
     "pydantic>=2.6",
     "jsonschema>=4.20",
 ]

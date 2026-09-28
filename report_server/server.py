@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from mcp.server.fastmcp import FastMCP
+from core.mcp_compat import Server
 
 from core.pbip import PbipProject
 from core.pbir import visual_bindings
@@ -230,12 +230,12 @@ def add_visual(state: ReportState, page_id: str, visuals: list[dict]) -> dict:
             "count": len(ids)}
 
 
-# --- FastMCP registration ------------------------------------------------------
+# --- MCP server registration ------------------------------------------------------
 
 from core.capabilities import GREETING
 
 STATE = ReportState()
-mcp = FastMCP(
+mcp = Server(
     "pbi-report",
     instructions=(
         GREETING + "\n\n"

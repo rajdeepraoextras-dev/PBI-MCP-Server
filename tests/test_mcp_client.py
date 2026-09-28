@@ -28,9 +28,14 @@ PBIP = REAL_HR if REAL_HR.exists() else SYNTH
 
 
 def _payload(result):
-    assert not result.isError, getattr(result, "content", result)
-    if getattr(result, "structuredContent", None):
-        sc = result.structuredContent
+    # mcp 2.x renamed the result fields to snake_case; accept both.
+    is_error = getattr(result, "is_error", None)
+    if is_error is None:
+        is_error = getattr(result, "isError", False)
+    assert not is_error, getattr(result, "content", result)
+    sc = (getattr(result, "structured_content", None)
+          or getattr(result, "structuredContent", None))
+    if sc:
         return sc.get("result", sc)
     return json.loads(result.content[0].text)
 

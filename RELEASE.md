@@ -1,5 +1,14 @@
 # pbi-mcp — release notes & portfolio write-up
 
+## v2.0.1 — compatibility & packaging
+
+- Runs on both the mcp Python SDK 1.x (`FastMCP`) and 2.x (`MCPServer`) via
+  `core/mcp_compat.py`; the 2.x rename had broken fresh installs at import.
+- Dependency range is now `mcp>=1.2.0,<3`; the bundle install notes use the
+  same range and include the previously missing `jsonschema`.
+- The ~20 MB standalone build is no longer tracked in git; download it from
+  the GitHub Release. README counts corrected (57 tools).
+
 ## v2.0.0 — "Epic Reports"
 
 A major upgrade from a correct report *builder* to a report *designer*. 57 MCP
