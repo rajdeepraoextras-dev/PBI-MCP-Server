@@ -8,7 +8,7 @@ dist/
 !dist/
 dist/*
 !dist/pbi-mcp.plugin
-!dist/pbi-mcp-standalone-win32-amd64.plugin
+# The ~20 MB standalone build is published as a GitHub Release asset, not tracked.
 !dist/claude_desktop_config.snippet.json
 .pytest_cache/
 

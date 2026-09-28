@@ -2,8 +2,8 @@
 
 ## v2.0.0 — "Epic Reports"
 
-A major upgrade from a correct report *builder* to a report *designer*. 56 MCP
-tools across the two servers; 300+ tests.
+A major upgrade from a correct report *builder* to a report *designer*. 57 MCP
+tools (13 model + 44 report) across the two servers; 297 tests.
 
 **Correctness (E1).** Every report write is now pre-flight validated against
 the official Microsoft Fabric JSON schemas (vendored offline, transitive
