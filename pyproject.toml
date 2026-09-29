@@ -19,6 +19,9 @@ dev = [
 build = [
     "pyinstaller>=6.0",
 ]
+docs = [
+    "mkdocs-material>=9",
+]
 
 [project.scripts]
 pbi-model-server = "model_server.server:main"
