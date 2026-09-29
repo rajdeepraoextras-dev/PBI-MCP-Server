@@ -4,7 +4,7 @@
 
 The `pbi-model` server reads and edits the **semantic model** (TMDL) of a Power BI Project: measures, columns, relationships, calculation groups and DAX lineage. Edits are surgical text changes, so partitions, annotations and M source survive byte for byte. Call `pbi_set_project(path)` first.
 
-**60 tools** (17 read-only, 43 write).
+**67 tools** (24 read-only, 43 write).
 
 ## How to read this page
 
@@ -192,6 +192,21 @@ Set dry_run=true to preview: the operation runs against a scratch copy and the r
 | `dry_run` | boolean | no | `false` |
 
 ## Columns, relationships and calculation groups
+
+### `pbi_column_stats`
+
+**Read-only**
+
+VertiPaq statistics per column from the live model, largest first:
+cardinality (distinct values), rows, encoding (HASH or VALUE),
+data_type, and sizes in bytes -- dictionary_size, data_size,
+hierarchy_size, total_size. Also returns per-table totals. Optional
+`table` filters to one table. Use it to find the columns that make
+the model big or slow (high-cardinality text columns first).
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `table` | string | no | `null` |
 
 ### `pbi_create_calc_group`
 
@@ -706,6 +721,53 @@ Set dry_run=true to preview: the operation runs against a scratch copy and the r
 | `force` | boolean | no | `false` |
 | `dry_run` | boolean | no | `false` |
 
+### `pbi_engine_connect`
+
+**Read-only** · idempotent
+
+Pin an XMLA connection string for this session so the engine tools
+query it instead of a local Desktop instance, e.g. "Data Source=
+powerbi://api.powerbi.com/v1.0/myorg/&lt;Workspace>;Initial Catalog=
+&lt;Dataset>;User ID=;Password=&lt;access token>". The string is verified
+with a probe query, kept in memory only and never written or logged;
+Password= is redacted in every response. Pass "" to unpin.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `connection_string` | string | yes |  |
+
+### `pbi_engine_status`
+
+**Read-only**
+
+Report what the live-engine tools can reach: the ADOMD DLL in use,
+every running Power BI Desktop Analysis Services instance (port,
+databases, table names), the instance matched to the selected project
+by table names, any pinned remote connection, and otherwise the reason
+nothing is reachable. Never raises; safe to call first.
+
+_No parameters._
+
+### `pbi_evaluate_dax`
+
+**Read-only**
+
+Run a DAX query (EVALUATE ...) or a DMV (SELECT * FROM $SYSTEM....)
+against the live model of the selected project in Power BI Desktop (or
+the pinned connection); the running instance is matched to the project
+by table names. Pass port/database to target a specific instance
+(`pbi_engine_status` lists them). Returns columns, rows (JSON scalars:
+null for blank, dates as ISO 8601, "Infinity"/"NaN" as strings),
+row_count, truncated (true when max_rows cut the result), elapsed_ms
+and the connection used. Read-only: nothing is written anywhere.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `query` | string | yes |  |
+| `max_rows` | integer | no | `200` |
+| `port` | integer | no | `null` |
+| `database` | string | no | `null` |
+
 ### `pbi_find_references`
 
 **Read-only**
@@ -809,6 +871,19 @@ increment (parsed from GENERATESERIES), the value measure and its
 default, and the format string.
 
 _No parameters._
+
+### `pbi_preview_table`
+
+**Read-only**
+
+First `top` rows of a table from the live model via EVALUATE
+TOPN(top, 'table'). Column names come back as Table[Column]. Returns
+columns, rows, row_count, truncated, elapsed_ms, connection.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `table` | string | yes |  |
+| `top` | integer | no | `20` |
 
 ### `pbi_remove_kpi`
 
@@ -932,6 +1007,19 @@ Set dry_run=true to preview: the operation runs against a scratch copy and the r
 | `display_folder` | string | no | `null` |
 | `dry_run` | boolean | no | `false` |
 
+### `pbi_table_row_counts`
+
+**Read-only**
+
+Row count of every table in the live model (from the storage engine
+DMV, falling back to COUNTROWS). Returns {tables: [{name, rows,
+internal}], source, connection}; `rows` is null for tables without
+loaded storage and `internal` marks Desktop's auto date/time helper
+tables. A freshly opened .pbip has no data until it is refreshed in
+Desktop, so every count is 0 until then.
+
+_No parameters._
+
 ### `pbi_update_expression`
 
 **Write** · idempotent
@@ -1024,3 +1112,22 @@ Set dry_run=true to preview: the operation runs against a scratch copy and the r
 | `description` | string | no | `null` |
 | `is_hidden` | boolean | no | `null` |
 | `dry_run` | boolean | no | `false` |
+
+### `pbi_validate_dax`
+
+**Read-only**
+
+Compile a measure expression against the real model before
+creating it. `dax` is the bare expression (e.g. SUM(Sales[Amount])),
+not a query and without a "Name =" prefix; pass `table` to define it on
+that table so row context and table-relative references resolve as
+they would for a real measure. The engine evaluates it once via a
+query-scoped measure, so nothing is persisted. Returns {ok, error
+(the engine's message, with positions relative to `dax`, when ok is
+false), value (the result when ok), query, connection}. Use it before
+`pbi_create_measure` / `pbi_update_measure`.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `dax` | string | yes |  |
+| `table` | string | no | `null` |
