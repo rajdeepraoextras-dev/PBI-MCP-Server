@@ -1,0 +1,982 @@
+{
+  "version": 1,
+  "about": "pbi-mcp Best Practice Analyzer rule catalog. Ported from the Tabular Editor / Microsoft standard BPA rules (BPARules.json, BPARules-PowerBI.json; same IDs, categories and severities - 3 is most severe) plus pbi-mcp additions (origin 'pbi-mcp'). Each rule is bound to a Python check in core/bpa.py.",
+  "rules": [
+    {
+      "id": "AVOID_FLOATING_POINT_DATA_TYPES",
+      "title": "Do not use floating point data types",
+      "aliases": [
+        "DO_NOT_USE_FLOATING_POINT_DATA_TYPES",
+        "META_AVOID_FLOAT"
+      ],
+      "category": "Performance",
+      "severity": 2,
+      "scopes": [
+        "column"
+      ],
+      "description": "The \"Double\" floating point data type should be avoided, as it can result in unpredictable roundoff errors and decreased performance in certain scenarios. Use \"Int64\" or \"Decimal\" where appropriate (but note that \"Decimal\" is limited to 4 digits after the decimal sign).",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "REDUCE_USAGE_OF_CALCULATED_COLUMNS_THAT_USE_THE_RELATED_FUNCTION",
+      "title": "Reduce usage of calculated columns that use the RELATED function",
+      "aliases": [],
+      "category": "Performance",
+      "severity": 2,
+      "scopes": [
+        "column"
+      ],
+      "description": "Calculated columns do not compress as well as data columns and may cause longer processing times. As such, calculated columns should be avoided if possible. One scenario where they may be easier to avoid is if they use the RELATED function. Reference: https://www.sqlbi.com/articles/storage-differences-between-calculated-columns-and-calculated-tables/",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "SNOWFLAKE_SCHEMA_ARCHITECTURE",
+      "title": "Consider a star-schema instead of a snowflake architecture",
+      "aliases": [],
+      "category": "Performance",
+      "severity": 2,
+      "scopes": [
+        "table"
+      ],
+      "description": "Generally speaking, a star-schema is the optimal architecture for tabular models. That being the case, there are valid cases to use a snowflake approach. Please check your model and consider moving to a star-schema architecture. Reference: https://docs.microsoft.com/power-bi/guidance/star-schema",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "MODEL_SHOULD_HAVE_A_DATE_TABLE",
+      "title": "Model should have a date table",
+      "aliases": [],
+      "category": "Performance",
+      "severity": 2,
+      "scopes": [
+        "model"
+      ],
+      "description": "Generally speaking, models should generally have a date table. Models that do not have a date table generally are not taking advantage of features such as time intelligence or may not have a properly structured architecture.",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "DATE/CALENDAR_TABLES_SHOULD_BE_MARKED_AS_A_DATE_TABLE",
+      "title": "Date/calendar tables should be marked as a date table",
+      "aliases": [
+        "MARK_AS_DATE_TABLE"
+      ],
+      "category": "Performance",
+      "severity": 2,
+      "scopes": [
+        "table"
+      ],
+      "description": "Tables whose name contains 'date' or 'calendar' should be marked as a date table (dataCategory: Time plus a key dateTime column). Reference: https://docs.microsoft.com/power-bi/transform-model/desktop-date-tables",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "REMOVE_AUTO-DATE_TABLE",
+      "title": "Remove auto-date table",
+      "aliases": [
+        "DIABLE_AUTO_DATE/TIME",
+        "DISABLE_AUTO_DATE_TIME"
+      ],
+      "category": "Performance",
+      "severity": 2,
+      "scopes": [
+        "table"
+      ],
+      "description": "Avoid using auto-date tables. Make sure to turn off auto-date table in the settings in Power BI Desktop. This will save memory resources. Reference: https://www.youtube.com/watch?v=xu3uDEHtCrg",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "AVOID_EXCESSIVE_BI-DIRECTIONAL_OR_MANY-TO-MANY_RELATIONSHIPS",
+      "title": "Avoid excessive bi-directional or many-to-many relationships",
+      "aliases": [],
+      "category": "Performance",
+      "severity": 2,
+      "scopes": [
+        "model"
+      ],
+      "description": "Limit use of b-di and many-to-many relationships. This rule flags the model if more than 30% of relationships are bi-di or many-to-many. Reference: https://www.sqlbi.com/articles/bidirectional-relationships-and-ambiguity-in-dax/",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "MODEL_USING_DIRECT_QUERY_AND_NO_AGGREGATIONS",
+      "title": "Consider using aggregations if using Direct Query in Power BI",
+      "aliases": [],
+      "category": "Performance",
+      "severity": 1,
+      "scopes": [
+        "model"
+      ],
+      "description": "If using Direct Query in Power BI Premium, you may want to consider using aggregations in order to boost performance. Reference: https://docs.microsoft.com/power-bi/transform-model/desktop-aggregations",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "MINIMIZE_POWER_QUERY_TRANSFORMATIONS",
+      "title": "Minimize Power Query transformations",
+      "aliases": [],
+      "category": "Performance",
+      "severity": 2,
+      "scopes": [
+        "partition"
+      ],
+      "description": "Minimize Power Query transformations in order to improve model processing performance. It is a best practice to offload these transformations to the data warehouse if possible. Also, please check whether query folding is occurring within your model. Please reference the article below for more information on query folding. Reference: https://docs.microsoft.com/power-query/power-query-folding",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "UNPIVOT_PIVOTED_(MONTH)_DATA",
+      "title": "Unpivot pivoted (month) data",
+      "aliases": [
+        "UNPIVOT_PIVOTED_DATA"
+      ],
+      "category": "Performance",
+      "severity": 2,
+      "scopes": [
+        "table"
+      ],
+      "description": "Avoid pivoted data. Flags tables with three or more numeric columns named after months (Jan, February ...) or years (2019, FY2020 ...); unpivot them into (period, value) rows. Reference: https://www.elegantbi.com/post/top10bestpractices",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "MANY-TO-MANY_RELATIONSHIPS_SHOULD_BE_SINGLE-DIRECTION",
+      "title": "Many-to-many relationships should be single-direction",
+      "aliases": [],
+      "category": "Performance",
+      "severity": 2,
+      "scopes": [
+        "relationship"
+      ],
+      "description": "Many-to-many relationships should filter in a single direction.",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "REDUCE_USAGE_OF_CALCULATED_TABLES",
+      "title": "Reduce usage of calculated tables",
+      "aliases": [],
+      "category": "Performance",
+      "severity": 2,
+      "scopes": [
+        "table"
+      ],
+      "description": "Migrate calculated table logic to your data warehouse. Reliance on calculated tables will lead to technical debt and potential misalignments if you have multiple models on your platform.",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "REMOVE_REDUNDANT_COLUMNS_IN_RELATED_TABLES",
+      "title": "Remove redundant columns in related tables",
+      "aliases": [],
+      "category": "Performance",
+      "severity": 2,
+      "scopes": [
+        "column"
+      ],
+      "description": "Removing unnecessary columns reduces model size and speeds up data loading.",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "MEASURES_USING_TIME_INTELLIGENCE_AND_MODEL_IS_USING_DIRECT_QUERY",
+      "title": "Measures using time intelligence and model is using Direct Query",
+      "aliases": [],
+      "category": "Performance",
+      "severity": 2,
+      "scopes": [
+        "measure",
+        "calculation_item"
+      ],
+      "description": "At present, time intelligence functions are known to not perform as well when using Direct Query. If you are having performance issues, you may want to try alternative solutions such as adding columns in the fact table that show previous year or previous month data.",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "REDUCE_NUMBER_OF_CALCULATED_COLUMNS",
+      "title": "Reduce number of calculated columns",
+      "aliases": [
+        "REDUCE_USAGE_OF_CALCULATED_COLUMNS"
+      ],
+      "category": "Performance",
+      "severity": 2,
+      "scopes": [
+        "model"
+      ],
+      "description": "Calculated columns do not compress as well as data columns so they take up more memory. They also slow down processing times for both the table as well as process recalc. Offload calculated column logic to your data warehouse and turn these calculated columns into data columns. Reference: https://www.elegantbi.com/post/top10bestpractices",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "CHECK_IF_BI-DIRECTIONAL_AND_MANY-TO-MANY_RELATIONSHIPS_ARE_VALID",
+      "title": "Check if bi-directional and many-to-many relationships are valid",
+      "aliases": [
+        "AVOID_BI_DIRECTIONAL_RELATIONSHIPS"
+      ],
+      "category": "Performance",
+      "severity": 1,
+      "scopes": [
+        "relationship"
+      ],
+      "description": "Bi-directional and many-to-many relationships may cause performance degradation or even have unintended consequences. Make sure to check these specific relationships to ensure they are working as designed and are actually necessary. Reference: https://www.sqlbi.com/articles/bidirectional-relationships-and-ambiguity-in-dax/",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "LIMIT_ROW_LEVEL_SECURITY_(RLS)_LOGIC",
+      "title": "Limit row level security (RLS) logic",
+      "aliases": [],
+      "category": "Performance",
+      "severity": 2,
+      "scopes": [
+        "role"
+      ],
+      "description": "Try to simplify the DAX used for row level security. Usage of the functions within this rule can likely be offloaded to the upstream systems (data warehouse).",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "CHECK_IF_DYNAMIC_ROW_LEVEL_SECURITY_(RLS)_IS_NECESSARY",
+      "title": "Check if dynamic row level security (RLS) is necessary",
+      "aliases": [],
+      "category": "Performance",
+      "severity": 1,
+      "scopes": [
+        "role"
+      ],
+      "description": "Usage of dynamic row level security (RLS) can add memory and performance overhead. Please research the pros/cons of using it. Reference: https://docs.microsoft.com/power-bi/admin/service-admin-rls",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "AVOID_USING_MANY-TO-MANY_RELATIONSHIPS_ON_TABLES_USED_FOR_DYNAMIC_ROW_LEVEL_SECURITY",
+      "title": "Avoid using many-to-many relationships on tables used for dynamic row level security",
+      "aliases": [],
+      "category": "Performance",
+      "severity": 3,
+      "scopes": [
+        "table"
+      ],
+      "description": "Using many-to-many relationships on tables which use dynamic row level security can cause serious query performance degradation. This pattern's performance problems compound when snowflaking multiple many-to-many relationships against a table which contains row level security. Instead, use one of the patterns shown in the article below where a single dimension table relates many-to-one to a security table. Reference: https://www.elegantbi.com/post/dynamicrlspatterns",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "AVOID_SINGLE_ATTRIBUTE_DIMENSIONS",
+      "title": "Avoid single-attribute dimensions that are not shared by multiple facts",
+      "aliases": [],
+      "category": "Performance",
+      "severity": 2,
+      "scopes": [
+        "table"
+      ],
+      "description": "In general, over-normalization should be avoided. If a dimension only holds a single attribute and the dimension is not shared by multiple facts, consider moving the attribute to the fact table.",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "DAX_COLUMNS_FULLY_QUALIFIED",
+      "title": "Column references should be fully qualified",
+      "aliases": [],
+      "category": "DAX Expressions",
+      "severity": 3,
+      "scopes": [
+        "measure",
+        "calculation_item",
+        "role"
+      ],
+      "description": "Using fully qualified column references makes it easier to distinguish between column and measure references, and also helps avoid certain errors. When referencing a column in DAX, first specify the table name, then specify the column name in square brackets. Reference: https://www.elegantbi.com/post/top10bestpractices",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "DAX_MEASURES_UNQUALIFIED",
+      "title": "Measure references should be unqualified",
+      "aliases": [],
+      "category": "DAX Expressions",
+      "severity": 3,
+      "scopes": [
+        "measure",
+        "column",
+        "table",
+        "calculation_item"
+      ],
+      "description": "Using unqualified measure references makes it easier to distinguish between column and measure references, and also helps avoid certain errors. When referencing a measure using DAX, do not specify the table name. Use only the measure name in square brackets. Reference: https://www.elegantbi.com/post/top10bestpractices",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "AVOID_DUPLICATE_MEASURES",
+      "title": "No two measures should have the same definition",
+      "aliases": [],
+      "category": "DAX Expressions",
+      "severity": 2,
+      "scopes": [
+        "measure"
+      ],
+      "description": "Two measures with different names and defined by the same DAX expression should be avoided to reduce redundancy.",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "USE_THE_TREATAS_FUNCTION_INSTEAD_OF_INTERSECT",
+      "title": "Use the TREATAS function instead of INTERSECT for virtual relationships",
+      "aliases": [
+        "USE_TREATAS_INSTEAD_OF_INTERSECT"
+      ],
+      "category": "DAX Expressions",
+      "severity": 2,
+      "scopes": [
+        "measure",
+        "calculation_item"
+      ],
+      "description": "The TREATAS function is more efficient and provides better performance than the INTERSECT function when used in virutal relationships. Reference: https://www.sqlbi.com/articles/propagate-filters-using-treatas-in-dax/",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "USE_THE_DIVIDE_FUNCTION_FOR_DIVISION",
+      "title": "Use the DIVIDE function for division",
+      "aliases": [],
+      "category": "DAX Expressions",
+      "severity": 2,
+      "scopes": [
+        "measure",
+        "column",
+        "calculation_item"
+      ],
+      "description": "Use the DIVIDE function instead of '/': DIVIDE resolves divide-by-zero. Division by a numeric constant is not flagged. Reference: https://docs.microsoft.com/power-bi/guidance/dax-divide-function-operator",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "AVOID_USING_THE_IFERROR_FUNCTION",
+      "title": "Avoid using the IFERROR function",
+      "aliases": [
+        "AVOID_USING_IFERROR"
+      ],
+      "category": "DAX Expressions",
+      "severity": 2,
+      "scopes": [
+        "measure",
+        "column",
+        "calculation_item"
+      ],
+      "description": "Avoid using the IFERROR function as it may cause performance degradation. If you are concerned about a divide-by-zero error, use the DIVIDE function as it naturally resolves such errors as blank (or you can customize what should be shown in case of such an error). Reference: https://www.elegantbi.com/post/top10bestpractices",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "MEASURES_SHOULD_NOT_BE_DIRECT_REFERENCES_OF_OTHER_MEASURES",
+      "title": "Measures should not be direct references of other measures",
+      "aliases": [],
+      "category": "DAX Expressions",
+      "severity": 2,
+      "scopes": [
+        "measure"
+      ],
+      "description": "This rule identifies measures which are simply a reference to another measure. As an example, consider a model with two measures: [MeasureA] and [MeasureB]. This rule would be triggered for MeasureB if MeasureB's DAX was MeasureB:=[MeasureA]. Such duplicative measures should be removed.",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "FILTER_COLUMN_VALUES",
+      "title": "Filter column values with proper syntax",
+      "aliases": [
+        "FILTER_COLUMN_VALUES_WITH_PROPER_SYNTAX"
+      ],
+      "category": "DAX Expressions",
+      "severity": 2,
+      "scopes": [
+        "measure",
+        "column",
+        "calculation_item"
+      ],
+      "description": "Instead of using this pattern FILTER('Table','Table'[Column]=\"Value\") for the filter parameters of a CALCULATE or CALCULATETABLE function, use one of the options below. As far as whether to use the KEEPFILTERS function, see the second reference link below. Option 1: KEEPFILTERS('Table'[Column]=\"Value\") Option 2: 'Table'[Column]=\"Value\" Reference: https://docs.microsoft.com/power-bi/guidance/dax-avoid-avoid-filter-as-filter-argument Reference: https://www.sqlbi.com/articles/using-keepfilters-in-dax/",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "FILTER_MEASURE_VALUES_BY_COLUMNS",
+      "title": "Filter measure values by columns, not tables",
+      "aliases": [
+        "FILTER_MEASURE_VALUES_BY_COLUMNS_NOT_TABLES"
+      ],
+      "category": "DAX Expressions",
+      "severity": 2,
+      "scopes": [
+        "measure",
+        "column",
+        "calculation_item"
+      ],
+      "description": "Instead of using this pattern FILTER('Table',[Measure]>Value) for the filter parameters of a CALCULATE or CALCULATETABLE function, use one of the options below (if possible). Filtering on a specific column will produce a smaller table for the engine to process, thereby enabling faster performance. Using the VALUES function or the ALL function depends on the desired measure result. Option 1: FILTER(VALUES('Table'[Column]),[Measure] > Value) Option 2: FILTER(ALL('Table'[Column]),[Measure] > Value) Reference: https://docs.microsoft.com/power-bi/guidance/dax-avoid-avoid-filter-as-filter-argument",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "NO_CALCULATE_FILTER_ON_WHOLE_TABLE",
+      "title": "Do not filter a whole table in CALCULATE",
+      "aliases": [],
+      "category": "DAX Expressions",
+      "severity": 2,
+      "scopes": [
+        "measure",
+        "column",
+        "calculation_item"
+      ],
+      "description": "A CALCULATE / CALCULATETABLE filter argument that is a whole table (CALCULATE([m], Sales)) or a FILTER over a whole table with a complex predicate forces the engine to materialize every column of the table. Filter the specific column(s) instead.",
+      "fixer": null,
+      "origin": "pbi-mcp",
+      "needs_report": false
+    },
+    {
+      "id": "INACTIVE_RELATIONSHIPS_THAT_ARE_NEVER_ACTIVATED",
+      "title": "Inactive relationships that are never activated",
+      "aliases": [],
+      "category": "DAX Expressions",
+      "severity": 2,
+      "scopes": [
+        "relationship"
+      ],
+      "description": "Inactive relationships are activated using the USERELATIONSHIP function. If an inactive relationship is not referenced in any measure via this function, the relationship will not be used. It should be determined whether the relationship is not necessary or to activate the relationship via this method. Reference: https://docs.microsoft.com/power-bi/guidance/relationships-active-inactive Reference: https://dax.guide/userelationship/",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "AVOID_USING_'1-(X/Y)'_SYNTAX",
+      "title": "Avoid using '1-(x/y)' syntax",
+      "aliases": [],
+      "category": "DAX Expressions",
+      "severity": 2,
+      "scopes": [
+        "measure",
+        "column",
+        "calculation_item"
+      ],
+      "description": "Instead of using the '1-(x/y)' or '1+(x/y)' syntax to achieve a percentage calculation, use the basic DAX functions (as shown below). Using the improved syntax will generally improve the performance. The '1+/-...' syntax always returns a value whereas the solution without the '1+/-...' does not (as the value may be 'blank'). Therefore the '1+/-...' syntax may return more rows/columns which may result in a slower query speed. Let's clarify with an example: Avoid this: 1 - SUM ( 'Sales'[CostAmount] ) / SUM( 'Sales'[SalesAmount] ) Better: DIVIDE ( SUM ( 'Sales'[SalesAmount] ) - SUM ( 'Sales'[CostAmount] ), SUM ( 'Sales'[SalesAmount] ) ) Best: VAR x = SUM ( 'Sales'[SalesAmount] ) RETURN DIVIDE ( x - SUM ( 'Sales'[CostAmount] ), x )",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "EVALUATEANDLOG_SHOULD_NOT_BE_USED_IN_PRODUCTION_MODELS",
+      "title": "The EVALUATEANDLOG function should not be used in production models",
+      "aliases": [],
+      "category": "DAX Expressions",
+      "severity": 1,
+      "scopes": [
+        "measure"
+      ],
+      "description": "The EVALUATEANDLOG function is meant to be used only in development/test environments and should not be used in production models. Reference: https://pbidax.wordpress.com/2022/08/16/introduce-the-dax-evaluateandlog-function/",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "DAX_TODO",
+      "title": "Revisit TODO expressions",
+      "aliases": [],
+      "category": "DAX Expressions",
+      "severity": 1,
+      "scopes": [
+        "measure",
+        "column",
+        "calculation_item",
+        "table"
+      ],
+      "description": "Objects with an expression containing the word \"TODO\" (typically as a comment), should most likely be revisited.",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "DATA_COLUMNS_MUST_HAVE_A_SOURCE_COLUMN",
+      "title": "Data columns must have a source column",
+      "aliases": [],
+      "category": "Error Prevention",
+      "severity": 3,
+      "scopes": [
+        "column"
+      ],
+      "description": "Data columns must have a source column. A data column without a source column will cause an error when processing the model.",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "EXPRESSION_RELIANT_OBJECTS_MUST_HAVE_AN_EXPRESSION",
+      "title": "Expression-reliant objects must have an expression",
+      "aliases": [],
+      "category": "Error Prevention",
+      "severity": 3,
+      "scopes": [
+        "measure",
+        "column",
+        "calculation_item"
+      ],
+      "description": "Calculated columns, calculation items and measures must have an expression. Without an expression, these objects will not show any values.",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "RELATIONSHIP_COLUMNS_SAME_DATA_TYPE",
+      "title": "Relationship columns should be of the same data type",
+      "aliases": [],
+      "category": "Error Prevention",
+      "severity": 3,
+      "scopes": [
+        "relationship"
+      ],
+      "description": "Columns used in a relationship should be of the same data type. Ideally, they will be of integer data type (see the related rule '[Formatting] Relationship columns should be of integer data type'). Having columns within a relationship which are of different data types may lead to various issues.",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "AVOID_INVALID_NAME_CHARACTERS",
+      "title": "Avoid invalid characters in names",
+      "aliases": [],
+      "category": "Error Prevention",
+      "severity": 3,
+      "scopes": [
+        "table",
+        "column",
+        "measure",
+        "hierarchy",
+        "partition",
+        "calculation_group",
+        "calculation_item"
+      ],
+      "description": "This rule identifies if a name for a given object in your model (i.e. table/column/measure) which contains an invalid character. Invalid characters will cause an error when deploying the model (and failure to deploy). This rule has a fix expression which converts the invalid character into a space, resolving the issue.",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "AVOID_INVALID_DESCRIPTION_CHARACTERS",
+      "title": "Avoid invalid characters in descriptions",
+      "aliases": [],
+      "category": "Error Prevention",
+      "severity": 3,
+      "scopes": [
+        "table",
+        "column",
+        "measure",
+        "calculation_group",
+        "calculation_item"
+      ],
+      "description": "This rule identifies if a description for a given object in your model (i.e. table/column/measure) which contains an invalid character. Invalid characters will cause an error when deploying the model (and failure to deploy). This rule has a fix expression which converts the invalid character into a space, resolving the issue.",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "AVOID_THE_USERELATIONSHIP_FUNCTION_AND_RLS_AGAINST_THE_SAME_TABLE",
+      "title": "Avoid the USERELATIONSHIP function and RLS against the same table",
+      "aliases": [],
+      "category": "Error Prevention",
+      "severity": 3,
+      "scopes": [
+        "table"
+      ],
+      "description": "The USERELATIONSHIP function may not be used against a table which also leverages row-level security (RLS). This will generate an error when using the particular measure in a visual. This rule will highlight the table which is used in a measure's USERELATIONSHIP function as well as RLS. Reference: https://blog.crossjoin.co.uk/2013/05/10/userelationship-and-tabular-row-security/",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "CALCULATION_GROUPS_NO_PRECEDENCE_CONFLICT",
+      "title": "Calculation groups must not share a precedence",
+      "aliases": [],
+      "category": "Error Prevention",
+      "severity": 3,
+      "scopes": [
+        "calculation_group"
+      ],
+      "description": "Every calculation group in a model needs a unique precedence value; two groups with the same precedence make the model fail to load or evaluate ambiguously.",
+      "fixer": null,
+      "origin": "pbi-mcp",
+      "needs_report": false
+    },
+    {
+      "id": "REMOVE_UNUSED_COLUMNS",
+      "title": "Remove unused columns",
+      "aliases": [
+        "PERF_UNUSED_COLUMNS"
+      ],
+      "category": "Maintenance",
+      "severity": 1,
+      "scopes": [
+        "column"
+      ],
+      "description": "Columns that no visual, filter, relationship, sort-by, hierarchy or used measure depends on (per the report's field usage and DAX lineage) only cost memory. Requires a report layer.",
+      "fixer": null,
+      "origin": "pbi-mcp",
+      "needs_report": true
+    },
+    {
+      "id": "UNUSED_MEASURES",
+      "title": "Remove unused measures",
+      "aliases": [
+        "PERF_UNUSED_MEASURES"
+      ],
+      "category": "Maintenance",
+      "severity": 1,
+      "scopes": [
+        "measure"
+      ],
+      "description": "Measures that are neither shown in the report nor needed by a measure that is (per the report's field usage and DAX lineage). Requires a report layer.",
+      "fixer": null,
+      "origin": "pbi-mcp",
+      "needs_report": true
+    },
+    {
+      "id": "ENSURE_TABLES_HAVE_RELATIONSHIPS",
+      "title": "Ensure tables have relationships",
+      "aliases": [],
+      "category": "Maintenance",
+      "severity": 1,
+      "scopes": [
+        "table"
+      ],
+      "description": "Tables that are not connected to any other table by a relationship. Calculation groups and tables that only hold measures are exempt.",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "OBJECTS_WITH_NO_DESCRIPTION",
+      "title": "Visible objects with no description",
+      "aliases": [],
+      "category": "Maintenance",
+      "severity": 1,
+      "scopes": [
+        "table",
+        "column",
+        "measure",
+        "calculation_group"
+      ],
+      "description": "Add descriptions to objects. These descriptions are shown on hover within the Field List in Power BI Desktop. Additionally, you can leverage these descriptions to create an automated data dictionary (see link below). Reference: https://www.elegantbi.com/post/datadictionary",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "CALCULATION_GROUPS_WITH_NO_CALCULATION_ITEMS",
+      "title": "Calculation groups with no calculation items",
+      "aliases": [],
+      "category": "Maintenance",
+      "severity": 2,
+      "scopes": [
+        "calculation_group"
+      ],
+      "description": "Calculation groups have no function unless they have calculation items.",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "PARTITION_NAME_SHOULD_MATCH_TABLE_NAME_FOR_SINGLE_PARTITION_TABLES",
+      "title": "Partition name should match table name for single partition tables",
+      "aliases": [],
+      "category": "Naming Conventions",
+      "severity": 1,
+      "scopes": [
+        "partition"
+      ],
+      "description": "Tables with just one partition should match their table and partition names.Tables with more than one partition should have each partition name starting with the table name.",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "SPECIAL_CHARS_IN_OBJECT_NAMES",
+      "title": "Object names must not contain special characters",
+      "aliases": [
+        "NO_SPECIAL_CHARACTERS_IN_NAMES"
+      ],
+      "category": "Naming Conventions",
+      "severity": 2,
+      "scopes": [
+        "table",
+        "column",
+        "measure",
+        "hierarchy",
+        "partition",
+        "calculation_group",
+        "calculation_item"
+      ],
+      "description": "Tabs, line breaks, etc.",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "UPPERCASE_FIRST_LETTER_MEASURES_TABLES",
+      "title": "Measure and table names must start with uppercase letter",
+      "aliases": [
+        "CAPITALIZE_FIRST_LETTER_OF_MEASURES"
+      ],
+      "category": "Naming Conventions",
+      "severity": 2,
+      "scopes": [
+        "table",
+        "measure"
+      ],
+      "description": "Avoid using prefixes and camelCasing. Use \"Sales\" instead of \"dimSales\" or \"mSales\".",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "UPPERCASE_FIRST_LETTER_COLUMNS_HIERARCHIES",
+      "title": "Column and hierarchy names must start with uppercase letter",
+      "aliases": [
+        "CAPITALIZE_FIRST_LETTER_OF_COLUMNS"
+      ],
+      "category": "Naming Conventions",
+      "severity": 2,
+      "scopes": [
+        "column"
+      ],
+      "description": "Avoid using prefixes and camelCasing. Use \"Sales\" instead of \"dimSales\" or \"mSales\".",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "RELATIONSHIP_COLUMN_NAMES",
+      "title": "Names of columns in relationships should be the same",
+      "aliases": [],
+      "category": "Naming Conventions",
+      "severity": 2,
+      "scopes": [
+        "relationship"
+      ],
+      "description": "When a single relationship exists between two tables, the columns on both sides of the relationship must have the same name. When multiple relationships exist between two tables, the name of the FromColumn must end with the name of the ToColumn (for example OrderDateKey, ShipDateKey, DueDateKey, etc.)",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "FORMAT_FLAG_COLUMNS_AS_YES/NO_VALUE_STRINGS",
+      "title": "Format flag columns as Yes/No value strings",
+      "aliases": [],
+      "category": "Formatting",
+      "severity": 1,
+      "scopes": [
+        "column"
+      ],
+      "description": "Flags must be properly formatted as Yes/No as this is easier to read than using 0/1 integer values.",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "OBJECTS_SHOULD_NOT_START_OR_END_WITH_A_SPACE",
+      "title": "Objects should not start or end with a space",
+      "aliases": [
+        "TRIM_OBJECT_NAMES"
+      ],
+      "category": "Formatting",
+      "severity": 3,
+      "scopes": [
+        "table",
+        "column",
+        "measure",
+        "hierarchy",
+        "partition",
+        "calculation_group",
+        "calculation_item"
+      ],
+      "description": "Objects should not start or end with a space",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "PROVIDE_FORMAT_STRING_FOR_MEASURES",
+      "title": "Provide format string for measures",
+      "aliases": [
+        "APPLY_FORMAT_STRING_MEASURES"
+      ],
+      "category": "Formatting",
+      "severity": 3,
+      "scopes": [
+        "measure"
+      ],
+      "description": "Visible measures should have their format string assigned. Fixer: adds '#,0' (or '0.0%' when the name contains %, pct, percent or ratio) to measures that clearly return numbers; measures with a dynamic format string expression are skipped.",
+      "fixer": "default_format_string",
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "NUMERIC_COLUMN_SUMMARIZE_BY",
+      "title": "Do not summarize numeric columns",
+      "aliases": [
+        "META_SUMMARIZE_NONE"
+      ],
+      "category": "Formatting",
+      "severity": 3,
+      "scopes": [
+        "column"
+      ],
+      "description": "Numeric columns (integer, decimal, double) should have their SummarizeBy property set to \"None\" to avoid accidental summation in Power BI (create measures instead).",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "PERCENTAGE_FORMATTING",
+      "title": "Percentages should be formatted with thousands separators and 1 decimal",
+      "aliases": [
+        "PERCENTAGES_SHOULD_BE_FORMATTED_WITH_THOUSANDS_SEPARATORS"
+      ],
+      "category": "Formatting",
+      "severity": 2,
+      "scopes": [
+        "measure"
+      ],
+      "description": "Percentage format strings should use a thousands separator, e.g. '#,0.0%;-#,0.0%;#,0.0%'. No automatic fixer (the format string is a style choice).",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "RELATIONSHIP_COLUMNS_SHOULD_BE_OF_INTEGER_DATA_TYPE",
+      "title": "Relationship columns should be of integer data type",
+      "aliases": [],
+      "category": "Formatting",
+      "severity": 1,
+      "scopes": [
+        "column"
+      ],
+      "description": "It is a best practice for relationship columns to be of integer data type. dateTime columns joined to a date table are exempt.",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "ADD_DATA_CATEGORY_FOR_COLUMNS",
+      "title": "Add data category for columns",
+      "aliases": [],
+      "category": "Formatting",
+      "severity": 1,
+      "scopes": [
+        "column"
+      ],
+      "description": "Add a Data Category to columns that name a geography (country, continent, city), Latitude/Longitude, or a WebUrl/ImageUrl. Fixer: sets dataCategory on columns named exactly Latitude, Longitude, WebUrl or ImageUrl. Reference: https://docs.microsoft.com/power-bi/transform-model/desktop-data-categorization",
+      "fixer": "set_data_category",
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "HIDE_FOREIGN_KEYS",
+      "title": "Hide foreign keys",
+      "aliases": [
+        "LAYOUT_HIDE_FK_COLUMNS"
+      ],
+      "category": "Formatting",
+      "severity": 2,
+      "scopes": [
+        "column"
+      ],
+      "description": "Foreign keys (the many side of a relationship) should always be hidden; filter through the related dimension instead. Fixer: adds isHidden to the column.",
+      "fixer": "hide_column",
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "MARK_PRIMARY_KEYS",
+      "title": "Mark primary keys",
+      "aliases": [],
+      "category": "Formatting",
+      "severity": 1,
+      "scopes": [
+        "column"
+      ],
+      "description": "Set the 'Key' property to 'True' for primary key columns within the column properties.",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "HIDE_FACT_TABLE_COLUMNS",
+      "title": "Hide fact table columns",
+      "aliases": [],
+      "category": "Formatting",
+      "severity": 2,
+      "scopes": [
+        "column"
+      ],
+      "description": "It is a best practice to hide fact table columns that are used for aggregation in measures.",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "MONTH_(AS_A_STRING)_MUST_BE_SORTED",
+      "title": "Month (as a string) must be sorted",
+      "aliases": [],
+      "category": "Formatting",
+      "severity": 2,
+      "scopes": [
+        "column"
+      ],
+      "description": "This rule highlights month columns which are strings and are not sorted. If left unsorted, they will sort alphabetically (i.e. April, August...). Make sure to sort such columns so that they sort properly (January, February, March...).",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    },
+    {
+      "id": "APPLY_FORMAT_STRING_COLUMNS",
+      "title": "Provide format string for visible numeric columns",
+      "aliases": [
+        "PROVIDE_FORMAT_STRING_FOR_VISIBLE_NUMERIC_COLUMNS"
+      ],
+      "category": "Formatting",
+      "severity": 2,
+      "scopes": [
+        "column"
+      ],
+      "description": "Visible numeric and date columns should have their format string assigned.",
+      "fixer": null,
+      "origin": "TabularEditor",
+      "needs_report": false
+    }
+  ]
+}
