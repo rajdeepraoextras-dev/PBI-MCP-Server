@@ -88,7 +88,7 @@ from __future__ import annotations
 import json
 import re
 import uuid
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 
 from core.tmdl import _leading_tabs, _unquote, quote_ident
 from core.tmdl_security import (

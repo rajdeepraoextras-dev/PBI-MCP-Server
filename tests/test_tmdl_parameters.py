@@ -303,6 +303,17 @@ def test_field_parameter_order_label_and_reference_forms(state, proj):
     assert info["fields"][0]["name"] == "Margin %"
 
 
+def test_field_parameter_with_unicode_and_quotes_in_labels(state, proj):
+    par.create_field_parameter(state, "Größe", [{"field": "Sales.Amount", "label": 'Betrag "netto"'}])
+    raw = (defn(proj) / "tables" / "Größe.tmdl").read_bytes()
+    assert not raw.startswith(b"\xef\xbb\xbf")
+    text = raw.decode("utf-8")
+    assert '("Betrag ""netto""", NAMEOF(\'Sales\'[Amount]), 0)' in text
+    (info,) = par.list_field_parameters(state)
+    assert info["table"] == "Größe" and info["fields"][0]["label"] == 'Betrag "netto"'
+    assert parse_table_file(defn(proj) / "tables" / "Größe.tmdl").name == "Größe"
+
+
 def test_field_parameter_rejections_leave_project_untouched(state, proj):
     before = snapshot(proj)
     bad = [

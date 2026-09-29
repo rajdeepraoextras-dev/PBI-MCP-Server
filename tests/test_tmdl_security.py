@@ -350,6 +350,58 @@ def test_parse_role_text_reads_desktop_shapes():
     assert out.count("member ") == 2 and "annotation PBI_Id" in out
 
 
+def test_adding_a_filter_to_an_ols_only_block_and_clearing_it_again(state, proj):
+    sec.create_role(state, "R")
+    sec.set_column_permission(state, "R", "Sales", "Cost")
+    sec.update_role(state, "R", table_filters={"Sales": "VAR x = 1\nRETURN [Amount] > x"})
+    p = defn(proj) / "roles" / "R.tmdl"
+    assert p.read_text(encoding="utf-8") == (
+        "role R\n\tmodelPermission: read\n\n"
+        "\ttablePermission Sales =\n\t\t\tVAR x = 1\n\t\t\tRETURN [Amount] > x\n"
+        "\t\tcolumnPermission Cost = none\n")
+    sec.update_role(state, "R", remove_tables=["Sales"])
+    assert p.read_text(encoding="utf-8") == (
+        "role R\n\tmodelPermission: read\n\n"
+        "\ttablePermission Sales\n\t\tcolumnPermission Cost = none\n")
+
+
+def test_awkward_names_round_trip(state, proj):
+    name = "O'Brien's = Team: A/B"
+    sec.create_role(state, name, table_filters={"Sales": "[Amount] > 0"})
+    assert "role 'O''Brien''s = Team: A/B'\n" in (
+        defn(proj) / "roles" / "O'Brien's = Team_ A_B.tmdl").read_text(encoding="utf-8")
+    assert "\tref role 'O''Brien''s = Team: A/B'\n" in model_text(proj)
+    assert sec.list_roles(state)[0]["name"] == name
+    sec.set_column_permission(state, name.upper(), "Sales", "Cost")   # case-insensitive
+    sec.delete_role(state, name)
+    assert sec.list_roles(state) == []
+    assert "ref role" not in model_text(proj)
+
+
+def test_names_that_map_to_the_same_file_are_rejected(state, proj):
+    sec.create_role(state, "A?B")
+    before = snapshot(proj)
+    with pytest.raises(ValueError, match="already used by 'A\\?B'"):
+        sec.create_role(state, "A*B")
+    assert snapshot(proj) == before
+
+
+def test_unicode_is_written_as_utf8_without_bom(state, proj):
+    sec.create_role(state, "Équipe", "Über uns", table_filters={"Sales": '[Amount] > 0 && "é" <> ""'})
+    sec.create_perspective(state, "Café Übersicht", tables={"Sales": {"columns": ["Amount"]}})
+    sec.add_culture(state, "zh-Hans-CN")
+    sec.set_translation(state, "zh-Hans-CN", "table", "Sales", caption="销售")
+    for rel, needle in (("roles/Équipe.tmdl", "/// Über uns"),
+                        ("perspectives/Café Übersicht.tmdl", "perspective 'Café Übersicht'"),
+                        ("cultures/zh-Hans-CN.tmdl", "caption: 销售")):
+        raw = (defn(proj) / rel).read_bytes()
+        assert not raw.startswith(b"\xef\xbb\xbf")
+        assert needle in raw.decode("utf-8")
+    assert "ref perspective 'Café Übersicht'" in model_text(proj)
+    assert sec.list_translations(state, "zh-Hans-CN")["translations"][0]["caption"] == "销售"
+    assert sec.list_roles(state)[0]["description"] == "Über uns"
+
+
 def test_role_edits_preserve_crlf_and_unrelated_bytes(state, proj):
     mp = defn(proj) / "model.tmdl"
     crlf = mp.read_bytes().replace(b"\n", b"\r\n")
