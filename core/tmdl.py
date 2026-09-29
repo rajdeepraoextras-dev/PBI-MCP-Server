@@ -533,7 +533,10 @@ def add_table_ref_text(model_text: str, table: str) -> str:
         if ln.strip().startswith("ref table "):
             last_ref = idx
     if last_ref is not None:
-        lines.insert(last_ref + 1, ref_line)
+        # match the neighbouring ref's indentation (Desktop: none; some
+        # hand-written files indent them under `model`)
+        indent = lines[last_ref][:len(lines[last_ref]) - len(lines[last_ref].lstrip())]
+        lines.insert(last_ref + 1, indent + ref_line)
     else:
         while lines and not lines[-1].strip():
             lines.pop()
