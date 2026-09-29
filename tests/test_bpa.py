@@ -537,6 +537,7 @@ def test_model_with_no_tables_does_not_crash(tmp_path):
     (tmp_path / "Synthetic.SemanticModel" / "definition" / "relationships.tmdl").unlink()
     r = bpa.analyze(PbipProject(project))
     assert r["warnings"] == [] and files
+    assert r["summary"]["total"] == 0 and any("No TMDL tables found" in n for n in r["notes"])
 
 
 def test_auto_date_tables_do_not_add_noise(tmp_path):
@@ -1007,6 +1008,26 @@ def test_tool_functions(state, tmp_path):
     fixed = tools_bpa.run_bpa_fix(state)
     assert fixed["count"] == 1
     assert tools_bpa.run_bpa_fix(state)["count"] == 0
+
+
+def test_register_defines_thin_wrappers_over_the_plain_functions(state):
+    seen: dict = {}
+
+    def tool(**kw):
+        def deco(fn):
+            seen[fn.__name__] = (kw, fn)
+            return fn
+        return deco
+
+    tools_bpa.register(object(), state, tool)
+    assert set(seen) == {"pbi_bpa", "pbi_bpa_fix", "pbi_bpa_rules"}
+    assert seen["pbi_bpa"][0] == {"read": True}
+    assert seen["pbi_bpa_rules"][0] == {"read": True}
+    assert seen["pbi_bpa_fix"][0] == {"write": True, "destructive": False, "idempotent": True}
+    assert all(fn.__doc__ and len(fn.__doc__) > 80 for _, fn in seen.values())
+    assert seen["pbi_bpa"][1](rules=["HIDE_FOREIGN_KEYS"])["summary"]["total"] == 1
+    assert seen["pbi_bpa_rules"][1]()["count"] == len(bpa.builtin_rules())
+    assert seen["pbi_bpa_fix"][1](rules=["HIDE_FOREIGN_KEYS"])["count"] == 1
 
 
 def test_tools_are_registered_with_the_right_annotations():

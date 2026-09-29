@@ -737,6 +737,10 @@ def load_model(project, with_usage: bool = True) -> BpaModel:
                 model.roles.append(MRole(n.name, [
                     (tp.name, tp.expr) for tp in n.kids("tablePermission")]))
     model.index()
+    if not model.tables:
+        model.notes.append(
+            "No TMDL tables found under definition/tables (models saved as model.bim "
+            "are not supported); nothing was analyzed.")
     if with_usage:
         try:
             model.usage = project._report_usage_or_none()

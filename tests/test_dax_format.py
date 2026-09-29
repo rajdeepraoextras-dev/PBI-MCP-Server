@@ -683,6 +683,26 @@ def test_dax_references_without_and_with_model(state):
         tools_dax.dax_references(state, "  ")
 
 
+def test_register_defines_thin_wrappers_over_the_plain_functions(state, proj):
+    seen: dict = {}
+
+    def tool(**kw):
+        def deco(fn):
+            seen[fn.__name__] = (kw, fn)
+            return fn
+        return deco
+
+    tools_dax.register(object(), state, tool)
+    assert set(seen) == {"pbi_format_dax", "pbi_format_measures", "pbi_dax_references"}
+    assert seen["pbi_format_dax"][0] == {"read": True}
+    assert seen["pbi_dax_references"][0] == {"read": True}
+    assert seen["pbi_format_measures"][0] == {"write": True, "destructive": False, "idempotent": True}
+    assert all(fn.__doc__ and len(fn.__doc__) > 80 for _, fn in seen.values())
+    assert seen["pbi_format_dax"][1](dax="sum(x)")["formatted"] == "SUM(x)"
+    assert seen["pbi_dax_references"][1]("[Net Revenue]")["measures"] == ["Net Revenue"]
+    assert seen["pbi_format_measures"][1](measure="Margin %")["count"] == 1
+
+
 def test_tools_are_registered_with_the_right_annotations():
     import model_server.server as srv
 

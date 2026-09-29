@@ -340,10 +340,6 @@ class _Ctx:
     oneline: bool = False
 
 
-def _wrap(d: _D, ctx: _Ctx, force: bool = False) -> _D:
-    return _D(_Group(d.doc, force and not ctx.oneline), d.call)
-
-
 def _is_tok(it, kind: str | None = None, text: str | None = None) -> bool:
     if not isinstance(it, _T):
         return False
