@@ -214,6 +214,82 @@ def test_formatting_paths_added_changed_removed(pair):
     assert d["summary"]["formatting_changes"] == 4
 
 
+def test_first_top_level_property_does_not_create_phantom_paths(pair):
+    """Regression: an empty container on one side must not show up as a
+    change of the root path when the other side gains its first property."""
+    _, b = pair
+    edit_json(vfile(b, "overview", "card1"), lambda j: j.update(isHidden=True))
+    edit_json(report_def(b) / "pages" / "overview" / "page.json",
+              lambda j: j.update(objects={"background": [{"properties": {
+                  "transparency": {"expr": {"Literal": {"Value": "50D"}}}}}]}))
+    edit_json(report_def(b) / "report.json",
+              lambda j: j.update(settings={"useStylableVisualContainerHeader": True}))
+    d = diff(pair)
+    assert changed_visuals(d)[0]["formatting"]["changes"] == [
+        {"path": "isHidden", "to": True}]
+    detail = d["report"]["page_details"][0]
+    assert detail["formatting"]["changes"] == [
+        {"path": "objects.background[0].properties.transparency", "to": "50D"}]
+    assert d["report"]["formatting"]["changes"] == [
+        {"path": "settings.useStylableVisualContainerHeader", "to": True}]
+    assert d["summary"]["formatting_changes"] == 3
+
+
+def test_desktop_shaped_visual_changes(pair):
+    """Selectors, theme colours, sort definitions and projection extras."""
+    a, b = pair
+
+    def visual(color_id=1, legend="false", display=None, direction="Descending",
+               year="2024L"):
+        proj = {"field": {"Measure": {"Expression": {"SourceRef": {"Entity": "Sales"}},
+                                      "Property": "Net Revenue"}},
+                "queryRef": "Sales.Net Revenue", "nativeQueryRef": "Net Revenue"}
+        if display:
+            proj["displayName"] = display
+        return {
+            "$schema": "x", "name": "line1",
+            "position": {"x": 1, "y": 2, "z": 3, "width": 4, "height": 5,
+                         "tabOrder": 3},
+            "visual": {
+                "visualType": "lineChart",
+                "query": {"queryState": {"Y": {"projections": [proj]}},
+                          "sortDefinition": {"sort": [{"field": proj["field"],
+                                                       "direction": direction}]}},
+                "objects": {
+                    "dataPoint": [{"properties": {"fill": {"solid": {"color": {
+                        "expr": {"ThemeDataColor": {"ColorId": color_id,
+                                                    "Percent": 0}}}}}},
+                        "selector": {"metadata": "Sales.Net Revenue"}}],
+                    "legend": [{"properties": {"show": {
+                        "expr": {"Literal": {"Value": legend}}}}}]}},
+            "filterConfig": {"filters": [{
+                "name": "F", "type": "Categorical",
+                "field": {"Column": {"Expression": {"SourceRef": {"Entity": "Date"}},
+                                     "Property": "Year"}},
+                "filter": {"Version": 2, "Where": [{"Condition": {"In": {"Values": [
+                    [{"Literal": {"Value": year}}]]}}}]}}]},
+        }
+    for root, kw in ((a, {}), (b, {"color_id": 3, "legend": "true",
+                                    "display": "Revenue", "direction": "Ascending",
+                                    "year": "2025L"})):
+        d = report_def(root) / "pages" / "overview" / "visuals" / "line1"
+        d.mkdir(parents=True)
+        write(d / "visual.json", json.dumps(visual(**kw), indent=2))
+    d = diff(pair)
+    assert d["report"]["page_details"][0]["visuals"]["added"] == []
+    line = changed_visuals(d)[0]
+    assert line["id"] == "line1" and set(line) == {"id", "type", "filters", "formatting"}
+    assert [c["path"] for c in line["formatting"]["changes"]] == [
+        "objects.dataPoint[0].properties.fill.solid.color.expr.ThemeDataColor.ColorId",
+        "objects.legend[0].properties.show",
+        "query.queryState.Y.projections.Sales.Net Revenue.displayName",
+        "query.sortDefinition.sort[0].direction",
+    ]
+    assert line["filters"]["changed"][0]["changes"] == [
+        {"path": "filter.Where[0].Condition.In.Values[0][0].Literal.Value",
+         "from": "2024L", "to": "2025L"}]
+
+
 def test_formatting_budget_is_shared_and_counts_stay_true(pair):
     _, b = pair
 
@@ -539,6 +615,28 @@ def test_partition_source_change(pair):
     parts = diff(pair)["model"]["partitions"]
     assert [x["name"] for x in parts["changed"]] == ["Sales"]
     assert any("sales2.csv" in ln for ln in parts["changed"][0]["source"]["diff"])
+
+
+EXPR = "Synthetic.SemanticModel/definition/expressions.tmdl"
+
+
+def test_shared_expressions_and_parameters(pair):
+    a, b = pair
+    sub(b / EXPR, '"prod-server"', '"dev-server"')
+    with (b / EXPR).open("a", encoding="utf-8", newline="\n") as fh:
+        fh.write("\nexpression Region =\n\t\tlet\n\t\t\tR = \"EU\"\n\t\tin\n\t\t\tR\n"
+                 "\tqueryGroup: Parameters\n")
+    ex = diff(pair)["model"]["expressions"]
+    assert ex["added"] == [{"name": "Region", "expression": 'let\n\tR = "EU"\nin\n\tR'}]
+    assert ex["removed"] == []
+    assert [e["name"] for e in ex["changed"]] == ["ServerParam"]
+    assert '+"dev-server" meta [IsParameterQuery=true, Type="Text"]' in \
+        ex["changed"][0]["expression"]["diff"]
+    d = diff(pair)
+    assert d["summary"]["expressions_added"] == 1
+    assert d["summary"]["expressions_changed"] == 1
+    reverse = semantic_diff(proj(pair[1]), proj(pair[0]))["model"]["expressions"]
+    assert [e["name"] for e in reverse["removed"]] == ["Region"]
 
 
 # --- model: relationships -----------------------------------------------------------------------------

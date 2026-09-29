@@ -318,6 +318,13 @@ def merge_texts(base: bytes | None, ours: bytes, theirs: bytes, *,
     return _render(merged, models, encoding, newline), conflicts
 
 
+def _err(message: str) -> None:
+    """stderr line that survives a console encoding without the characters
+    in a path label (git passes repo paths, which may contain accents)."""
+    enc = getattr(sys.stderr, "encoding", None) or "utf-8"
+    sys.stderr.write(message.encode(enc, "replace").decode(enc, "replace") + "\n")
+
+
 def _read_optional(path: Path) -> bytes | None:
     try:
         return path.read_bytes()
@@ -342,8 +349,8 @@ def main(argv: list[str] | None = None) -> int:
     string_lists = "--merge-string-lists" in args
     args = [a for a in args if a != "--merge-string-lists"]
     if len(args) not in (4, 5):
-        print("usage: pbir_merge.py [--merge-string-lists] "
-              "<base> <ours> <theirs> <out> [<path-label>]", file=sys.stderr)
+        _err("usage: pbir_merge.py [--merge-string-lists] "
+             "<base> <ours> <theirs> <out> [<path-label>]")
         return 2
     base_p, ours_p, theirs_p, out_p = (Path(a) for a in args[:4])
     label = args[4] if len(args) == 5 else str(out_p)
@@ -356,7 +363,7 @@ def main(argv: list[str] | None = None) -> int:
         data, conflicts = merge_texts(_read_optional(base_p), ours, theirs,
                                       merge_string_lists=string_lists)
     except ValueError as exc:
-        print(f"pbir-merge: cannot merge {label}: {exc}", file=sys.stderr)
+        _err(f"pbir-merge: cannot merge {label}: {exc}")
         return 2
     _atomic_write(out_p, data)
     if conflicts:
@@ -366,9 +373,8 @@ def main(argv: list[str] | None = None) -> int:
                                encoding="utf-8")
         paths = ", ".join(c["path"] for c in conflicts[:5])
         more = f" (+{len(conflicts) - 5} more)" if len(conflicts) > 5 else ""
-        print(f"pbir-merge: {len(conflicts)} conflict(s) in {label}: "
-              f"{paths}{more}; ours kept, details in {conflicts_p}",
-              file=sys.stderr)
+        _err(f"pbir-merge: {len(conflicts)} conflict(s) in {label}: "
+             f"{paths}{more}; ours kept, details in {conflicts_p}")
         return 1
     if conflicts_p.exists():
         conflicts_p.unlink()

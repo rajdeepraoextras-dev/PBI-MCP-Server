@@ -25,7 +25,8 @@ Result shape (every list is sorted; empty categories are still present)::
         "theme": {...} | None, "bookmarks": {...}, "report_measures": {...}
       },
       "model": {"present", "tables", "measures", "columns", "relationships",
-                "calculation_groups", "partitions"}     # or {"included": false}
+                "calculation_groups", "partitions",
+                "expressions"}                          # or {"included": false}
     }
 
 A changed visual entry carries only the keys that changed: ``moved`` (x/y),
@@ -82,6 +83,7 @@ _SUMMARY_KEYS = (
     "calculation_groups_added", "calculation_groups_removed",
     "calculation_groups_changed",
     "partitions_added", "partitions_removed", "partitions_changed",
+    "expressions_added", "expressions_removed", "expressions_changed",
 )
 
 
@@ -148,6 +150,7 @@ def _flat(node: Any) -> dict:
     out: dict = {}
     if node is not None:
         _flatten(node, "", out)
+    out.pop("", None)      # an empty root container has no properties
     return out
 
 
@@ -312,7 +315,8 @@ def _load_theme(report_dir: Path, report_json: dict) -> dict:
     custom = tc.get("customTheme")
     custom_name = custom.get("name") if isinstance(custom, dict) else None
     theme_json = None
-    if custom_name:
+    parts = Path(str(custom_name).replace("\\", "/")).parts if custom_name else ()
+    if parts and ".." not in parts and not Path(str(custom_name)).is_absolute():
         try:
             theme_json = _read_json(report_dir / "StaticResources"
                                     / "RegisteredResources" / custom_name)
@@ -436,7 +440,7 @@ def _visual_flat(v: dict) -> dict:
         extra = {k: x for k, x in pos.items()
                  if k not in ("x", "y", "z", "width", "height")}
         for path, val in _flat(extra).items():
-            flat[f"position.{path}" if path else "position"] = val
+            flat[f"position.{path}"] = val
     vis = v.get("visual")
     if isinstance(vis, dict):
         inner = {k: x for k, x in vis.items() if k not in ("visualType", "query")}
@@ -445,10 +449,9 @@ def _visual_flat(v: dict) -> dict:
         if isinstance(query, dict):
             rest = {k: x for k, x in query.items() if k != "queryState"}
             for path, val in _flat(rest).items():
-                flat[f"query.{path}" if path else "query"] = val
-    extras = _query_extras(v)
-    for path, val in _flat(extras).items():
-        flat[f"query.queryState.{path}" if path else "query.queryState"] = val
+                flat[f"query.{path}"] = val
+    for path, val in _flat(_query_extras(v)).items():
+        flat[f"query.queryState.{path}"] = val
     return flat
 
 
@@ -458,7 +461,6 @@ def _pos_pair(pos: dict, keys: tuple[str, ...]) -> dict:
 
 def _diff_visual(vid: str, a: dict, b: dict, ctx: _Ctx) -> dict | None:
     entry: dict = {"id": vid, "type": _vtype(b)}
-    changed = False
     pa = a.get("position") if isinstance(a.get("position"), dict) else {}
     pb = b.get("position") if isinstance(b.get("position"), dict) else {}
     if not (_same(pa.get("x"), pb.get("x")) and _same(pa.get("y"), pb.get("y"))):
@@ -493,8 +495,7 @@ def _diff_visual(vid: str, a: dict, b: dict, ctx: _Ctx) -> dict | None:
     fmt = _format_section(ctx, _flat_diff(fa, fb))
     if fmt:
         entry["formatting"] = fmt
-    changed = len(entry) > 2
-    if changed:
+    if len(entry) > 2:            # more than the id/type header
         ctx.hit("visuals_changed")
         return entry
     return None
@@ -885,6 +886,23 @@ def _scan_relationships(path: Path) -> dict[str, dict]:
     return rels
 
 
+def _scan_expressions(path: Path) -> dict[str, dict]:
+    """Shared M expressions / parameters from expressions.tmdl."""
+    if not path.exists():
+        return {}
+    lines = [ln.rstrip("\r") for ln in
+             path.read_text(encoding="utf-8-sig").split("\n")]
+    out: dict[str, dict] = {}
+    i = 0
+    while i < len(lines):
+        if lines[i].startswith("expression "):
+            member, i = _scan_member(lines, i)
+            out[member["name"]] = member
+        else:
+            i += 1
+    return out
+
+
 def _has_model(project) -> bool:
     try:
         project._require_model()
@@ -906,7 +924,9 @@ def _load_model(project) -> dict:
             tables[t["name"]] = t
     return {"tables": tables,
             "relationships": _scan_relationships(
-                model_dir / "definition" / "relationships.tmdl")}
+                model_dir / "definition" / "relationships.tmdl"),
+            "expressions": _scan_expressions(
+                model_dir / "definition" / "expressions.tmdl")}
 
 
 # --- model diff --------------------------------------------------------------------
@@ -1074,8 +1094,29 @@ def _diff_model(a: dict, b: dict, ctx: _Ctx) -> dict:
                 {"table": pb[k]["table"], "name": pb[k]["name"], **ch})
     out["partitions"] = partitions
 
+    xa, xb = a["expressions"], b["expressions"]
+    expressions: dict = {
+        "added": [{"name": n, "expression": (xb[n]["expr"] or "").strip()}
+                  for n in sorted(set(xb) - set(xa))],
+        "removed": [{"name": n, "expression": (xa[n]["expr"] or "").strip()}
+                    for n in sorted(set(xa) - set(xb))],
+        "changed": []}
+    for n in sorted(set(xa) & set(xb)):
+        entry = {"name": n}
+        ea, eb = (xa[n]["expr"] or "").strip(), (xb[n]["expr"] or "").strip()
+        if ea != eb:
+            entry["expression"] = {"diff": _udiff(ea, eb)}
+        for prop in sorted((set(xa[n]["props"]) | set(xb[n]["props"]))
+                           - {"lineageTag"}):
+            if not _same(xa[n]["props"].get(prop), xb[n]["props"].get(prop)):
+                entry[prop] = {"from": xa[n]["props"].get(prop),
+                               "to": xb[n]["props"].get(prop)}
+        if len(entry) > 1:
+            expressions["changed"].append(entry)
+    out["expressions"] = expressions
+
     for section in ("tables", "measures", "columns", "relationships",
-                    "calculation_groups", "partitions"):
+                    "calculation_groups", "partitions", "expressions"):
         for kind in ("added", "removed", "changed"):
             ctx.hit(f"{section}_{kind}", len(out[section][kind]))
     return out

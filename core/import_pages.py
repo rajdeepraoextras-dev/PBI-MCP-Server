@@ -51,7 +51,10 @@ _BOOKMARKS_SCHEMA = ("https://developer.microsoft.com/json-schemas/fabric/item/"
 # --- small helpers ---------------------------------------------------------------
 
 def _read_json(path: Path):
-    return json.loads(path.read_text(encoding="utf-8-sig"))
+    try:
+        return json.loads(path.read_text(encoding="utf-8-sig"))
+    except ValueError as exc:      # JSONDecodeError / UnicodeDecodeError
+        raise ValueError(f"Cannot read JSON from {path}: {exc}") from exc
 
 
 def _read_json_or(path: Path, default):
@@ -427,6 +430,9 @@ def _remap_links(node, page_map: dict[str, str], bookmark_map: dict[str, str],
 
 def _load_source_page(defn: Path, pid: str) -> dict:
     pdir = defn / "pages" / pid
+    if not (pdir / "page.json").is_file():
+        raise ValueError(f"Source page {pid!r} has no page.json ({pdir}); "
+                         f"it cannot be imported")
     page_json = _read_json(pdir / "page.json")
     visuals: dict[str, dict] = {}
     extras: dict[str, Path] = {}

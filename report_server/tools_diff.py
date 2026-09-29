@@ -89,7 +89,8 @@ def register(mcp, state, tool) -> None:
         with include_model=false): tables, measures (DAX as unified diff
         lines, format string, folder, hidden), columns (type, format, hidden,
         sort-by), relationships (cardinality, direction, active), calculation
-        groups and partitions. page_id limits the report part to one page.
+        groups, partitions and shared expressions/parameters. page_id limits
+        the report part to one page.
         Returns {identical, summary (counts), report, model}; a layer missing
         on one side is flagged instead of enumerated."""
         return semantic_diff(state, other_path, page_id, include_model,

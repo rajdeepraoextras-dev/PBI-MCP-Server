@@ -436,6 +436,20 @@ def test_schema_invalid_source_is_refused_before_anything_is_written(pair):
     assert snapshot(dst) == before
 
 
+def test_unreadable_source_files_give_actionable_errors(pair):
+    src, dst = pair
+    before = snapshot(dst)
+    bad = pages_dir(src) / "overview" / "visuals" / "card1" / "visual.json"
+    bad.write_text("{ not json", encoding="utf-8")
+    with pytest.raises(ValueError, match="card1"):
+        import_pages(P(dst), P(src), ["overview"])
+    bad.unlink()
+    (pages_dir(src) / "details" / "page.json").unlink()
+    with pytest.raises(ValueError, match="no page.json"):
+        import_pages(P(dst), P(src), ["details"])
+    assert snapshot(dst) == before
+
+
 def test_a_failing_write_is_rolled_back(pair, monkeypatch, tmp_path):
     src, dst = pair
     P(src).add_image("overview", str(png(tmp_path)))

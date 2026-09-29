@@ -322,6 +322,21 @@ def test_cli_errors_exit_2_and_leave_out_untouched(tmp_path):
     assert r.returncode == 2
 
 
+def test_cli_survives_a_label_the_console_cannot_encode(tmp_path):
+    import os
+
+    f = write_files(tmp_path, {"a": 1}, {"a": 2}, {"a": 3})
+    env = {**os.environ, "PYTHONIOENCODING": "ascii"}
+    r = subprocess.run([sys.executable, str(SCRIPT), str(f["base"]), str(f["ours"]),
+                        str(f["theirs"]), str(f["ours"]), "Übersicht.Report/page.json"],
+                       capture_output=True, env=env)
+    assert r.returncode == 1 and b"Traceback" not in r.stderr
+    assert b"1 conflict" in r.stderr
+    report = json.loads((tmp_path / "ours.json.pbir-conflicts.json").read_text(
+        encoding="utf-8"))
+    assert report["file"] == "Übersicht.Report/page.json"
+
+
 def test_cli_string_list_flag(tmp_path):
     f = write_files(tmp_path, {"pageOrder": ["a"]}, {"pageOrder": ["a", "o"]},
                     {"pageOrder": ["a", "t"]})
