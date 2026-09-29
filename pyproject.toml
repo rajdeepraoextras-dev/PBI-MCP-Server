@@ -42,6 +42,9 @@ build = [
 cloud = [
     "msal>=1.28",  # optional: service-principal / device-code sign-in for pbi-service
 ]
+docs = [
+    "mkdocs-material>=9",
+]
 
 [project.scripts]
 pbi-mcp = "core.cli:main"

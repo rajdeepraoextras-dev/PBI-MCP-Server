@@ -1,0 +1,66 @@
+name: Docs
+
+# Pull requests: strict build + "tool reference is current" check.
+# Pushes to main: rebuild the reference and publish with `mkdocs gh-deploy`
+# (commits the site to the gh-pages branch). One-time repository setting:
+# Settings > Pages > Source "Deploy from a branch" > gh-pages, / (root).
+# See docs/development.md.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build (strict)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install ".[docs]"
+      # Pull requests must commit a current reference (the test suite checks
+      # this too); on main the deploy job regenerates it instead of blocking.
+      - name: Tool reference is current
+        if: github.event_name == 'pull_request'
+        run: python scripts/gen_tool_reference.py --check
+      - name: Build the site (warnings are errors)
+        run: mkdocs build --strict --site-dir "$RUNNER_TEMP/site"
+
+  deploy:
+    name: Publish to GitHub Pages
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # mkdocs gh-deploy pushes the gh-pages branch
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure git credentials
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install ".[docs]"
+      - name: Regenerate the tool reference so the site can never be stale
+        run: python scripts/gen_tool_reference.py
+      - name: Deploy
+        run: mkdocs gh-deploy --force --strict
