@@ -4,22 +4,39 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
+    name: py${{ matrix.python-version }} / mcp${{ matrix.mcp }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12", "3.13"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+        # pyproject allows mcp>=1.2.0,<3. Pin one major per cell so both the
+        # FastMCP (1.x) and MCPServer (2.x) code paths in core/mcp_compat.py
+        # are exercised.
+        mcp: ["<2", ">=2"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
+          pip install "mcp${{ matrix.mcp }}"
+      - name: Show resolved mcp
+        run: python -c "import importlib.metadata as m; print('mcp', m.version('mcp'))"
       - name: Test (real-fixture tests skip cleanly in CI)
         run: pytest -q
       - name: Verify emitted output validates against Fabric schemas
@@ -33,3 +50,45 @@ jobs:
           assert sv.validate("page", build_page_json("p", "P", 1280, 720)) == []
           print("emitted output is schema-valid")
           PY
+
+  package:
+    name: package (sdist, wheel, bundles)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - name: Build sdist + wheel
+        run: |
+          python -m pip install --upgrade pip build twine
+          python -m build --outdir pkg
+          twine check --strict pkg/*
+      - name: Wheel installs and ships the vendored Fabric schemas
+        run: |
+          WHEEL="$(ls "$PWD"/pkg/*.whl)"
+          python -m venv "$RUNNER_TEMP/whl"
+          "$RUNNER_TEMP/whl/bin/pip" install -q "$WHEEL"
+          cd "$RUNNER_TEMP"   # away from the checkout so `core` resolves to the wheel
+          "$RUNNER_TEMP/whl/bin/pbi-mcp" --version
+          "$RUNNER_TEMP/whl/bin/python" - <<'PY'
+          from core.pbir import build_page_json
+          from core import schema_validate as sv
+          assert sv.validate("page", build_page_json("p", "P", 1280, 720)) == []
+          print("installed wheel validates against the vendored schemas")
+          PY
+      - name: Build .plugin, .mcpb bundles and config snippet
+        run: |
+          pip install -e .
+          python scripts/package.py --dist bundles --portable
+      - name: Validate .mcpb manifests
+        run: |
+          for bundle in bundles/*.mcpb; do
+            dir="$(mktemp -d)"
+            unzip -q "$bundle" manifest.json -d "$dir"
+            echo "== $bundle"
+            npx --yes @anthropic-ai/mcpb validate "$dir/manifest.json"
+          done

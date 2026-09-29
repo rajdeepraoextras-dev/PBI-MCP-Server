@@ -28,6 +28,12 @@ VERSION = "2.0.1"
 
 EXE_NAME = "pbi-mcp.exe" if sys.platform == "win32" else "pbi-mcp"
 
+# Servers to freeze: the service server lives on a sibling branch and is only
+# bundled when its package is present in this checkout.
+SERVERS = {"model": "model_server", "report": "report_server"}
+if (REPO / "service_server").is_dir():
+    SERVERS["service"] = "service_server"
+
 
 def freeze() -> Path:
     """Run PyInstaller to produce the standalone executable."""
@@ -36,8 +42,14 @@ def freeze() -> Path:
         "--onefile", "--name", "pbi-mcp", "--paths", str(REPO),
         "--add-data", f"resources/schemas{';' if sys.platform=='win32' else ':'}resources/schemas",
         "--collect-submodules", "core",
-        "--collect-submodules", "model_server",
-        "--collect-submodules", "report_server",
+    ]
+    # Each server package is collected whole: core/tooling.py discovers its
+    # `tools_*` modules at runtime via pkgutil, which PyInstaller's static
+    # import analysis cannot see — without --collect-submodules those tools
+    # would silently be missing from the frozen build.
+    for pkg in SERVERS.values():
+        cmd += ["--collect-submodules", pkg]
+    cmd += [
         "--collect-submodules", "mcp.server",
         "--collect-data", "mcp",
         "--collect-all", "jsonschema",
@@ -74,12 +86,15 @@ def plugin_manifest() -> dict:
 
 
 def mcp_config() -> dict:
-    """`.mcp.json` — the MCP servers, launched from the bundled executable."""
+    """`.mcp.json` — the MCP servers, launched from the bundled executable.
+
+    One entry per frozen server (`pbi-service` only when service_server is
+    part of this checkout); scripts/launcher.py maps the argument to a server.
+    """
     exe = "${CLAUDE_PLUGIN_ROOT}/" + EXE_NAME
     return {
         "mcpServers": {
-            "pbi-model": {"command": exe, "args": ["model"]},
-            "pbi-report": {"command": exe, "args": ["report"]},
+            f"pbi-{name}": {"command": exe, "args": [name]} for name in SERVERS
         }
     }
 

@@ -38,4 +38,35 @@ def tool_annotations(*, read_only: bool, destructive: bool = False,
         idempotent_hint=idempotent, open_world_hint=open_world)
 
 
-__all__ = ["Server", "MCP_MAJOR", "tool_annotations"]
+def run_server(mcp, transport: str = "stdio", host: str | None = None,
+               port: int | None = None) -> None:
+    """Run ``mcp`` over ``transport`` on either major.
+
+    The bind address for the HTTP transports lives in different places:
+    mcp 1.x reads it from ``mcp.settings`` (the FastMCP ``Settings`` object)
+    and ``run()`` takes only ``transport``; 2.x moved it to keyword arguments
+    that ``run()`` forwards to the transport runner (``mcp.settings`` no
+    longer decides the bind address). ``host``/``port`` are ignored for stdio.
+    ``None`` keeps the SDK's own default (127.0.0.1:8000 on both).
+    """
+    if transport == "stdio":
+        mcp.run(transport="stdio")
+        return
+    if MCP_MAJOR >= 2:
+        kwargs = {}
+        if host is not None:
+            kwargs["host"] = host
+        if port is not None:
+            kwargs["port"] = port
+        mcp.run(transport=transport, **kwargs)
+        return
+    settings = getattr(mcp, "settings", None)
+    if settings is not None:
+        if host is not None:
+            settings.host = host
+        if port is not None:
+            settings.port = port
+    mcp.run(transport=transport)
+
+
+__all__ = ["Server", "MCP_MAJOR", "tool_annotations", "run_server"]
