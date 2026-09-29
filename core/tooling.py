@@ -34,7 +34,12 @@ def make_tool(mcp, state):
 
     def tool(*, read: bool = False, write: bool = False,
              destructive: bool = False, idempotent: bool = False,
-             journaled: bool = True, name: str | None = None):
+             journaled: bool = True, preview: bool = True,
+             name: str | None = None):
+        """``preview=False`` keeps the journal but injects no ``dry_run``:
+        for tools whose arguments are paths into the live project (restore
+        from trash or backup), which a scratch-copy preview would act on for
+        real."""
         if read == write:
             raise ValueError("specify exactly one of read=True or write=True")
         ann = tool_annotations(read_only=read,
@@ -42,15 +47,23 @@ def make_tool(mcp, state):
                                idempotent=idempotent)
 
         def deco(fn):
-            wrapped = fn if (read or not journaled) else _journaled(fn, state)
+            wrapped = (fn if (read or not journaled)
+                       else _journaled(fn, state, preview))
             return mcp.tool(name=name, annotations=ann)(wrapped)
         return deco
 
     return tool
 
 
-def _journaled(fn, state):
+def _journaled(fn, state, preview: bool = True):
     sig = inspect.signature(fn, eval_str=True)
+    if not preview:
+        @functools.wraps(fn)
+        def plain(*args, **kwargs):
+            return journal.for_state(state).record(
+                fn.__name__, lambda: fn(*args, **kwargs))
+        plain.__signature__ = sig
+        return plain
     if "dry_run" in sig.parameters:
         # The tool implements its own preview; only journal real writes.
         @functools.wraps(fn)

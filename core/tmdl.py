@@ -287,7 +287,8 @@ def parse_relationships_file(path: str | Path) -> list[Relationship]:
             elif s.startswith("toColumn:"):
                 cur["to"] = s.split(":", 1)[1].strip()
             elif s == "isActive" or s.startswith("isActive:"):
-                cur["is_active"] = True
+                value = s.split(":", 1)[1].strip().lower() if ":" in s else "true"
+                cur["is_active"] = value != "false"
             elif s.startswith("crossFilteringBehavior:"):
                 cur["cross_filter"] = s.split(":", 1)[1].strip()
             elif s.endswith("Cardinality:") or "Cardinality:" in s:

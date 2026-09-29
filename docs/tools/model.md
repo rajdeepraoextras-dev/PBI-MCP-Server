@@ -4,7 +4,7 @@
 
 The `pbi-model` server reads and edits the **semantic model** (TMDL) of a Power BI Project: measures, columns, relationships, calculation groups and DAX lineage. Edits are surgical text changes, so partitions, annotations and M source survive byte for byte. Call `pbi_set_project(path)` first.
 
-**19 tools** (7 read-only, 12 write).
+**60 tools** (17 read-only, 43 write).
 
 ## How to read this page
 
@@ -127,6 +127,53 @@ unless force=true. dry_run=true previews without writing.
 | `force` | boolean | no | `false` |
 | `dry_run` | boolean | no | `false` |
 
+### `pbi_rename_measure`
+
+**Write**
+
+Rename a measure everywhere: its TMDL definition, every DAX
+expression that references it (measures, calculated columns, roles),
+perspectives and translations, and every report binding, filter,
+bookmark and conditional-format selector that uses it. Power Query
+sources are never touched. Returns the list of files changed; use
+`pbi_undo` to revert the whole cascade.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `table` | string | yes |  |
+| `old_name` | string | yes |  |
+| `new_name` | string | yes |  |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_set_measure_properties`
+
+**Write** · idempotent
+
+Set a measure's `///` description ("" removes), isHidden and/or its
+KPI without touching the DAX (use `pbi_update_measure` for DAX/format).
+kpi = {"target_measure": "Table.Measure" OR "target_dax": "&lt;DAX>",
+"status_dax": "&lt;DAX returning -1/0/1>", "trend_dax"?: "&lt;DAX>",
+"status_graphic"?: "Traffic Light - Single", "trend_graphic"?:
+"Standard Arrow", "description"?, "target_format_string"?,
+"status_description"?, "trend_description"?, "annotations"?: {name:
+value}} writes (or replaces) the TMDL `kpi` block with targetExpression,
+statusExpression, statusGraphic, trendExpression/trendGraphic and the
+GoalType / KpiStatusType annotations. Returns {ok, changed, is_hidden,
+description, kpi}.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `table` | string | yes |  |
+| `name` | string | yes |  |
+| `description` | string | no | `null` |
+| `is_hidden` | boolean | no | `null` |
+| `kpi` | object | no | `null` |
+| `dry_run` | boolean | no | `false` |
+
 ### `pbi_update_measure`
 
 **Write** · idempotent
@@ -201,6 +248,113 @@ Set dry_run=true to preview: the operation runs against a scratch copy and the r
 | `is_active` | boolean | no | `true` |
 | `dry_run` | boolean | no | `false` |
 
+### `pbi_delete_column`
+
+**Write** · destructive
+
+Delete a column. Refuses (listing the dependents) while any measure
+or calculated column references it, a relationship joins on it,
+another column sorts by it, a hierarchy level uses it, or a report
+visual/filter binds it. force=true deletes anyway and also removes the
+dependent relationship blocks, hierarchy levels (empty hierarchies too)
+and sortByColumn lines; measures, calculated columns and visuals that
+reference it are left for you to fix. Returns {ok, removed,
+still_referenced_by}.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `table` | string | yes |  |
+| `name` | string | yes |  |
+| `force` | boolean | no | `false` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_list_columns`
+
+**Read-only**
+
+List columns (all tables, or one `table`) with the properties
+Desktop stores in TMDL: name, data_type, is_hidden, is_key,
+summarize_by, format_string, data_category, sort_by_column,
+display_folder, description, is_calculated (+ its dax), source_column.
+Returns a list of column objects.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `table` | string | no | `null` |
+
+### `pbi_rename_column`
+
+**Write**
+
+Rename a column everywhere: its TMDL definition, sortByColumn and
+hierarchy levels, relationships, every DAX expression referencing
+Table[Column] (and bare [Column] inside its own table), role column
+permissions, perspectives, translations, and every report binding,
+filter, sort and bookmark. Power Query sources are never touched.
+Returns the files changed; `pbi_undo` reverts the cascade.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `table` | string | yes |  |
+| `old_name` | string | yes |  |
+| `new_name` | string | yes |  |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_set_column_permission`
+
+**Write** · idempotent
+
+Object-level security: set `columnPermission` for one column inside
+a role's tablePermission block (created without a row filter when the
+table has none). `permission` is "none" (column hidden from the role),
+"read", or "default" (removes the setting). Returns the resulting
+permission.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `role` | string | yes |  |
+| `table` | string | yes |  |
+| `column` | string | yes |  |
+| `permission` | string | no | `"none"` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_update_column`
+
+**Write** · idempotent
+
+Partially update a column's properties by editing only its block:
+omitted arguments are kept, "" removes a text property. description
+(multi-line ok) becomes `///` doc lines; format_string, display_folder
+are free text; data_category must be one of Address, City, Continent,
+Country, County, Image, ImageUrl, Latitude, Longitude, Organization,
+Place, PostalCode, StateOrProvince, WebUrl, Barcode; sort_by_column
+must be another column of the table; summarize_by one of none, sum,
+count, min, max, average, distinctCount, default; data_type one of
+string, int64, double, dateTime, boolean, decimal, binary, variant.
+Returns {ok, changed, column_after}.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `table` | string | yes |  |
+| `name` | string | yes |  |
+| `description` | string | no | `null` |
+| `format_string` | string | no | `null` |
+| `data_category` | string | no | `null` |
+| `sort_by_column` | string | no | `null` |
+| `is_hidden` | boolean | no | `null` |
+| `display_folder` | string | no | `null` |
+| `summarize_by` | string | no | `null` |
+| `data_type` | string | no | `null` |
+| `dry_run` | boolean | no | `false` |
+
 ## Undo, transactions and backups
 
 ### `pbi_begin_transaction`
@@ -235,12 +389,9 @@ _No parameters._
 
 Restore a backup file (path from `pbi_list_backups`) over its original.
 
-Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
-
 | Parameter | Type | Required | Default |
 |---|---|---|---|
 | `backup` | string | yes |  |
-| `dry_run` | boolean | no | `false` |
 
 ### `pbi_rollback`
 
@@ -274,3 +425,602 @@ history; any entry can be reverted with `pbi_undo`.
 | Parameter | Type | Required | Default |
 |---|---|---|---|
 | `limit` | integer | no | `20` |
+
+## Other tools
+
+### `pbi_add_culture`
+
+**Write**
+
+Add a translation culture, e.g. "de-DE": creates cultures/&lt;code>.tmdl
+(cultureInfo plus the minimal linguisticMetadata Desktop writes) and a
+`ref cultureInfo` line in model.tmdl. Add captions afterwards with
+`pbi_set_translation`. Returns the file.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `code` | string | yes |  |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_create_calculated_table`
+
+**Write**
+
+Create a DAX calculated table: tables/&lt;name>.tmdl with `partition
+<name> = calculated`, mode import and the DAX as source, registered in
+model.tmdl. No columns are written — Power BI Desktop infers them from
+the expression when it loads the model. Refuses if the table exists.
+Returns {ok, table, file, partition, warnings?}.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `name` | string | yes |  |
+| `dax` | string | yes |  |
+| `description` | string | no | `null` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_create_expression`
+
+**Write**
+
+Add a shared expression to expressions.tmdl. kind="query": a named
+M query (multi-line `let ... in` allowed) with lineageTag and
+Desktop's PBI_NavigationStepName / PBI_ResultType annotations.
+kind="parameter": a single-line M literal ("text", 42, true,
+#datetime(2024, 1, 1, 0, 0, 0)) emitted as `expression Name = value
+meta [IsParameterQuery=true, Type=<inferred>,
+IsParameterQueryRequired=true]`; parameter_meta merges extra/override
+keys into that record (e.g. {"Type": "Number", "List": [1, 2]}).
+Refuses duplicate names. Returns {ok, name, kind, meta, result_type}.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `name` | string | yes |  |
+| `m` | string | yes |  |
+| `kind` | string | no | `"query"` |
+| `description` | string | no | `null` |
+| `parameter_meta` | object | no | `null` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_create_field_parameter`
+
+**Write**
+
+Create a field parameter (a slicer that switches which column or
+measure a visual shows) as a calculated table `{("Label",
+NAMEOF('T'[C]), 0), ...}` with the Desktop column layout: visible
+`<name>`, hidden `<name> Fields` (ParameterMetadata kind 2) and hidden
+`<name> Order`, registered in model.tmdl. `fields` are "Table.Column"
+or "Table.[Measure]" strings (or {"field": ..., "label": ...} to set
+the slicer label; default label is the field name); all must exist.
+`default_index` moves that field to the first position, which is what a
+single-select slicer starts on (Power BI stores no other default).
+Returns the table, file and fields in order.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `name` | string | yes |  |
+| `fields` | array of string or object | yes |  |
+| `default_index` | integer | no | `0` |
+| `description` | string | no | `null` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_create_hierarchy`
+
+**Write**
+
+Create a hierarchy in `table`. levels = [{"name": "Year", "column":
+"Year"}, ...] in drill order (name defaults to the column); every
+column must exist in the table. Optional `///` description and hidden
+flag. Returns {ok, hierarchy}.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `table` | string | yes |  |
+| `name` | string | yes |  |
+| `levels` | array of object | yes |  |
+| `description` | string | no | `null` |
+| `hidden` | boolean | no | `false` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_create_perspective`
+
+**Write**
+
+Create a perspective (perspectives/&lt;name>.tmdl, registered with
+`ref perspective`). `tables` maps a table to {"columns": [...],
+"measures": [...], "hierarchies": [...]} (or {"include_all": true});
+every listed object must exist in that table. Returns the file and
+tables.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `name` | string | yes |  |
+| `description` | string | no | `null` |
+| `tables` | object | no | `null` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_create_role`
+
+**Write**
+
+Create a row-level-security role (roles/&lt;name>.tmdl, registered with
+`ref role` in model.tmdl). `table_filters` maps a table name to a DAX
+boolean filter, e.g. {"Sales": "[Region] = USERPRINCIPALNAME()"}; the
+expressions are checked for balanced brackets and existing Table[Column]
+references before anything is written. `model_permission` is read
+(default), readRefresh, refresh, administrator or none. Role members
+are assigned in the Power BI service, not here. Returns the file, the
+filtered tables and any non-blocking warnings.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `name` | string | yes |  |
+| `description` | string | no | `null` |
+| `model_permission` | string | no | `"read"` |
+| `table_filters` | object | no | `null` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_create_table`
+
+**Write**
+
+Create an import table fed by a Power Query (M) expression: writes
+tables/&lt;name>.tmdl (lineageTag, columns, one `partition <name> = m`
+with mode import and the M source, Desktop's PBI_ResultType=Table
+annotation) and registers `ref table <name>` in model.tmdl. Refuses
+if the table exists. columns: [{"name", "data_type" (string | int64 |
+double | decimal | dateTime | boolean), "source_column"?,
+"summarize_by"? (none | sum | ...), "format_string"?, "is_hidden"?,
+"data_category"?}]; description becomes `///` doc lines; hidden sets
+isHidden. Returns {ok, table, file, columns, partition}.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `name` | string | yes |  |
+| `m_source` | string | yes |  |
+| `columns` | array of object | no | `null` |
+| `description` | string | no | `null` |
+| `hidden` | boolean | no | `false` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_create_whatif_parameter`
+
+**Write**
+
+Create a what-if parameter: a calculated table
+`GENERATESERIES(minimum, maximum, increment)` with column `<name>`
+(ParameterMetadata version 0) and the measure `<name> Value` =
+SELECTEDVALUE('&lt;name>'[&lt;name>], default), registered in model.tmdl.
+`default` defaults to `minimum` and must lie in the range;
+`format_string` defaults to 0 / 0.00 based on the decimals used.
+Rejects an existing table or measure name and ranges above 1,000,000
+rows. Returns the table, column, measure and row count.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `name` | string | yes |  |
+| `minimum` | number | yes |  |
+| `maximum` | number | yes |  |
+| `increment` | number | yes |  |
+| `default` | number | no | `null` |
+| `format_string` | string | no | `null` |
+| `description` | string | no | `null` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_delete_culture`
+
+**Write** · destructive
+
+Delete a culture and all its translations: removes cultures/&lt;code>.tmdl
+(a .bak copy stays beside it) and its `ref cultureInfo` line. Revert
+with `pbi_undo`.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `code` | string | yes |  |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_delete_hierarchy`
+
+**Write** · destructive
+
+Delete a hierarchy. Refuses while a report visual or filter binds one
+of its levels unless force=true. Returns {ok, forced_past_report_usage}.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `table` | string | yes |  |
+| `name` | string | yes |  |
+| `force` | boolean | no | `false` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_delete_perspective`
+
+**Write** · destructive
+
+Delete a perspective: removes perspectives/&lt;name>.tmdl (a .bak copy
+stays beside it) and its `ref perspective` line. Revert with `pbi_undo`.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `name` | string | yes |  |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_delete_role`
+
+**Write** · destructive
+
+Delete a security role: removes roles/&lt;name>.tmdl (a .bak copy stays
+beside it) and its `ref role` line. Revert with `pbi_undo`.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `name` | string | yes |  |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_delete_table`
+
+**Write** · destructive
+
+Delete a table: removes tables/&lt;name>.tmdl (with a backup), its
+`ref table` line in model.tmdl and every relationship touching it.
+Refuses — listing the dependents — when other tables' measures,
+calculated columns or calculated tables reference it (DAX lineage),
+when relationships touch it, or when report visuals/filters use its
+fields; force=true deletes anyway and reports what was removed plus
+the references left dangling. Returns {ok, table, removed: {file,
+ref_table, relationships}, dangling_references}.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `table` | string | yes |  |
+| `force` | boolean | no | `false` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_find_references`
+
+**Read-only**
+
+Preview where a measure, column (table required) or table is
+referenced: DAX expressions (as table/measure pairs) and report
+fields (Entity.Property) bound anywhere in the report. Use before a
+rename or delete to see the blast radius.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `kind` | string | yes |  |
+| `name` | string | yes |  |
+| `table` | string | no | `null` |
+
+### `pbi_list_expressions`
+
+**Read-only**
+
+Shared Power Query expressions from expressions.tmdl: [{name, kind
+("parameter" when meta says IsParameterQuery=true, else "query"), m,
+meta (parsed record, e.g. {IsParameterQuery, Type,
+IsParameterQueryRequired}), lineage_tag, query_group, description,
+result_type, annotations}].
+
+_No parameters._
+
+### `pbi_list_field_parameters`
+
+**Read-only** · idempotent
+
+List field-parameter tables: label/fields/order column names, and the
+fields in order with label, table, name, kind (column|measure) and
+whether the referenced object still exists.
+
+_No parameters._
+
+### `pbi_list_hierarchies`
+
+**Read-only**
+
+List hierarchies (all tables, or one `table`): name, description,
+is_hidden, display_folder and ordered levels [{name, column}].
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `table` | string | no | `null` |
+
+### `pbi_list_partitions`
+
+**Read-only**
+
+Partitions per table (all tables, or just `table`): [{table,
+partitions: [{name, kind (m | calculated | entity | calculationGroup),
+mode (import | directQuery | ...), source (M or DAX text; null for
+entity partitions, whose entityName sits in properties),
+source_form, properties}]}].
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `table` | string | no | `null` |
+
+### `pbi_list_perspectives`
+
+**Read-only** · idempotent
+
+List perspectives: name, description, file and, per table, the
+include_all flag and the columns / measures / hierarchies exposed.
+
+_No parameters._
+
+### `pbi_list_roles`
+
+**Read-only** · idempotent
+
+List security roles in model.tmdl order: name, description,
+model_permission, file, per-table row filter plus object-level security
+(metadata_permission, columns {name: permission}), and members.
+
+_No parameters._
+
+### `pbi_list_translations`
+
+**Read-only** · idempotent
+
+Without `culture`: the model's cultures (file, whether it is the
+model default, how many objects are translated). With `culture`: every
+translated table / column / measure / hierarchy with its caption,
+description and display_folder.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `culture` | string | no | `null` |
+
+### `pbi_list_whatif_parameters`
+
+**Read-only** · idempotent
+
+List what-if parameter tables: table, column, minimum / maximum /
+increment (parsed from GENERATESERIES), the value measure and its
+default, and the format string.
+
+_No parameters._
+
+### `pbi_remove_kpi`
+
+**Write** · destructive · idempotent
+
+Remove the KPI block from a measure (its DAX and other properties
+stay). No-op when the measure has none. Returns {ok, changed}.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `table` | string | yes |  |
+| `name` | string | yes |  |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_remove_refresh_policy`
+
+**Write** · destructive
+
+Remove the `refreshPolicy` block from `table` (turns incremental
+refresh off; the partition query is untouched and RangeStart/RangeEnd
+stay). Errors if the table has no policy. Returns {ok, table}.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `table` | string | yes |  |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_rename_table`
+
+**Write**
+
+Rename a table everywhere: its TMDL file and header, partitions
+named after it, model.tmdl `ref table`, relationships, every DAX
+qualifier and bare table reference (ALL(Table)...), roles,
+perspectives, translations, and every report Entity reference and
+queryRef. Power Query sources are never touched. Returns the files
+changed; `pbi_undo` reverts the cascade (including the file rename).
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `old_name` | string | yes |  |
+| `new_name` | string | yes |  |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_set_refresh_policy`
+
+**Write** · idempotent
+
+Configure incremental refresh on an import table: writes or
+replaces its `refreshPolicy` block (policyType basic,
+rollingWindowGranularity/Periods = data kept, incrementalGranularity/
+Periods = window refreshed each time, optional
+incrementalPeriodsOffset, mode hybrid for a DirectQuery tail,
+sourceExpression = the M used for new partitions). Granularities:
+day | month | quarter | year. source_expression defaults to the
+table's M partition source and must filter on RangeStart/RangeEnd
+(e.g. Table.SelectRows(Source, each [OrderDate] >= RangeStart and
+[OrderDate] &lt; RangeEnd)). Adds RangeStart/RangeEnd DateTime
+parameters to expressions.tmdl when missing (Desktop requires them).
+Returns {ok, action, table, policy, parameters_added, warnings?}.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `table` | string | yes |  |
+| `rolling_window_granularity` | string | yes |  |
+| `rolling_window_periods` | integer | yes |  |
+| `incremental_granularity` | string | yes |  |
+| `incremental_periods` | integer | yes |  |
+| `source_expression` | string | no | `null` |
+| `mode` | string | no | `"import"` |
+| `incremental_periods_offset` | integer | no | `0` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_set_table_permission_metadata`
+
+**Write** · idempotent
+
+Object-level security for a whole table: `metadataPermission` on the
+role's tablePermission block. "none" hides the entire table from the
+role, "read" grants it explicitly, "default" removes the setting.
+Returns the resulting permission.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `role` | string | yes |  |
+| `table` | string | yes |  |
+| `metadata_permission` | string | no | `"none"` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_set_translation`
+
+**Write** · idempotent
+
+Set translated metadata in an existing culture. `object_type` is
+"table", "column", "measure" or "hierarchy"; `table` is the owning table
+and `name` the column/measure/hierarchy (omit for a table). Pass any of
+`caption`, `description`, `display_folder` (tables have no display
+folder); "" removes a value, omitted values are kept. The object must
+exist in the model. Returns the translated object.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `culture` | string | yes |  |
+| `object_type` | string | yes |  |
+| `table` | string | yes |  |
+| `name` | string | no | `null` |
+| `caption` | string | no | `null` |
+| `description` | string | no | `null` |
+| `display_folder` | string | no | `null` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_update_expression`
+
+**Write** · idempotent
+
+Replace the M of an existing shared expression or parameter value;
+its meta record, lineageTag, description and annotations are kept.
+Returns {ok, action, name, kind, meta}.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `name` | string | yes |  |
+| `m` | string | yes |  |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_update_partition`
+
+**Write** · idempotent
+
+Replace the `source =` expression (M, or DAX for a calculated
+partition) of one partition of `table`, leaving every other byte of
+the file intact. partition defaults to the table's only partition and
+is required when the table has several. Returns {ok, action, table,
+partition, kind, mode}.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `table` | string | yes |  |
+| `m_source` | string | yes |  |
+| `partition` | string | no | `null` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_update_perspective`
+
+**Write** · idempotent
+
+Edit a perspective. Removals run first, then additions: `remove_tables`
+[table, ...], `remove_objects` {table: {"columns": [...], "measures":
+[...], "hierarchies": [...]}}, then `tables` (same shape as
+`pbi_create_perspective`) adds objects. `description` "" clears it.
+Returns what changed.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `name` | string | yes |  |
+| `description` | string | no | `null` |
+| `tables` | object | no | `null` |
+| `remove_tables` | array of string | no | `null` |
+| `remove_objects` | object | no | `null` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_update_role`
+
+**Write** · idempotent
+
+Edit a role in place; only the parts you pass change. `description`
+("" removes it), `model_permission`, `table_filters` {table: DAX} to
+add or replace row filters, and `remove_tables` [table, ...] to clear
+the row filter of those tables (object-level-security settings on the
+table are kept). Returns what changed.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `name` | string | yes |  |
+| `description` | string | no | `null` |
+| `model_permission` | string | no | `null` |
+| `table_filters` | object | no | `null` |
+| `remove_tables` | array of string | no | `null` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_update_table`
+
+**Write** · idempotent
+
+Set a table's `///` description ("" removes it) and/or isHidden.
+Returns {ok, changed, is_hidden, description}.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `table` | string | yes |  |
+| `description` | string | no | `null` |
+| `is_hidden` | boolean | no | `null` |
+| `dry_run` | boolean | no | `false` |

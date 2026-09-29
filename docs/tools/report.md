@@ -4,7 +4,7 @@
 
 The `pbi-report` server builds and edits the **report** (PBIR) of a Power BI Project: pages, visuals, formatting, themes, filters and design elements. Every report write is validated against the official Fabric schemas before it reaches disk. Call `pbi_set_project(path)` first, then `pbi_capabilities()` to learn the visual types, buckets and filters.
 
-**50 tools** (17 read-only, 33 write).
+**75 tools** (22 read-only, 53 write).
 
 ## How to read this page
 
@@ -112,12 +112,9 @@ _No parameters._
 
 Restore a deleted visual (path from `pbi_list_trash`) back onto its page.
 
-Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
-
 | Parameter | Type | Required | Default |
 |---|---|---|---|
 | `trash_path` | string | yes |  |
-| `dry_run` | boolean | no | `false` |
 
 ### `pbi_rollback`
 
@@ -159,7 +156,11 @@ history; any entry can be reverted with `pbi_undo`.
 **Read-only**
 
 Design lint a page: overlaps, off-canvas visuals, too-small visuals,
-near-misaligned edges. Returns {ok, findings[]}.
+near-misaligned edges, plus accessibility findings (a11y_*: alt text, tab
+order, small text, WCAG contrast, judged against the active theme).
+Returns {ok, accessibility_ok, findings[]}: `ok` is the layout verdict
+(no layout warnings); `accessibility_ok` is true when there are no a11y_*
+findings.
 
 | Parameter | Type | Required | Default |
 |---|---|---|---|
@@ -317,6 +318,36 @@ Set dry_run=true to preview: the operation runs against a scratch copy and the r
 | `hidden` | boolean | no | `true` |
 | `dry_run` | boolean | no | `false` |
 
+### `pbi_import_pages`
+
+**Write**
+
+Copy pages from another PBIP (from_path: project root, .pbip or
+*.Report folder) into the selected report: page.json, every visual
+folder, the registered images they use (copied and re-registered in
+report.json when needed) and, with include_bookmarks, the bookmarks
+that open those pages. Ids that are taken get new ones (page ids from
+the display name, "-2" suffixes); navigation buttons, bookmarks and
+pageBinding follow. rename_map is {source page id: new display name};
+position is the 0-based index in the page order (omit to append);
+imported pages keep their source order. Every field the imported
+visuals and filters bind is checked against the target model and the
+import is refused with the list of missing fields unless
+allow_missing_fields is true. Returns {id_map (old -> new page id),
+pages, bookmarks, resources, order, missing_fields, warnings}.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `from_path` | string | yes |  |
+| `page_ids` | array of string | yes |  |
+| `rename_map` | object | no | `null` |
+| `include_bookmarks` | boolean | no | `true` |
+| `allow_missing_fields` | boolean | no | `false` |
+| `position` | integer | no | `null` |
+| `dry_run` | boolean | no | `false` |
+
 ### `pbi_list_pages`
 
 **Read-only**
@@ -379,6 +410,24 @@ Set dry_run=true to preview: the operation runs against a scratch copy and the r
 | `role` | string | yes |  |
 | `tooltip_width` | integer | no | `320` |
 | `tooltip_height` | integer | no | `240` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_set_tooltip_page`
+
+**Write** · idempotent
+
+Show a report tooltip page when hovering a visual (visualTooltip type
+'ReportPage' + section). tooltip_page_id must already be a tooltip-role
+page (`pbi_set_page_role`). Pass tooltip_page_id=None to revert to the
+default tooltip.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `page_id` | string | yes |  |
+| `visual_id` | string | yes |  |
+| `tooltip_page_id` | string | no | `null` |
 | `dry_run` | boolean | no | `false` |
 
 ### `pbi_style_page`
@@ -490,6 +539,32 @@ Set dry_run=true to preview: the operation runs against a scratch copy and the r
 | `page_id` | string | yes |  |
 | `visual_ids` | array | yes |  |
 | `name` | string | no | `"Group"` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_import_visuals`
+
+**Write**
+
+Copy individual visuals from page `page_id` of another PBIP
+(from_path) onto `target_page_id` of the selected report. Visual ids
+already used on the target page get a "-2"/"-3" suffix; offset
+{"x": 20, "y": 10} shifts every imported visual; selecting a group
+also imports its members. Bound fields are checked against the target
+model (refused with the list of missing fields unless
+allow_missing_fields is true) and referenced images are copied.
+Returns {id_map (old -> new visual id), count, missing_fields,
+resources, warnings}.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `from_path` | string | yes |  |
+| `page_id` | string | yes |  |
+| `visual_ids` | array of string | yes |  |
+| `target_page_id` | string | yes |  |
+| `offset` | object | no | `null` |
+| `allow_missing_fields` | boolean | no | `false` |
 | `dry_run` | boolean | no | `false` |
 
 ### `pbi_list_visuals`
@@ -634,10 +709,13 @@ Set dry_run=true to preview: the operation runs against a scratch copy and the r
 
 ### `pbi_generate_theme`
 
-**Read-only** · idempotent
+**Write** · idempotent
 
 Generate a coherent Power BI theme from a brand color (palette + text
-classes + visual styles, light|dark). install=True applies it now.
+classes + visual styles, light|dark). install=True (the default) applies
+it to the report now; install=False only returns the theme JSON.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
 
 | Parameter | Type | Required | Default |
 |---|---|---|---|
@@ -645,6 +723,7 @@ classes + visual styles, light|dark). install=True applies it now.
 | `name` | string | no | `"MCP Brand Theme"` |
 | `mode` | string | no | `"light"` |
 | `install` | boolean | no | `true` |
+| `dry_run` | boolean | no | `false` |
 
 ### `pbi_set_report_theme`
 
@@ -752,4 +831,434 @@ Set dry_run=true to preview: the operation runs against a scratch copy and the r
 | `name` | string | yes |  |
 | `display_name` | string | no | `null` |
 | `page_id` | string | no | `null` |
+| `dry_run` | boolean | no | `false` |
+
+## Other tools
+
+### `pbi_accessibility_report`
+
+**Read-only** · idempotent
+
+Audit a page: missing alt text, tab-order duplicates/gaps, text
+below 9 pt, and text/background contrast under WCAG 2.1 AA (4.5:1),
+using the active theme's colours (defaults #252423 on #FFFFFF).
+Returns {ok, counts, theme, findings[]}; each finding has severity,
+code, visual_id, message and a fix hint.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `page_id` | string | yes |  |
+
+### `pbi_add_analytics_line`
+
+**Write**
+
+Add an Analytics-pane line to a cartesian visual. kind: constant
+(needs value) | min | max | average | median | percentile (needs
+percentile 0-100) | trend (line/clustered/scatter/area only). measure
+= 'Table.Measure' the aggregate line summarises (optional); color '#hex';
+style dashed|solid|dotted; transparency 0-100; position behind|front;
+label = legend text. Returns the line's index for
+`pbi_remove_analytics_line`.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `page_id` | string | yes |  |
+| `visual_id` | string | yes |  |
+| `kind` | string | yes |  |
+| `value` | number | no | `null` |
+| `measure` | string | no | `null` |
+| `color` | string | no | `null` |
+| `style` | string | no | `"dashed"` |
+| `label` | string | no | `null` |
+| `transparency` | number | no | `null` |
+| `position` | string | no | `"behind"` |
+| `percentile` | number | no | `null` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_add_visual_calculation`
+
+**Write**
+
+Add a visual calculation (visual-level DAX such as
+'RUNNINGSUM([Net Revenue])' or '[Net Revenue] / COLLAPSE([Net Revenue],
+ROWS)') as a NativeVisualCalculation projection. Fields are referenced
+as [nativeQueryRef] — every existing field gets one (its field name);
+the response lists them and warns about unknown references. bucket
+defaults to Values/Y/Data. hidden=true keeps a helper calculation out
+of the visual. Note: `pbi_update_bindings` rewrites the query and drops
+visual calculations.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `page_id` | string | yes |  |
+| `visual_id` | string | yes |  |
+| `name` | string | yes |  |
+| `expression` | string | yes |  |
+| `format_string` | string | no | `null` |
+| `hidden` | boolean | no | `false` |
+| `bucket` | string | no | `null` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_auto_alt_text`
+
+**Write** · idempotent
+
+Generate alt text for a page's content visuals that lack it, as
+'&lt;visual type> of &lt;measures> by &lt;category>' (prefixed by the title when
+it adds information). Existing alt text is kept unless overwrite=true.
+Text boxes and decorative shapes are skipped. Returns what was set.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `page_id` | string | yes |  |
+| `overwrite` | boolean | no | `false` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_auto_tab_order`
+
+**Write** · idempotent
+
+Set tab order to reading order (top-to-bottom, left-to-right), with
+hidden and decorative visuals last. Returns the order and what
+changed.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `page_id` | string | yes |  |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_clear_conditional_format`
+
+**Write** · destructive · idempotent
+
+Remove the conditional format of one target (background|font|
+data_bars|icons|web_url) from a bound field; returns how many
+properties/entries were removed (0 = nothing was set).
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `page_id` | string | yes |  |
+| `visual_id` | string | yes |  |
+| `field` | string | yes |  |
+| `target` | string | yes |  |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_create_report_measure`
+
+**Write**
+
+Create a report-level measure (stored in the report's
+definition/reportExtensions.json, created if absent, not in the
+semantic model). `table` must be an existing model table; `name` must
+be unique across model and report measures. data_type is one of
+Double (default), Integer, Decimal, Text, Boolean, Date, DateTime.
+Visuals bind it like any measure ("Table.Name"). Returns the created
+measure plus any DAX warnings.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `table` | string | yes |  |
+| `name` | string | yes |  |
+| `dax` | string | yes |  |
+| `format_string` | string | no | `null` |
+| `description` | string | no | `null` |
+| `data_type` | string | no | `null` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_delete_report_measure`
+
+**Write** · destructive
+
+Delete a report-level measure. Refused while a visual, filter or
+bookmark binds it, or another report measure's DAX references it,
+unless force=true. Returns what was removed and anything forced
+past.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `table` | string | yes |  |
+| `name` | string | yes |  |
+| `force` | boolean | no | `false` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_get_mobile_layout`
+
+**Read-only** · idempotent
+
+A page's phone layout: enabled flag, canvas size, the placed
+visuals with their mobile x/y/width/height (top to bottom), and the
+visuals that have no phone placement.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `page_id` | string | yes |  |
+
+### `pbi_list_analytics_lines`
+
+**Read-only**
+
+List a visual's Analytics-pane lines: index, kind, object, value/
+percentile, label, color, style, position, measure.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `page_id` | string | yes |  |
+| `visual_id` | string | yes |  |
+
+### `pbi_list_report_measures`
+
+**Read-only** · idempotent
+
+List the report-level measures in reportExtensions.json: table,
+name, dax, data_type, format_string, description. Empty when the
+report has none.
+
+_No parameters._
+
+### `pbi_list_visual_calculations`
+
+**Read-only**
+
+List a visual's visual calculations: bucket, name, expression,
+format, hidden.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `page_id` | string | yes |  |
+| `visual_id` | string | yes |  |
+
+### `pbi_remove_analytics_line`
+
+**Write** · destructive
+
+Remove the analytics line at `index` (from `pbi_list_analytics_lines`).
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `page_id` | string | yes |  |
+| `visual_id` | string | yes |  |
+| `index` | integer | yes |  |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_remove_visual_calculation`
+
+**Write** · destructive
+
+Remove a visual calculation by name.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `page_id` | string | yes |  |
+| `visual_id` | string | yes |  |
+| `name` | string | yes |  |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_semantic_diff`
+
+**Read-only**
+
+Structured, deterministic diff between the selected project and
+another PBIP (a backup, another branch checkout or a sibling copy):
+other_path is a project root, .pbip file or *.Report / *.SemanticModel
+folder. Report layer: pages added/removed/renamed/reordered/resized/
+hidden; per page, visuals added/removed and, per surviving visual
+(matched by id), moved/resized/z-order/type/title, bindings added or
+removed per bucket, formatting property changes as flattened paths
+(old -> new, at most max_format_changes entries in total, with true
+counts), filters at report/page/visual scope, theme (name + which
+dataColors), bookmarks and report-level measures. Model layer (skip
+with include_model=false): tables, measures (DAX as unified diff
+lines, format string, folder, hidden), columns (type, format, hidden,
+sort-by), relationships (cardinality, direction, active), calculation
+groups, partitions and shared expressions/parameters. page_id limits
+the report part to one page.
+Returns {identical, summary (counts), report, model}; a layer missing
+on one side is flagged instead of enumerated.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `other_path` | string | yes |  |
+| `page_id` | string | no | `null` |
+| `include_model` | boolean | no | `true` |
+| `max_format_changes` | integer | no | `200` |
+
+### `pbi_set_alt_text`
+
+**Write** · idempotent
+
+Set a visual's alt text (visualContainerObjects.general.altText,
+read aloud by screen readers). An empty string clears it. Groups and
+decorative shapes are not valid targets. Returns the stored text.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `page_id` | string | yes |  |
+| `visual_id` | string | yes |  |
+| `text` | string | yes |  |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_set_conditional_format`
+
+**Write** · idempotent
+
+Apply conditional formatting to a field bound in a visual. field is
+the bound 'Table.Column'/'Table.Measure' (its queryRef). target:
+background|font (table/matrix cells via `values`, chart marks via
+`dataPoint.fill`, chart/card data-label color via `labels.color`),
+data_bars|icons|web_url (table/matrix only). rule shapes — gradient:
+{"kind":"gradient","measure":"T.M","min":{"color":"#hex","value"?:n},
+"mid"?:{...},"max":{...},"null_color"?:"#hex"}; rules: {"kind":"rules",
+"measure":"T.M","rules":[{"min"?:n,"max"?:n,"min_inclusive"?:true,
+"max_inclusive"?:false,"color":"#hex"}],"default_color"?:"#hex"};
+field value: {"kind":"field","measure":"T.M"}; data_bars:
+{"positive_color","negative_color","axis_color"?,"show_bar_only"?,
+"min"?,"max"?}; icons: {"style":"threeArrowsColored","rules":[{"min"?,
+"max"?,"icon":0}],"layout"?:"leftOfData|rightOfData|dataOnly",
+"measure"?}; web_url: {"kind":"field","measure"|"column":"T.F"}.
+Returns the object/property/selector written. Re-running replaces the
+same rule.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `page_id` | string | yes |  |
+| `visual_id` | string | yes |  |
+| `field` | string | yes |  |
+| `target` | string | yes |  |
+| `rule` | object | yes |  |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_set_data_labels`
+
+**Write** · idempotent
+
+Data labels. Charts/pie/donut -> `labels` (show, position e.g.
+OutsideEnd|InsideEnd|InsideCenter|InsideBase for columns, Above|Below|
+Center for lines, Outside|Inside for pie; display_units auto|none|
+thousands|millions|billions|trillions or a number; decimals; color
+'#hex'; font_size; font_family; background '#hex' or false). Card ->
+`labels` (color/size/family/units/decimals). Table/matrix -> `values`
+(color, font_size, font_family, background only). Other visual types
+are rejected.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `page_id` | string | yes |  |
+| `visual_id` | string | yes |  |
+| `show` | boolean | no | `true` |
+| `position` | string | no | `null` |
+| `display_units` | string | no | `null` |
+| `decimals` | integer | no | `null` |
+| `color` | string | no | `null` |
+| `font_size` | number | no | `null` |
+| `font_family` | string | no | `null` |
+| `background` | string | no | `null` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_set_mobile_layout`
+
+**Write** · idempotent
+
+Set a page's phone layout (per-visual mobile.json; report.json
+layoutOptimization is kept in sync). mode='auto' stacks the page's
+visible visuals top-left first on the 320-wide phone canvas keeping
+aspect ratios (min height 80); mode='manual' takes
+visuals=[{"visual_id","x","y","width","height"}] (x+width &lt;= 320);
+mode='off' removes the phone layout. Returns the resulting layout.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `page_id` | string | yes |  |
+| `mode` | string | no | `"auto"` |
+| `visuals` | array of object | no | `null` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_set_slicer`
+
+**Write** · idempotent
+
+Configure a slicer. style: list|dropdown|tile|between|relative_date|
+before|after (data.mode; tile = list + horizontal). single_select,
+select_all (selection), search (search box), header (true/false or the
+header text), orientation vertical|horizontal. sync_group='Name'
+joins a sync group across pages (syncGroup.groupName with
+fieldChanges/filterChanges, default true); sync_group='' leaves it.
+Only settings you pass change.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `page_id` | string | yes |  |
+| `visual_id` | string | yes |  |
+| `style` | string | no | `null` |
+| `single_select` | boolean | no | `null` |
+| `select_all` | boolean | no | `null` |
+| `sync_group` | string | no | `null` |
+| `sync_field_changes` | boolean | no | `null` |
+| `sync_filter_changes` | boolean | no | `null` |
+| `search` | boolean | no | `null` |
+| `header` | string | no | `null` |
+| `orientation` | string | no | `null` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_set_tab_order`
+
+**Write** · idempotent
+
+Set keyboard tab order (position.tabOrder) from a list of visual
+ids, first to last, numbered 0..n-1. Visuals not listed follow in
+reading order. Returns the full resulting order and what changed.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `page_id` | string | yes |  |
+| `order` | array of string | yes |  |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_update_report_measure`
+
+**Write** · idempotent
+
+Update a report-level measure; omitted fields are kept and an empty
+string clears format_string or description. Returns the updated
+measure and any DAX warnings.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `table` | string | yes |  |
+| `name` | string | yes |  |
+| `dax` | string | no | `null` |
+| `format_string` | string | no | `null` |
+| `description` | string | no | `null` |
 | `dry_run` | boolean | no | `false` |

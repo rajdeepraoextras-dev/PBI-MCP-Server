@@ -13,7 +13,7 @@ import pytest
 REPO = Path(__file__).resolve().parent.parent
 DOCS = REPO / "docs"
 TOOLS_DIR = DOCS / "tools"
-STEMS = ("model", "report")
+STEMS = ("model", "report", "service")
 
 
 def _load_generator():

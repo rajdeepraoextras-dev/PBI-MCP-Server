@@ -186,7 +186,7 @@ def pbi_list_backups() -> list[dict]:
     return STATE.require().list_backups()
 
 
-@tool(write=True, destructive=True)
+@tool(write=True, destructive=True, preview=False)
 def pbi_restore_backup(backup: str) -> dict:
     """Restore a backup file (path from pbi_list_backups) over its original."""
     return STATE.require().restore_backup(backup)

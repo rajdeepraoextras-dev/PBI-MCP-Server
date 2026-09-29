@@ -108,3 +108,14 @@ def test_resolves_from_semantic_model_folder():
     sm = FIXTURE.parent / "Synthetic.SemanticModel"
     project = PbipProject(sm)
     assert {t.name for t in project.list_tables()} == {"Sales", "Date"}
+
+
+def test_relationship_is_active_false_is_respected(tmp_path):
+    from core.tmdl import parse_relationships_file
+    f = tmp_path / "relationships.tmdl"
+    f.write_text(
+        "relationship a\n\tfromColumn: S.X\n\ttoColumn: D.X\n\tisActive: false\n\n"
+        "relationship b\n\tfromColumn: S.Y\n\ttoColumn: D.Y\n\tisActive\n\n"
+        "relationship c\n\tfromColumn: S.Z\n\ttoColumn: D.Z\n\tisActive: true\n\n"
+        "relationship d\n\tfromColumn: S.W\n\ttoColumn: D.W\n", encoding="utf-8")
+    assert [r.is_active for r in parse_relationships_file(f)] == [False, True, True, True]

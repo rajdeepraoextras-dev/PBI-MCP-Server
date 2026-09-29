@@ -130,3 +130,86 @@ def test_project_root_for_all_input_forms(project):
         state = ModelState()
         set_project(state, str(p))
         assert journal.project_root(state.project) == project
+
+
+# --- regressions found while documenting the foundation ----------------------
+
+def test_rollback_survives_history_cap(project, monkeypatch):
+    """The transaction mark is an entry id, not a count, and pruning is
+    suspended while a transaction is open."""
+    monkeypatch.setattr(journal, "MAX_ENTRIES", 3)
+    state = _model_state(project)
+    j = journal.for_state(state)
+    before = snapshot(project)
+    j.begin()
+    for i in range(5):
+        j.record(f"t{i}", lambda i=i: create_measure(state, "Sales", f"Tx {i}", "1"))
+    out = j.rollback()
+    assert len(out["undone"]) == 5
+    assert snapshot(project) == before
+    # pruning resumes after the transaction closes
+    for i in range(5):
+        j.record(f"u{i}", lambda i=i: create_measure(state, "Sales", f"After {i}", "1"))
+    assert len(j.history(50)) == 3
+
+
+def test_commit_after_history_cap_reports_all_kept_writes(project, monkeypatch):
+    monkeypatch.setattr(journal, "MAX_ENTRIES", 2)
+    state = _model_state(project)
+    j = journal.for_state(state)
+    j.begin()
+    for i in range(4):
+        j.record(f"t{i}", lambda i=i: create_measure(state, "Sales", f"Keep {i}", "1"))
+    assert j.commit() == {"ok": True, "writes_kept": 4}
+    assert len(j.history(50)) == 2
+
+
+def test_undo_removes_backups_and_dirs_left_by_the_operation(project):
+    state = ReportState()
+    set_report_project(state, str(project / "Synthetic.pbip"))
+    j = journal.for_state(state)
+    before = snapshot(project)
+    baks_before = journal.backup_files(project)
+
+    def op():
+        create_page(state, "Phantom")
+        # a second write to the new page makes the project take a safety copy
+        pages = project / "Synthetic.Report" / "definition" / "pages"
+        newest = next(p for p in pages.iterdir()
+                      if p.is_dir() and not (SYNTH / "Synthetic.Report" / "definition" / "pages" / p.name).exists())
+        page_json = newest / "page.json"
+        state.project._backed_up.discard(page_json)
+        state.project._write_text(page_json, page_json.read_text(encoding="utf-8"))
+        return newest.name
+
+    name = j.record("pbi_create_page", op)
+    assert any(name in b for b in journal.backup_files(project) - baks_before)
+    j.undo()
+    assert snapshot(project) == before
+    assert journal.backup_files(project) == baks_before
+    assert not (project / "Synthetic.Report" / "definition" / "pages" / name).exists()
+
+
+def test_trash_is_journaled_so_delete_and_restore_undo_cleanly(project):
+    from report_server.server import STATE, mcp  # noqa: F401 (server import ok in tests)
+    state = ReportState()
+    set_report_project(state, str(project / "Synthetic.pbip"))
+    j = journal.for_state(state)
+    proj = state.project
+    page = next(p for p in proj.list_pages() if p.visual_count)
+    vid = proj.list_visuals(page.id)[0].id
+    before = snapshot(project)
+
+    j.record("pbi_delete_visual", lambda: proj.delete_visual(page.id, vid))
+    trashed = [k for k in snapshot(project) if ".pbi/mcp-trash" in k]
+    assert trashed, "trash contents must be part of the snapshot"
+    j.undo()
+    assert snapshot(project) == before                     # visual back, trash entry gone
+
+    j.record("pbi_delete_visual", lambda: proj.delete_visual(page.id, vid))
+    after_delete = snapshot(project)
+    trash_path = proj.list_trash()[0]["path"]
+    j.record("pbi_restore_visual", lambda: proj.restore_visual(trash_path))
+    assert snapshot(project) != after_delete
+    j.undo()
+    assert snapshot(project) == after_delete               # trash entry is back, not lost

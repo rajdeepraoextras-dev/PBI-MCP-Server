@@ -117,3 +117,15 @@ def test_write_tool_end_to_end_dry_run_then_write_then_undo(tmp_path):
     assert undone["undone"][0]["tool"] == "pbi_create_measure"
     assert snapshot(proj) == before
     assert call("pbi_undo_history") == []
+
+
+def test_restore_tools_have_no_dry_run_and_generate_theme_is_a_write():
+    import model_server.server as m
+    import report_server.server as r
+    rt, mt = _tools(r), _tools(m)
+    for tools, name in ((rt, "pbi_restore_visual"), (mt, "pbi_restore_backup")):
+        assert "dry_run" not in _schema(tools[name]).get("properties", {}), name
+        assert _ann(tools[name], "readOnlyHint") is False
+    theme = rt["pbi_generate_theme"]
+    assert _ann(theme, "readOnlyHint") is False
+    assert "dry_run" in _schema(theme)["properties"]

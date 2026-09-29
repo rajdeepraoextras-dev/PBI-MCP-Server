@@ -68,6 +68,7 @@ nav:
   - Tool reference:
       - Model server: tools/model.md
       - Report server: tools/report.md
+      - Service server (optional): tools/service.md
   - Cookbook: cookbook.md
   - Safety model: safety.md
   - Cloud publishing: cloud.md

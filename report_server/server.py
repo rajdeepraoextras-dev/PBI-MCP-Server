@@ -336,7 +336,7 @@ def pbi_list_trash() -> list:
     return STATE.require().list_trash()
 
 
-@tool(write=True)
+@tool(write=True, preview=False)
 def pbi_restore_visual(trash_path: str) -> dict:
     """Restore a deleted visual (path from pbi_list_trash) back onto its page."""
     return STATE.require().restore_visual(trash_path)
@@ -624,11 +624,12 @@ def pbi_set_report_theme(theme: dict) -> dict:
     return STATE.require().set_report_theme(theme)
 
 
-@tool(read=True, idempotent=True)
+@tool(write=True, idempotent=True)
 def pbi_generate_theme(brand: str = "#1F3A5F", name: str = "MCP Brand Theme",
                        mode: str = "light", install: bool = True) -> dict:
     """Generate a coherent Power BI theme from a brand color (palette + text
-    classes + visual styles, light|dark). install=True applies it now."""
+    classes + visual styles, light|dark). install=True (the default) applies
+    it to the report now; install=False only returns the theme JSON."""
     from core.theme import generate_theme
 
     theme = generate_theme(brand, name, mode)

@@ -73,6 +73,15 @@ AREAS: dict[str, list[tuple[str, list[str]]]] = {
         ("Filters", [r".*filter.*"]),
         ("Navigation and bookmarks", ["add_nav_button", r".*bookmark.*"]),
     ],
+    "service": [
+        ("Session and sign-in", ["service_status", "service_login", "set_project"]),
+        ("Workspaces and items", ["list_workspaces", "list_items",
+                                  "get_item_definition"]),
+        ("Publish", ["publish_project"]),
+        ("Refresh", [r".*refresh.*"]),
+        ("Deployment pipelines", [r".*pipeline.*"]),
+        ("Export", ["export_report"]),
+    ],
 }
 OTHER_AREA = "Other tools"
 
@@ -101,6 +110,17 @@ SERVERS = (
             "against the official Fabric schemas before it reaches disk. "
             "Call `pbi_set_project(path)` first, then `pbi_capabilities()` "
             "to learn the visual types, buckets and filters."),
+    },
+    {
+        "stem": "service",
+        "module": "service_server.server",
+        "server": "pbi-service",
+        "title": "Service server tools (optional)",
+        "intro": (
+            "The optional `pbi-service` server talks to the Power BI and "
+            "Fabric REST APIs: publish a local project, refresh, deploy and "
+            "export. The local servers never import it. Cloud actions "
+            "cannot be previewed with `dry_run` and are not journaled."),
     },
 )
 
