@@ -1,0 +1,56 @@
+name: Feature request
+description: Suggest a new tool, a Power BI capability, or a packaging/documentation improvement
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea. The most useful requests describe the Power BI task you are
+        trying to get done, not just the tool you imagine. Ground rule of this project:
+        anything that writes must be safe to preview (`dry_run`) and undo (`pbi_undo`).
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Semantic model (TMDL)
+        - Report (PBIR)
+        - Power BI Service / Fabric
+        - Safety, undo and validation
+        - Packaging, install or CI
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The task, and what is slow, impossible or error-prone today.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to see?
+      description: Sketch the tool call or behaviour. Pointers to Desktop UI steps, TMDL/PBIR snippets or a real Desktop export of the result help a lot.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you tried
+      description: Existing tools, `pbi_add_visual_raw`, editing files by hand, other MCP servers.
+
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contributing
+      options:
+        - label: I would be willing to open a pull request for this.
+        - label: I have read CONTRIBUTING.md.

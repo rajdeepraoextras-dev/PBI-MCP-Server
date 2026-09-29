@@ -1,5 +1,13 @@
 # pbi-mcp
 
+[![CI](https://github.com/rajdeepraoextras-dev/PBI-MCP-Server/actions/workflows/ci.yml/badge.svg)](https://github.com/rajdeepraoextras-dev/PBI-MCP-Server/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/rajdeepraoextras-dev/PBI-MCP-Server)](https://github.com/rajdeepraoextras-dev/PBI-MCP-Server/releases/latest)
+[![PyPI](https://img.shields.io/pypi/v/pbi-mcp)](https://pypi.org/project/pbi-mcp/)
+[![Python](https://img.shields.io/pypi/pyversions/pbi-mcp)](https://pypi.org/project/pbi-mcp/)
+[![License: MIT](https://img.shields.io/github/license/rajdeepraoextras-dev/PBI-MCP-Server)](https://github.com/rajdeepraoextras-dev/PBI-MCP-Server/blob/main/LICENSE)
+
+<!-- mcp-name: io.github.rajdeepraoextras-dev/pbi-mcp -->
+
 **MCP servers for local-file Power BI Project (`.pbip`) automation** — model
 (TMDL) and report (PBIR) layers. No Power BI API, no auth, no cloud: the
 tools read and write the on-disk project files Power BI Desktop itself uses.
@@ -37,35 +45,109 @@ refuses to open. Every mutation therefore goes through:
 - **recoverable visual deletes** — removed visuals move to
   `Report/.pbi/mcp-trash/`, which Desktop ignores
 
-## Download the plugin
+## Install
 
-For the easiest install, grab a bundle from the
+Pick one option. Whichever you choose, your MCP host launches the two servers
+(`model` for the semantic model, `report` for the report layer), and every
+session starts with `pbi_set_project(path)`.
+
+### A. From PyPI: `uvx` or `pip` (recommended)
+
+Needs Python 3.11+, or [uv](https://docs.astral.sh/uv/), which fetches Python
+for you.
+
+```bash
+uvx pbi-mcp report                 # run once, nothing to install
+pip install pbi-mcp                # or install; gives you the `pbi-mcp` command
+pbi-mcp model                      # model | report | service, stdio by default
+pbi-mcp report --transport streamable-http --port 8000   # HTTP on 127.0.0.1
+```
+
+`--project PATH` (or the `PBI_MCP_PROJECT` environment variable) preselects a
+`.pbip` at startup. The HTTP transports have no authentication, so keep the
+default `--host 127.0.0.1`.
+
+**Claude Desktop**: Settings > Developer > Edit Config, add the following to
+`claude_desktop_config.json`, then restart.
+
+```json
+{
+  "mcpServers": {
+    "pbi-model":  { "command": "uvx", "args": ["pbi-mcp", "model"] },
+    "pbi-report": { "command": "uvx", "args": ["pbi-mcp", "report"] }
+  }
+}
+```
+
+**Claude Code**:
+
+```bash
+claude mcp add pbi-model -- uvx pbi-mcp model
+claude mcp add pbi-report -- uvx pbi-mcp report
+```
+
+Add `--scope project` to write a shared `.mcp.json` in your repository instead;
+its content is the same `mcpServers` JSON as above.
+
+**Cursor**: put the same `mcpServers` JSON in `~/.cursor/mcp.json` (all
+projects) or `.cursor/mcp.json` (one project).
+
+**VS Code**: `.vscode/mcp.json` uses a `servers` key and an explicit `type`:
+
+```json
+{
+  "servers": {
+    "pbi-model":  { "type": "stdio", "command": "uvx", "args": ["pbi-mcp", "model"] },
+    "pbi-report": { "type": "stdio", "command": "uvx", "args": ["pbi-mcp", "report"] }
+  }
+}
+```
+
+Installed with `pip` instead of `uvx`? Use `"command": "pbi-mcp"` with
+`"args": ["report"]` (or `["model"]`) in any of the snippets above.
+
+### B. Standalone `.plugin` bundle (no Python needed)
+
+Download from the
 [latest GitHub Release](https://github.com/rajdeepraoextras-dev/PBI-MCP-Server/releases/latest):
 
-- `pbi-mcp-standalone-win32-amd64.plugin` - self-contained Windows build; no
-  local Python setup required.
-- `pbi-mcp.plugin` - source plugin bundle; requires Python 3.11+ plus `mcp`
+- `pbi-mcp-standalone-win32-amd64.plugin`,
+  `pbi-mcp-standalone-darwin-arm64.plugin` or
+  `pbi-mcp-standalone-linux-x86_64.plugin`: a self-contained build for that
+  platform (Python runtime, dependencies and schemas inside); no local setup.
+- `pbi-mcp.plugin`: the source plugin bundle; requires Python 3.11+ plus `mcp`
   (1.x or 2.x), `pydantic` and `jsonschema` on the host.
 
-The standalone build is ~20 MB and is published only as a release asset (it
-is not tracked in git); rebuild it locally with `scripts/build_standalone.py`.
+Drag the `.plugin` file into a plugin-aware MCP host. The standalone builds are
+~20 MB, published only as release assets (not tracked in git), and listed with
+checksums in `SHA256SUMS.txt`; rebuild one locally with
+`scripts/build_standalone.py`.
 
-Drag the `.plugin` file into a plugin-aware MCP host, then call
-`pbi_set_project(path)` first in both `pbi-model` and `pbi-report` sessions.
+### C. `.mcpb` for Claude Desktop
 
-## Quickstart
+Each release also carries one MCP Bundle per server, `pbi-mcp-model.mcpb` and
+`pbi-mcp-report.mcpb`. Open one in Claude Desktop (double-click, or Settings >
+Extensions) and optionally choose a default project folder. These bundles use
+the machine's Python, so it needs Python 3.11+ with
+`pip install "mcp<3" pydantic jsonschema`; options A and B avoid that.
+
+### D. From source
 
 ```bash
 git clone https://github.com/rajdeepraoextras-dev/PBI-MCP-Server.git && cd PBI-MCP-Server
 python -m venv .venv
-.venv\Scripts\pip install -e ".[dev]"
-.venv\Scripts\python -m pytest          # green suite = good to go
+.venv\Scripts\pip install -e ".[dev]"     # macOS/Linux: .venv/bin/pip
+.venv\Scripts\python -m pytest            # green suite = good to go
+.venv\Scripts\python -m core.cli report   # or: python -m report_server.server
 ```
 
-Register in Claude Desktop: run `scripts/package.py`, then merge
-`dist/claude_desktop_config.snippet.json` into your
-`claude_desktop_config.json` and restart. Or drag-drop `dist/pbi-mcp.plugin`
-into a plugin-aware host. Details: `INSTALL.md` inside the bundle.
+Build the distributables yourself with `python scripts/package.py` (writes
+`dist/pbi-mcp.plugin`, `dist/*.mcpb` and `dist/claude_desktop_config.snippet.json`,
+whose paths point at your checkout). See
+[CONTRIBUTING.md](https://github.com/rajdeepraoextras-dev/PBI-MCP-Server/blob/main/CONTRIBUTING.md)
+to contribute and
+[CHANGELOG.md](https://github.com/rajdeepraoextras-dev/PBI-MCP-Server/blob/main/CHANGELOG.md)
+for what changed.
 
 **Every session starts with `pbi_set_project(path)`** — point it at a `.pbip`
 saved with Desktop's PBIP preview format (enable *Power BI Project (.pbip)
