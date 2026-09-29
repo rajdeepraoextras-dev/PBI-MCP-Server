@@ -19,6 +19,9 @@ dev = [
 build = [
     "pyinstaller>=6.0",
 ]
+render = [
+    "Pillow>=10",
+]
 
 [project.scripts]
 pbi-model-server = "model_server.server:main"
