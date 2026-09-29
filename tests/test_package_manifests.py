@@ -322,6 +322,14 @@ def test_pyproject_entry_points_and_urls():
         assert callable(getattr(importlib.import_module(mod), func))
 
 
+def test_pyproject_and_bundles_ship_the_bpa_rule_catalog():
+    """resources/bpa_rules.json is data, not code: every channel must carry it."""
+    assert "*.json" in PYPROJECT["tool"]["setuptools"]["package-data"]["resources"]
+    assert (REPO / "resources" / "bpa_rules.json").is_file()
+    assert "resources/bpa_rules.json" in (REPO / "scripts" / "package.py").read_text(encoding="utf-8")
+    assert "resources/bpa_rules.json" in (REPO / "scripts" / "build_standalone.py").read_text(encoding="utf-8")
+
+
 def test_pyproject_ships_the_vendored_schemas():
     """A wheel once shipped without resources/schemas; keep the tripwire."""
     find = PYPROJECT["tool"]["setuptools"]["packages"]["find"]

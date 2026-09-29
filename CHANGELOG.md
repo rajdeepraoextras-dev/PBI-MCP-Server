@@ -9,13 +9,16 @@ Release notes for each GitHub Release are taken from the matching section below
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-09-29
+
 ### Added
 
 - **Tool annotations.** Every tool declares the MCP `readOnlyHint`,
   `destructiveHint` and `idempotentHint` annotations, so hosts can auto-approve
   reads and gate deletes.
-- **`dry_run` on every write.** Write tools run against a scratch copy of the
-  project and return a unified diff; nothing is written to disk.
+- **`dry_run` on write tools.** Write tools run against a scratch copy of the
+  project and return a unified diff; nothing is written to disk. (Restore,
+  cloud and render tools have no preview.)
 - **Undo journal and transactions.** Real writes are journaled under
   `<project>/.pbi-mcp/undo/` (outside the `*.Report` / `*.SemanticModel`
   folders). New tools: `pbi_undo`, `pbi_undo_history`,
@@ -45,18 +48,57 @@ Release notes for each GitHub Release are taken from the matching section below
   `.mcpb` manifests.
 - Project docs and templates: `CONTRIBUTING.md`, `SECURITY.md`, issue forms,
   pull request template.
-- In progress (parallel work packages; each entry is expanded as it merges):
-  - Live engine
-  - Tables, partitions and refresh policy
-  - Column lifecycle, hierarchies and KPIs
-  - RLS, OLS, perspectives, translations, field parameters and what-if
-    parameters
-  - Conditional formatting, analytics lines, slicer sync and visual calculations
-  - Report-level measures, mobile layout and accessibility
-  - Page rendering, theme from image and Deneb
-  - Semantic diff, page import and merge driver
-  - `pbi-service` cloud server
-  - Docs site, `doctor`, MCP resources and prompts
+- **Live engine (optional, Windows).** Connect to the Analysis Services engine
+  of a running Power BI Desktop, or to a remote XMLA endpoint:
+  `pbi_engine_status`, `pbi_evaluate_dax`, `pbi_validate_dax` (the engine
+  compiles a measure before it is written), `pbi_table_row_counts`,
+  `pbi_column_stats`, `pbi_preview_table`, `pbi_engine_connect`.
+  `scripts/desktop_launch.py` opens and closes Desktop on a fixture project.
+- **Cascading rename** of measures, columns and tables across TMDL and PBIR:
+  `pbi_rename_measure`, `pbi_rename_column`, `pbi_rename_table`,
+  `pbi_find_references`. One `pbi_undo` reverts the whole cascade.
+- **Tables, partitions and refresh policy:** `pbi_create_table`,
+  `pbi_create_calculated_table`, `pbi_list_partitions`, `pbi_update_partition`,
+  `pbi_delete_table`, shared expressions and parameters
+  (`pbi_create_expression`, `pbi_list_expressions`, `pbi_update_expression`),
+  incremental refresh (`pbi_set_refresh_policy`, `pbi_remove_refresh_policy`).
+- **Column, hierarchy and KPI lifecycle:** `pbi_list_columns`,
+  `pbi_update_column`, `pbi_update_table`, `pbi_delete_column`,
+  `pbi_set_measure_properties` (descriptions, hidden, KPI), `pbi_remove_kpi`,
+  `pbi_create_hierarchy`, `pbi_list_hierarchies`, `pbi_delete_hierarchy`.
+- **Security and metadata:** row-level security roles, object-level security,
+  perspectives, translations and cultures, field parameters and what-if
+  parameters (`pbi_create_role`, `pbi_set_column_permission`,
+  `pbi_create_perspective`, `pbi_add_culture`, `pbi_set_translation`,
+  `pbi_create_field_parameter`, `pbi_create_whatif_parameter` and their
+  list/update/delete siblings).
+- **Best Practice Analyzer and DAX formatter:** `pbi_bpa`, `pbi_bpa_fix`,
+  `pbi_bpa_rules` (ported Tabular Editor rules with safe fixers and custom rules
+  from `.pbi-mcp/bpa_rules.json`), `pbi_format_dax`, `pbi_format_measures`,
+  `pbi_dax_references`.
+- **Advanced visual formatting:** conditional formatting (gradient, rules,
+  field value, data bars, icons, web URL), analytics lines, tooltip pages,
+  slicer styles and sync groups, data labels, visual calculations.
+- **Report-level measures, mobile layout and accessibility:**
+  `pbi_create_report_measure` and siblings (`reportExtensions.json`),
+  `pbi_set_mobile_layout` / `pbi_get_mobile_layout`, alt text, tab order and
+  `pbi_accessibility_report`; `pbi_lint_page` now also returns `a11y_*`
+  findings and an `accessibility_ok` flag.
+- **Page rendering, theme from image and Deneb:** `pbi_render_page`,
+  `pbi_render_report` (SVG or PNG), `pbi_theme_from_image`, and twelve Deneb
+  (Vega-Lite) templates via `pbi_add_deneb_visual`, `pbi_set_deneb_spec`,
+  `pbi_list_deneb_templates`. Optional extra: `pip install "pbi-mcp[render]"`.
+- **Semantic diff, page import and a git merge driver:** `pbi_semantic_diff`,
+  `pbi_import_pages`, `pbi_import_visuals`, and `scripts/pbir_merge.py` for
+  structural three-way merges of PBIR JSON.
+- **`pbi-service` (optional third server):** publish a local project to a
+  Fabric workspace, refresh datasets, deploy pipeline stages and export reports
+  over the Fabric and Power BI REST APIs. Token, service-principal or
+  device-code sign-in; the local servers never import it. Optional extra:
+  `pip install "pbi-mcp[cloud]"`. Not exercised against the live service.
+- **Docs site, `pbi_doctor`, MCP resources and prompts:** a mkdocs-material
+  site with a generated tool reference, a project health check in both
+  servers, `pbip://` resources and five guided prompts.
 
 ### Changed
 
@@ -70,6 +112,15 @@ Release notes for each GitHub Release are taken from the matching section below
 
 ### Fixed
 
+- `pbi_restore_visual` and `pbi_restore_backup` no longer accept `dry_run`: a
+  scratch-copy preview acted on the real trash and backups.
+- `pbi_generate_theme` installed a theme by default while marked read-only; it
+  is now a write tool with `dry_run` and undo.
+- `pbi_rollback` and `pbi_commit` now work past the history cap, `pbi_undo`
+  removes the safety copies and empty folders the undone write created, and
+  deleted or restored visuals are fully undoable. Cleanup copes with the
+  read-only folder attribute OneDrive sets on Windows.
+- `relationships.tmdl` `isActive: false` was read as active.
 - Built wheels and sdists now include the vendored Fabric schemas
   (`resources/schemas`). Previously an installed wheel had none, so pre-flight
   schema validation could not run outside a source checkout.

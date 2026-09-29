@@ -18,7 +18,7 @@ body:
     attributes:
       label: pbi-mcp version
       description: Output of `pbi-mcp --version`, the release tag, or the commit you built from.
-      placeholder: "2.0.1"
+      placeholder: "2.1.0"
     validations:
       required: true
 

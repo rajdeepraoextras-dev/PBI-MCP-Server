@@ -32,7 +32,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 DIST = REPO / "dist"
 
-VERSION = "2.0.1"
+VERSION = "2.1.0"
 REPO_URL = "https://github.com/rajdeepraoextras-dev/PBI-MCP-Server"
 AUTHOR = {"name": "Rajdeep Rao",
           "url": "https://www.linkedin.com/in/rajdeep-rao-14bab1320/"}
@@ -132,6 +132,8 @@ def _add_common(zf: zipfile.ZipFile, servers: list[str]) -> None:
     # vendored Fabric schemas (needed for offline pre-flight validation)
     for f in sorted((REPO / "resources" / "schemas").glob("*.json")):
         zf.write(f, f.relative_to(REPO).as_posix())
+    # Best Practice Analyzer rule catalog
+    zf.write(REPO / "resources" / "bpa_rules.json", "resources/bpa_rules.json")
 
 
 def build_plugin(dist: Path, servers: list[str]) -> Path:

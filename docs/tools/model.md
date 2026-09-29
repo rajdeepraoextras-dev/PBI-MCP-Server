@@ -4,7 +4,7 @@
 
 The `pbi-model` server reads and edits the **semantic model** (TMDL) of a Power BI Project: measures, columns, relationships, calculation groups and DAX lineage. Edits are surgical text changes, so partitions, annotations and M source survive byte for byte. Call `pbi_set_project(path)` first.
 
-**67 tools** (24 read-only, 43 write).
+**73 tools** (28 read-only, 45 write).
 
 ## How to read this page
 
@@ -125,6 +125,26 @@ unless force=true. dry_run=true previews without writing.
 | `table` | string | yes |  |
 | `name` | string | yes |  |
 | `force` | boolean | no | `false` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_format_measures`
+
+**Write** · idempotent
+
+Reformat measure DAX in place (all measures, one table, or one
+measure) and report which measures changed. Only the expression lines
+are rewritten; format strings, folders, lineage tags and annotations are
+untouched, and already-formatted measures are skipped, so re-running is
+a no-op. Measures the formatter cannot handle safely are listed under
+`skipped` and left as they were.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `table` | string | no | `null` |
+| `measure` | string | no | `null` |
+| `style` | string | no | `"long"` |
 | `dry_run` | boolean | no | `false` |
 
 ### `pbi_rename_measure`
@@ -459,6 +479,68 @@ Set dry_run=true to preview: the operation runs against a scratch copy and the r
 | `code` | string | yes |  |
 | `dry_run` | boolean | no | `false` |
 
+### `pbi_bpa`
+
+**Read-only**
+
+Best Practice Analyzer: check the semantic model against ~60 rules
+ported from Tabular Editor / Microsoft's standard BPA (performance, DAX,
+error prevention, maintenance, naming, formatting) and any custom rules
+in &lt;project>/.pbi-mcp/bpa_rules.json. Read-only.
+
+Each finding has rule_id, category, severity (3 = most severe), the
+object it is about (object_type, table, name), a fix-oriented message and
+`fixable` (`pbi_bpa_fix` can repair it). The response also carries a
+summary per category / severity / rule and `fixable_count`.
+
+Filters: `categories` (Performance, DAX Expressions, Error Prevention,
+Maintenance, Naming Conventions, Formatting), `severity_min` (1-3),
+`table`, `rules` / `exclude_rules` (rule IDs or aliases; see
+`pbi_bpa_rules`). Usage-based rules (unused columns / measures) need a
+report layer. At most `max_findings` findings are returned; the summary
+always counts everything.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `categories` | array of string | no | `null` |
+| `severity_min` | integer | no | `1` |
+| `table` | string | no | `null` |
+| `rules` | array of string | no | `null` |
+| `exclude_rules` | array of string | no | `null` |
+| `max_findings` | integer | no | `500` |
+
+### `pbi_bpa_fix`
+
+**Write** · idempotent
+
+Apply the Best Practice Analyzer's safe automatic fixes and report
+what changed. Each fix inserts a single property line into the table's
+TMDL file and nothing else: a default format string on numeric measures
+that lack one (#,0 whole numbers, or 0.0% for percent-like names; set
+a decimal format afterwards where you need one), isHidden on
+foreign-key columns, and dataCategory on columns named Latitude,
+Longitude, WebUrl or ImageUrl. Re-running is a no-op. `rules` limits the
+fixes to those rule IDs; `table` to one table.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `rules` | array of string | no | `null` |
+| `table` | string | no | `null` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_bpa_rules`
+
+**Read-only**
+
+List every Best Practice Analyzer rule: id, aliases, category,
+severity, description, scopes, whether `pbi_bpa_fix` can repair it and
+whether it needs a report layer. Includes the project's custom rules
+when a project is selected.
+
+_No parameters._
+
 ### `pbi_create_calculated_table`
 
 **Write**
@@ -641,6 +723,22 @@ Set dry_run=true to preview: the operation runs against a scratch copy and the r
 | `description` | string | no | `null` |
 | `dry_run` | boolean | no | `false` |
 
+### `pbi_dax_references`
+
+**Read-only**
+
+Parse a DAX expression and list what it references: measures,
+qualified columns (Table[Col]), tables, functions, VAR variables and bare
+[Name] references that are not measures ('unqualified', likely columns
+read in row context). With a project selected, bare references are
+resolved against the model's measure names and columns are marked
+column / measure / unknown. Comments and strings are never references.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `dax` | string | yes |  |
+| `resolve_against_model` | boolean | no | `true` |
+
 ### `pbi_delete_culture`
 
 **Write** · destructive
@@ -782,6 +880,29 @@ rename or delete to see the blast radius.
 | `kind` | string | yes |  |
 | `name` | string | yes |  |
 | `table` | string | no | `null` |
+
+### `pbi_format_dax`
+
+**Read-only**
+
+Format DAX (read-only). Pass `dax` to format text, or `measure`
+(optionally with `table`) to preview how a model measure would be
+formatted; `table` alone previews every measure of that table.
+
+Long style (DAX Formatter-like): keywords and function names upper-cased,
+one argument per line when a call is long or contains nested calls,
+VAR / RETURN on their own lines with the body indented, spaced
+operators, commas at line ends, comments kept in place. Short style: one
+line when the whole expression fits in 100 characters, else long.
+Table, column and measure names, strings and comments are never changed;
+formatting is idempotent.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `dax` | string | no | `null` |
+| `table` | string | no | `null` |
+| `measure` | string | no | `null` |
+| `style` | string | no | `"long"` |
 
 ### `pbi_list_expressions`
 

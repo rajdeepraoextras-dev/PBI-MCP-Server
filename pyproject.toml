@@ -1,6 +1,6 @@
 [project]
 name = "pbi-mcp"
-version = "2.0.1"
+version = "2.1.0"
 description = "MCP server for local-file Power BI Project (.pbip) automation — model (TMDL) + report (PBIR) layers."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -84,6 +84,7 @@ namespaces = true
 
 [tool.setuptools.package-data]
 "resources.schemas" = ["*.json"]
+resources = ["*.json"]   # bpa_rules.json (Best Practice Analyzer catalog)
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

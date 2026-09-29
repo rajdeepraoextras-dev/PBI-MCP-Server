@@ -24,7 +24,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 DIST = REPO / "dist"
-VERSION = "2.0.1"
+VERSION = "2.1.0"
 
 EXE_NAME = "pbi-mcp.exe" if sys.platform == "win32" else "pbi-mcp"
 
@@ -41,6 +41,7 @@ def freeze() -> Path:
         sys.executable, "-m", "PyInstaller", "--noconfirm",
         "--onefile", "--name", "pbi-mcp", "--paths", str(REPO),
         "--add-data", f"resources/schemas{';' if sys.platform=='win32' else ':'}resources/schemas",
+        "--add-data", f"resources/bpa_rules.json{';' if sys.platform=='win32' else ':'}resources",
         "--collect-submodules", "core",
     ]
     # Each server package is collected whole: core/tooling.py discovers its

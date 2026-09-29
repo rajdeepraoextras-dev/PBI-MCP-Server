@@ -9,11 +9,14 @@
 <!-- mcp-name: io.github.rajdeepraoextras-dev/pbi-mcp -->
 
 **MCP servers for local-file Power BI Project (`.pbip`) automation** — model
-(TMDL) and report (PBIR) layers. No Power BI API, no auth, no cloud: the
-tools read and write the on-disk project files Power BI Desktop itself uses.
+(TMDL) and report (PBIR) layers. The model and report servers use no Power BI
+API, no auth and no cloud: the tools read and write the on-disk project files
+Power BI Desktop itself uses. Two optional extras go further: a live engine
+connection to a running Desktop, and a `pbi-service` server for the Fabric
+REST APIs.
 
 Build a correctly-bound, themed, filtered, multi-page report — or bulk-author
-hundreds of measures — from a prompt, in minutes. **148 tools** (67 model +
+hundreds of measures — from a prompt, in minutes. **154 tools** (73 model +
 81 report) across two MCP servers; every report write is pre-flight validated
 against the official Fabric schemas.
 
@@ -22,10 +25,13 @@ the model and builds a themed, navigable, multi-page designed report in one
 call (use `dry_run=true` to review the proposal first). Or compose it yourself
 with `pbi_build_designed_page`, the design elements, and the theme generator.
 
-> **Scope honesty.** This builds **structure, speed, consistency**. It does
-> **not** do custom Deneb/Vega visuals, AppSource visual sourcing, or replace
-> design taste. It's a fast report *builder*, not an autonomous report
-> *designer*.
+> **Scope honesty.** This builds **structure, speed, consistency**. It ships
+> Deneb (Vega-Lite) templates, but it does **not** source AppSource visuals or
+> replace design taste. It's a fast report *builder*, not an autonomous report
+> *designer*. Shapes the vendored schemas leave open (conditional-format icons,
+> analytics lines, field parameters, KPIs) follow Desktop exports and the docs
+> but have not all been reopened in Desktop; the reopen check stays a manual
+> gate, and each such tool says what is unconfirmed.
 
 ## Safety model (the part that matters)
 
@@ -44,6 +50,14 @@ refuses to open. Every mutation therefore goes through:
   `force=true` overrides, `dry_run=true` previews
 - **recoverable visual deletes** — removed visuals move to
   `Report/.pbi/mcp-trash/`, which Desktop ignores
+- **`dry_run=true` on write tools** — the call runs against a scratch copy and
+  returns a unified diff; nothing is written
+- **undo journal and transactions** — real writes keep byte-exact pre-images
+  under `<project>/.pbi-mcp/undo/`; `pbi_undo` reverts them, and
+  `pbi_begin_transaction` / `pbi_commit` / `pbi_rollback` group several writes
+  (restore, cloud and render tools have no preview)
+- **tool annotations** — every tool declares read-only / destructive /
+  idempotent hints, so hosts can auto-approve reads and gate deletes
 
 ## Install
 
@@ -211,6 +225,29 @@ save option* + *PBIR enhanced metadata* in Options → Preview features).
 | `pbi_validate_project() / pbi_lint_page(id)` | Schema validation + design lint |
 | `pbi_project_diff(other) / pbi_project_summary()` | Diff vs another project/backup; overview |
 
+### More tool families (v2.1)
+
+The full, generated reference for every tool is in `docs/tools/`
+(`model.md`, `report.md`, `service.md`).
+
+| Family | Tools |
+|--------|-------|
+| Safety net | `pbi_undo`, `pbi_undo_history`, `pbi_begin_transaction`, `pbi_commit`, `pbi_rollback`, `pbi_doctor` |
+| Cascading rename | `pbi_rename_measure`, `pbi_rename_column`, `pbi_rename_table`, `pbi_find_references` |
+| Tables and queries | `pbi_create_table`, `pbi_create_calculated_table`, `pbi_list_partitions`, `pbi_update_partition`, `pbi_delete_table`, `pbi_create_expression`, `pbi_list_expressions`, `pbi_update_expression`, `pbi_set_refresh_policy`, `pbi_remove_refresh_policy` |
+| Columns, hierarchies, KPIs | `pbi_list_columns`, `pbi_update_column`, `pbi_update_table`, `pbi_delete_column`, `pbi_set_measure_properties`, `pbi_remove_kpi`, `pbi_create_hierarchy`, `pbi_list_hierarchies`, `pbi_delete_hierarchy` |
+| Security and metadata | roles and OLS (`pbi_create_role`, `pbi_update_role`, `pbi_list_roles`, `pbi_delete_role`, `pbi_set_column_permission`, `pbi_set_table_permission_metadata`), perspectives (`pbi_create_perspective`, `pbi_update_perspective`, `pbi_list_perspectives`, `pbi_delete_perspective`), translations (`pbi_add_culture`, `pbi_set_translation`, `pbi_list_translations`, `pbi_delete_culture`), parameters (`pbi_create_field_parameter`, `pbi_list_field_parameters`, `pbi_create_whatif_parameter`, `pbi_list_whatif_parameters`) |
+| Quality | `pbi_bpa`, `pbi_bpa_fix`, `pbi_bpa_rules`, `pbi_format_dax`, `pbi_format_measures`, `pbi_dax_references` |
+| Live engine | `pbi_engine_status`, `pbi_evaluate_dax`, `pbi_validate_dax`, `pbi_table_row_counts`, `pbi_column_stats`, `pbi_preview_table`, `pbi_engine_connect` |
+| Visual formatting | `pbi_set_conditional_format`, `pbi_clear_conditional_format`, `pbi_add_analytics_line`, `pbi_list_analytics_lines`, `pbi_remove_analytics_line`, `pbi_set_tooltip_page`, `pbi_set_slicer`, `pbi_set_data_labels`, `pbi_add_visual_calculation`, `pbi_list_visual_calculations`, `pbi_remove_visual_calculation` |
+| Report measures, mobile, accessibility | `pbi_create_report_measure`, `pbi_list_report_measures`, `pbi_update_report_measure`, `pbi_delete_report_measure`, `pbi_set_mobile_layout`, `pbi_get_mobile_layout`, `pbi_set_alt_text`, `pbi_auto_alt_text`, `pbi_set_tab_order`, `pbi_auto_tab_order`, `pbi_accessibility_report` |
+| Rendering and Deneb | `pbi_render_page`, `pbi_render_report`, `pbi_theme_from_image`, `pbi_list_deneb_templates`, `pbi_add_deneb_visual`, `pbi_set_deneb_spec` |
+| Diff and import | `pbi_semantic_diff`, `pbi_import_pages`, `pbi_import_visuals`, and `scripts/pbir_merge.py` (git merge driver for PBIR JSON) |
+
+MCP resources (`pbip://model`, `pbip://pages`, ...) and prompts (`audit_model`,
+`bulk_measures`, `build_dashboard`, `theme_report`, `review_page`) are also
+registered.
+
 ### Binding format
 
 Bindings are `{bucket: ["Table.Field", ...]}`. Measures vs columns are
@@ -282,7 +319,7 @@ pbi-mcp/
   report_server/   # MCP server: pbi-report
   service_server/  # MCP server: pbi-service (optional, cloud)
   scripts/         # smoke test, M5 demo, packager
-  tests/           # 1169 tests; fixtures/ (synthetic + real, gitignored)
+  tests/           # 1700 tests; fixtures/ (synthetic + real, gitignored)
 ```
 
 ## Testing
