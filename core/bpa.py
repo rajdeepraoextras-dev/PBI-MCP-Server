@@ -540,6 +540,11 @@ class BpaModel:
             out.add((r.to_table.lower(), r.to_column.lower()))
         return out
 
+    def rel_is_auto_date(self, r: "MRel") -> bool:
+        """A relationship Desktop manages itself (to an auto date/time table)."""
+        return any((t := self.table(n)) is not None and t.is_auto_date
+                   for n in (r.from_table, r.to_table))
+
     def rel_tables(self) -> set[str]:
         out: set[str] = set()
         for r in self.relationships:
@@ -685,7 +690,7 @@ def _build_relationship(n: Node) -> MRel | None:
         is_active=active)
 
 
-_TABLE_HEADER = re.compile(r"^table[ 	]+(.+?)[ 	]*$", re.MULTILINE)
+_TABLE_HEADER = re.compile(r"^table[ \t]+(.+?)[ \t]*$", re.MULTILINE)
 
 
 def table_files(project) -> dict[str, Path]:
@@ -742,6 +747,11 @@ def load_model(project, with_usage: bool = True) -> BpaModel:
             if model.usage is None:
                 model.notes.append(
                     "No report layer found; usage-based rules were skipped.")
+            elif not model.usage["counts"]["direct"]:
+                model.usage = None       # a report that binds nothing says nothing
+                model.notes.append(
+                    "The report does not reference any model field yet, so 'unused' "
+                    "would be meaningless; usage-based rules were skipped.")
     return model
 
 
@@ -1185,8 +1195,9 @@ def _calc_col_related(c: _Ctx) -> None:
 
 @check("SNOWFLAKE_SCHEMA_ARCHITECTURE")
 def _snowflake(c: _Ctx) -> None:
-    many = {r.from_table.lower() for r in c.m.relationships}
-    one = {r.to_table.lower() for r in c.m.relationships}
+    rels = [r for r in c.m.relationships if not c.m.rel_is_auto_date(r)]
+    many = {r.from_table.lower() for r in rels}
+    one = {r.to_table.lower() for r in rels}
     for t in c.m.tables:
         if not t.is_calc_group and t.name.lower() in many and t.name.lower() in one:
             c.emit("table", t.name, t.name,
@@ -1204,13 +1215,25 @@ def _has_date_table(c: _Ctx) -> None:
                "time intelligence.")
 
 
+# Everyday words that contain "date" (Tabular Editor's plain substring test would
+# call a `Mandates` fact table a date table).
+_DATE_LOOKALIKES = ("update", "candidate", "mandate", "validate", "validation", "consolidate",
+                    "outdate", "predate", "backdate", "accommodate", "intimidate", "liquidate")
+
+
+def _looks_like_date_table_name(name: str) -> bool:
+    low = name.lower()
+    for w in _DATE_LOOKALIKES:
+        low = low.replace(w, "")
+    return "date" in low or "calendar" in low
+
+
 @check("DATE/CALENDAR_TABLES_SHOULD_BE_MARKED_AS_A_DATE_TABLE")
 def _mark_date_table(c: _Ctx) -> None:
     for t in c.m.tables:
         if t.is_auto_date or t.is_calc_group:
             continue
-        low = t.name.lower()
-        if ("date" in low or "calendar" in low) and not t.is_date_table:
+        if _looks_like_date_table_name(t.name) and not t.is_date_table:
             c.emit("table", t.name, t.name,
                    f"Table '{t.name}' looks like a date table but is not marked as one. "
                    "Set 'dataCategory: Time' on the table and 'isKey' on its date column.")
@@ -1323,7 +1346,7 @@ def _redundant_cols(c: _Ctx) -> None:
     seen: set[tuple[str, str]] = set()
     for r in c.m.relationships:
         src, dst = c.m.table(r.from_table), c.m.table(r.to_table)
-        if src is None or dst is None or src is dst:
+        if src is None or dst is None or src is dst or c.m.rel_is_auto_date(r):
             continue
         dst_names = {x.name.lower() for x in dst.columns}
         for col in src.columns:
@@ -1353,7 +1376,8 @@ def _ti_dq(c: _Ctx) -> None:
 
 @check("REDUCE_NUMBER_OF_CALCULATED_COLUMNS")
 def _many_calc_cols(c: _Ctx) -> None:
-    n = sum(1 for col in c.m.columns() if col.is_calculated)
+    n = sum(1 for col in c.m.columns()
+            if col.is_calculated and not col.table.is_auto_date)
     if n > 5:
         c.emit("model", None, "Model",
                f"The model has {n} calculated columns (limit 5). Calculated columns "
@@ -1417,7 +1441,7 @@ def _m2m_rls(c: _Ctx) -> None:
 def _single_attr(c: _Ctx) -> None:
     rel_cols = c.m.rel_columns()
     for t in c.m.tables:
-        if t.is_calc_group or not t.columns:
+        if t.is_calc_group or t.is_auto_date or not t.columns:
             continue
         loose = [x for x in t.columns
                  if x.visible and (t.name.lower(), x.name.lower()) not in rel_cols]
@@ -1749,7 +1773,7 @@ def _unused_columns(c: _Ctx) -> None:
     kept = _dax_referenced_columns(c.m)
     for col in c.m.columns():
         t = col.table
-        if t.is_calc_group or f"{t.name}.{col.name}" not in unused:
+        if t.is_calc_group or t.is_auto_date or f"{t.name}.{col.name}" not in unused:
             continue
         if (t.name.lower(), col.name.lower()) in kept:
             continue
@@ -1863,6 +1887,8 @@ def _rel_names(c: _Ctx) -> None:
         key = (r.from_table.lower(), r.to_table.lower())
         pairs[key] = pairs.get(key, 0) + 1
     for r in c.m.relationships:
+        if c.m.rel_is_auto_date(r):
+            continue
         n = pairs[(r.from_table.lower(), r.to_table.lower())]
         f, t = r.from_column.lower(), r.to_column.lower()
         if (n == 1 and f != t) or (n > 1 and not f.endswith(t)):
@@ -1933,6 +1959,8 @@ def _percent_format(c: _Ctx) -> None:
 def _rel_integer(c: _Ctx) -> None:
     seen: set[tuple[str, str]] = set()
     for r in c.m.relationships:
+        if c.m.rel_is_auto_date(r):
+            continue
         for tname, cname, other in ((r.from_table, r.from_column, r.to_table),
                                     (r.to_table, r.to_column, r.from_table)):
             col = c.m.column(tname, cname)
@@ -1979,7 +2007,7 @@ def _data_category(c: _Ctx) -> None:
 def _hide_fk(c: _Ctx) -> None:
     done: set[tuple[str, str]] = set()
     for r in c.m.relationships:
-        if r.from_card != "many":
+        if r.from_card != "many" or c.m.rel_is_auto_date(r):
             continue
         col = c.m.column(r.from_table, r.from_column)
         if col is None or col.is_hidden or col.table.is_hidden:
@@ -1998,7 +2026,7 @@ def _hide_fk(c: _Ctx) -> None:
 def _primary_keys(c: _Ctx) -> None:
     done: set[tuple[str, str]] = set()
     for r in c.m.relationships:
-        if r.to_card != "one":
+        if r.to_card != "one" or c.m.rel_is_auto_date(r):
             continue
         col = c.m.column(r.to_table, r.to_column)
         if col is None or col.is_key or (col.table.data_category or "").lower() == "time":
@@ -2055,28 +2083,21 @@ def _column_format(c: _Ctx) -> None:
 # =============================================================================
 # 5. Safe fixers (surgical line insertions)
 # =============================================================================
-# A fixer receives the table file's text (LF newlines; PbipProject._write_text
-# re-applies the file's own line endings / BOM) and a finding, and returns
-# ``(new_text, description)`` or ``None`` when there is nothing to do. They only
-# ever *insert* one property line, and refuse when it is already present, so
-# they are idempotent and every other byte of the file is untouched.
+# A fixer is a *planner*: given a table node and a finding it returns
+# ``(line_index, line_text, description)`` -- one property line to insert -- or
+# ``None`` when there is nothing to do. ``apply_fixes`` parses each file once,
+# collects the plans of all findings and inserts the lines bottom-up, so the
+# work is linear in the file size. Fixers only ever *insert* one line and refuse
+# when the property is already present: they are idempotent and every other byte
+# of the file is untouched (PbipProject._write_text keeps the file's own line
+# endings and BOM).
 
-def _find_member(text: str, table: str, kw: str, name: str) -> Node | None:
-    tn = next((n for n in parse_nodes(text)
-               if n.kw == "table" and n.name.lower() == (table or "").lower()), None)
-    if tn is None:
-        return None
+def _member(tn: Node, kw: str, name: str) -> Node | None:
     exact = [c for c in tn.kids(kw) if c.name == name]
     if exact:
         return exact[0]
     low = name.lower()
     return next((c for c in tn.kids(kw) if c.name.lower() == low), None)
-
-
-def _insert_line(text: str, at: int, line: str) -> str:
-    lines = text.split("\n")
-    lines.insert(at, line)
-    return "\n".join(lines)
 
 
 def _property_slot(node: Node) -> int:
@@ -2085,37 +2106,36 @@ def _property_slot(node: Node) -> int:
     return dt.end if dt is not None else node.body_end
 
 
-def _fix_format_string(text: str, f: Finding):
+def _plan_format_string(tn: Node, f: Finding):
     fmt = f.data.get("format")
-    node = _find_member(text, f.table or "", "measure", f.name)
+    node = _member(tn, "measure", f.name)
     if (not fmt or node is None or "formatString" in node.props
             or "formatStringDefinition" in node.props):
         return None
-    line = "\t" * (node.indent + 1) + f"formatString: {fmt}"
-    return _insert_line(text, node.body_end, line), f"formatString: {fmt}"
+    return (node.body_end, "\t" * (node.indent + 1) + f"formatString: {fmt}",
+            f"formatString: {fmt}")
 
 
-def _fix_hide_column(text: str, f: Finding):
-    node = _find_member(text, f.table or "", "column", f.name)
+def _plan_hide_column(tn: Node, f: Finding):
+    node = _member(tn, "column", f.name)
     if node is None or node.flag("isHidden"):
         return None
-    line = "\t" * (node.indent + 1) + "isHidden"
-    return _insert_line(text, _property_slot(node), line), "isHidden"
+    return _property_slot(node), "\t" * (node.indent + 1) + "isHidden", "isHidden"
 
 
-def _fix_data_category(text: str, f: Finding):
+def _plan_data_category(tn: Node, f: Finding):
     cat = f.data.get("category")
-    node = _find_member(text, f.table or "", "column", f.name)
+    node = _member(tn, "column", f.name)
     if not cat or node is None or node.prop("dataCategory"):
         return None
-    line = "\t" * (node.indent + 1) + f"dataCategory: {cat}"
-    return _insert_line(text, _property_slot(node), line), f"dataCategory: {cat}"
+    return (_property_slot(node), "\t" * (node.indent + 1) + f"dataCategory: {cat}",
+            f"dataCategory: {cat}")
 
 
 FIXERS: dict[str, Callable] = {
-    "default_format_string": _fix_format_string,
-    "hide_column": _fix_hide_column,
-    "set_data_category": _fix_data_category,
+    "default_format_string": _plan_format_string,
+    "hide_column": _plan_hide_column,
+    "set_data_category": _plan_data_category,
 }
 
 
@@ -2413,18 +2433,24 @@ def apply_fixes(project, *, rules=None, table: str | None = None) -> dict:
             tbl = model.table(f.table)
             if tbl is not None:
                 by_file.setdefault(tbl.file, []).append(f)
-        fixer = FIXERS[rule.fixer]
+        planner = FIXERS[rule.fixer]
         for path, fs in by_file.items():
             text = _read(path)
-            new = text
+            table_nodes = {n.name.lower(): n for n in parse_nodes(text) if n.kw == "table"}
+            inserts: dict[tuple[int, str], None] = {}
             for f in fs:
-                res = fixer(new, f)
-                if res is not None:
-                    new, what = res
+                tn = table_nodes.get((f.table or "").lower())
+                plan = planner(tn, f) if tn is not None else None
+                if plan is not None:
+                    at, line, what = plan
+                    inserts[(at, line)] = None
                     changed.append({"rule_id": rule.id, "object_type": f.object_type,
                                     "table": f.table, "name": f.name, "change": what})
-            if new != text:
-                project._write_text(path, new)
+            if inserts:
+                out = text.split("\n")
+                for at, line in sorted(inserts, key=lambda x: x[0], reverse=True):
+                    out.insert(at, line)
+                project._write_text(path, "\n".join(out))
                 try:
                     rel = path.relative_to(root).as_posix()
                 except ValueError:

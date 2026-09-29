@@ -395,11 +395,13 @@ def test_comments_stay_in_position():
 
 
 def test_line_comment_never_swallows_code():
-    for src in ["f(a, // c\n b)", "a + // c\n b", "VAR x = // c\n 1 RETURN x", "( // c\n a )"]:
-        out = check_props(src)
-        for line in out.split("\n"):
-            code = line.split("//")[0] if "//" in line else line
-            assert not (("//" in line) and line.split("//", 1)[1].strip().startswith(")")), out
+    # lossless tokens prove nothing was commented out; also pin the layouts
+    for src in ["f(a, // c\n b)", "a + // c\n b", "VAR x = // c\n 1 RETURN x", "( // c\n a )",
+                "f(a // c\n)", "SUM(x) // c\n+ 1"]:
+        check_props(src)
+    assert format_dax("f(a, // c\n b)") == "F(\n    a, // c\n    b\n)"
+    assert format_dax("f(a // c\n)") == "F(\n    a // c\n)"
+    assert format_dax("a + // c\n b") == "a + // c\nb"
 
 
 def test_short_style():
@@ -590,6 +592,22 @@ def test_format_measures_skips_what_it_cannot_format(state, proj):
     assert res["count"] == 0 and res["skipped"][0]["name"] == "Hidden Helper"
     assert "Unbalanced" in res["skipped"][0]["reason"]
     assert path.read_text(encoding="utf-8") == before
+
+
+def test_format_measures_never_lets_a_comment_share_the_header_line(state, proj):
+    path = sales_file(proj)
+    text = path.read_text(encoding="utf-8").replace(
+        "\tmeasure 'Hidden Helper' = 1\n",
+        "\tmeasure Noted = sum(Sales[Amount]) // total\n\t\tformatString: 0\n\n"
+        "\tmeasure 'Hidden Helper' = 1\n")
+    path.write_text(text, encoding="utf-8")
+    res = tools_dax.format_measures(state, measure="Noted")
+    assert res["changed"] == [{"table": "Sales", "name": "Noted"}]
+    new = path.read_text(encoding="utf-8")
+    assert "\tmeasure Noted = ```\n\t\t\tSUM(Sales[Amount]) // total\n\t\t\t```\n\t\tformatString: 0\n" in new
+    m = next(x for x in PbipProject(proj / "Synthetic.pbip").list_measures() if x.name == "Noted")
+    assert m.dax == "SUM(Sales[Amount]) // total" and m.format_string == "0"
+    assert tools_dax.format_measures(state, measure="Noted")["count"] == 0
 
 
 def test_format_measures_keeps_other_properties(state, proj):

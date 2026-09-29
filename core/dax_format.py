@@ -160,7 +160,8 @@ def _normalize(atoms: list[_Atom]) -> None:
                     a.text = upper
             continue
         if follows_paren:
-            a.text = upper                            # function call
+            if a.text.isascii():                      # e.g. sharp s upper-cases to "SS"
+                a.text = upper                        # function call
             continue
         if is_kw and upper not in declared:           # bare TRUE / FALSE / NOT ...
             a.text = upper

@@ -124,10 +124,12 @@ def _replacement_lines(node: Node, formatted: str) -> list[str]:
     tabs = "\t" * node.indent
     head = f"{tabs}measure {node.raw_name}"
     body_indent = "\t" * (node.indent + 2)
-    if "\n" not in formatted:
+    # A comment must never share the header line with what follows it.
+    has_comment = any(t.kind == "COMMENT" for t in tokenize(formatted))
+    if "\n" not in formatted and not has_comment:
         return [f"{head} = {formatted}"]
     body = [body_indent + ln for ln in formatted.split("\n")]
-    if node.fenced or node.inline:                 # fenced, or was one line
+    if node.fenced or node.inline or has_comment:  # fenced, or was one line
         return [f"{head} = ```", *body, body_indent + "```"]
     return [f"{head} =", *body]                    # plain multi-line body
 

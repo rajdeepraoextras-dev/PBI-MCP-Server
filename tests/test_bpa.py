@@ -497,6 +497,33 @@ def test_model_with_no_tables_does_not_crash(tmp_path):
     assert r["warnings"] == [] and files
 
 
+def test_auto_date_tables_do_not_add_noise(tmp_path):
+    """Desktop's hidden auto date/time tables are reported once, not rule by rule."""
+    auto = (
+        "table LocalDateTable_abc\n\tisHidden\n\n"
+        + col("Date", "dateTime", hidden=True)
+        + "".join(calc_col(n, f"YEAR([Date]) + {i}") for i, n in enumerate(
+            ["Year", "MonthNo", "Month", "QuarterNo", "Quarter", "Day"]))
+        + "\tpartition LocalDateTable_abc = calculated\n\t\tmode: import\n"
+          "\t\tsource = CALENDAR(DATE(2020,1,1), DATE(2021,1,1))\n\n"
+          "\tannotation __PBI_LocalDateTable = true\n")
+    project = PbipProject(build(tmp_path, [
+        add(f"{SM}/tables/LocalDateTable_abc.tmdl", auto),
+        in_sales(col("ShipDate", "dateTime")),
+        rel("r2", "Sales.ShipDate", "LocalDateTable_abc.Date"),
+    ]))
+    r = bpa.analyze(project)
+    assert r["warnings"] == []
+    auto_hits = [f for f in r["findings"] if "LocalDateTable_abc" in (f["table"] or "") + f["name"]]
+    assert {f["rule_id"] for f in auto_hits} == {"REMOVE_AUTO-DATE_TABLE"}
+    ship = {f["rule_id"] for f in r["findings"] if f["name"] == "ShipDate"}
+    assert not ship & {"HIDE_FOREIGN_KEYS", "RELATIONSHIP_COLUMNS_SHOULD_BE_OF_INTEGER_DATA_TYPE",
+                       "RELATIONSHIP_COLUMN_NAMES", "REMOVE_REDUNDANT_COLUMNS_IN_RELATED_TABLES"}
+    assert "REDUCE_NUMBER_OF_CALCULATED_COLUMNS" not in r["summary"]["by_rule"]
+    assert "MARK_PRIMARY_KEYS" not in r["summary"]["by_rule"]
+    assert "REMOVE_UNUSED_COLUMNS" in r["summary"]["by_rule"]         # user columns still count
+
+
 # --- filters ---------------------------------------------------------------------------------------------
 
 def test_filters(tmp_path):
@@ -600,6 +627,54 @@ def test_tmdl_node_parser():
     assert p.kw == "partition" and p.inline == "m" and p.props["mode"].value == "import"
     assert p.props["source"].value == "let\n\tS = 1\nin S"
     assert c.props["dataType"].end == c.props["dataType"].line + 1
+
+
+@pytest.mark.parametrize("ref, want", [
+    ("Sales.OrderDate", ("Sales", "OrderDate")),
+    ("'Sales Table'.'Order Date'", ("Sales Table", "Order Date")),
+    ("Sales.'Order Date'", ("Sales", "Order Date")),
+    ("'It''s'.Col", ("It's", "Col")),
+    ("'a.b'.c", ("a.b", "c")),
+])
+def test_relationship_endpoint_parsing(ref, want):
+    assert bpa._split_ref(ref) == want
+
+
+def test_relationship_properties_are_read_correctly(tmp_path):
+    """isActive: false, cardinalities and cross-filter direction (core.tmdl misses isActive)."""
+    project = PbipProject(build(tmp_path, [
+        table_file("Extra", "\n" + col("Key", "int64") + col("Other", "int64")),
+        rel("inactive", "Extra.Key", "Date.Year", "isActive: false"),
+        rel("onetoone", "Extra.Other", "Date.Year", "fromCardinality: one\ntoCardinality: one"),
+    ]))
+    model = bpa.load_model(project, with_usage=False)
+    by = {r.name: r for r in model.relationships}
+    assert by["inactive"].is_active is False and by["f1a2b3c4-0000-0000-0000-000000000001"].is_active
+    assert (by["onetoone"].from_card, by["onetoone"].to_card) == ("one", "one")
+    assert by["inactive"].from_card == "many" and by["inactive"].to_card == "one"
+    assert by["inactive"].cross_filter == "onedirection"
+    fk = bpa.analyze(project, rules=["HIDE_FOREIGN_KEYS"])
+    assert ("Extra", "Key") in keys(fk) and ("Extra", "Other") not in keys(fk)   # 1:1 is not a foreign key
+
+
+def test_excessive_bidirectional_threshold(tmp_path):
+    bidi = "crossFilteringBehavior: bothDirections"
+    three = [table_file("A", "\n" + col("K", "int64")), table_file("B", "\n" + col("K", "int64")),
+             rel("r2", "A.K", "Date.Year", bidi), rel("r3", "B.K", "Date.Year")]
+    at_33 = run(tmp_path / "a", three, rules=["AVOID_EXCESSIVE_BI-DIRECTIONAL_OR_MANY-TO-MANY_RELATIONSHIPS"])
+    assert keys(at_33) == {(None, "Model")}                        # 1 of 3 > 30%
+    four = three + [table_file("C", "\n" + col("K", "int64")), rel("r4", "C.K", "Date.Year")]
+    at_25 = run(tmp_path / "b", four, rules=["AVOID_EXCESSIVE_BI-DIRECTIONAL_OR_MANY-TO-MANY_RELATIONSHIPS"])
+    assert at_25["findings"] == []                                # 1 of 4
+
+
+def test_measure_only_tables_and_calc_groups_are_exempt_from_relationship_rule(tmp_path):
+    r = run(tmp_path, [
+        table_file("_Measures", measure("Total", "SUM(Sales[Amount])", "#,0")
+                   + "\n" + col("Dummy", "string", hidden=True)),
+        add(f"{SM}/tables/CG.tmdl", emit_calc_group_table("CG", 1, _CG)),
+    ], rules=["ENSURE_TABLES_HAVE_RELATIONSHIPS"])
+    assert r["findings"] == []
 
 
 def test_nested_calc_group_and_roles_parse():
