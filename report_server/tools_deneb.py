@@ -12,6 +12,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from core import deneb  # registers the Deneb visual type with the generic binding tools
+
 if TYPE_CHECKING:  # pragma: no cover - typing only (the server loads this module)
     from report_server.server import ReportState
 
@@ -20,8 +22,6 @@ if TYPE_CHECKING:  # pragma: no cover - typing only (the server loads this modul
 
 def list_deneb_templates(state: ReportState) -> list[dict]:
     """The Deneb template catalogue (needs no project)."""
-    from core import deneb
-
     return deneb.list_templates()
 
 
@@ -29,8 +29,6 @@ def add_deneb_visual(state: ReportState, page_id: str, template: str, bindings: 
                      position: dict | None = None, title: str | None = None,
                      options: dict | None = None) -> dict:
     """Add a template-built Deneb visual bound to model fields."""
-    from core import deneb
-
     return deneb.add_deneb_visual(state.require(), page_id, template, bindings,
                                   position, title, options)
 
@@ -38,8 +36,6 @@ def add_deneb_visual(state: ReportState, page_id: str, template: str, bindings: 
 def set_deneb_spec(state: ReportState, page_id: str, visual_id: str, spec,
                    config=None) -> dict:
     """Replace the spec (and optionally the config) of an existing Deneb visual."""
-    from core import deneb
-
     return deneb.set_deneb_spec(state.require(), page_id, visual_id, spec, config)
 
 
@@ -89,6 +85,8 @@ def register(mcp, state, tool) -> None:
         bound fields from the data named "dataset" (Vega-Lite: "data": {"name":
         "dataset"}); a warning is returned when it does not. Field names in the
         dataset are the bound fields' display names with \\ " . [ ] replaced by _.
-        Bindings are not changed (pbi_update_bindings does that). The Deneb
-        custom visual must be present in the report or organization to render."""
+        Bindings are not changed: to change the fields, call pbi_update_bindings
+        with the single bucket "dataset", e.g. {"dataset": ["Date.Year",
+        "Sales.Net Revenue"]}. The Deneb custom visual must be present in the
+        report or organization to render."""
         return set_deneb_spec(state, page_id, visual_id, spec, config)

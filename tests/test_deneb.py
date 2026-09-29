@@ -18,7 +18,6 @@ import pytest
 
 from core import deneb, schema_validate
 from core.journal import snapshot
-from core.pbip import PbipProject
 from core.pbir import visual_bindings
 from core.theme import generate_theme
 from report_server import tools_deneb
@@ -316,6 +315,23 @@ def test_role_names_are_case_insensitive_and_accept_single_item_lists(state):
     assert res["ok"]
 
 
+@pytest.mark.parametrize("template", ["line", "area", "sparkline"])
+def test_x_and_y_are_aliases_on_line_like_templates(state, template):
+    via_alias = tools_deneb.add_deneb_visual(
+        state, "details", template, {"x": "Date.Date", "y": "Sales.Net Revenue"})
+    assert via_alias["dataset_fields"] == {"category": "Date", "value": "Net Revenue"}
+    entry = next(t for t in tools_deneb.list_deneb_templates(state) if t["name"] == template)
+    assert entry["aliases"] == {"x": "category", "y": "value"}
+    with pytest.raises(ValueError, match="given twice"):
+        tools_deneb.add_deneb_visual(state, "details", template,
+                                     {"x": "Date.Date", "category": "Date.Year",
+                                      "value": "Sales.Net Revenue"})
+    # templates without the alias still reject them, naming the real roles
+    with pytest.raises(ValueError, match="Unknown binding role 'x'.*category"):
+        tools_deneb.add_deneb_visual(state, "details", "bar",
+                                     {"x": "Date.Year", "value": "Sales.Net Revenue"})
+
+
 # --- validation ---------------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("bindings, message", [
@@ -428,6 +444,10 @@ def test_explicit_position_and_title(state):
                                      position={"width": "wide"})
     with pytest.raises(ValueError, match="position must be an object"):
         tools_deneb.add_deneb_visual(state, "details", "bar", CASES["bar"][0], position=[1, 2])
+    with pytest.raises(ValueError, match=r"Unknown position key\(s\) \['w'\]"):
+        tools_deneb.add_deneb_visual(state, "details", "bar", CASES["bar"][0], position={"w": 300})
+    with pytest.raises(ValueError, match="title must be a string"):
+        tools_deneb.add_deneb_visual(state, "details", "bar", CASES["bar"][0], title=5)
     assert schema_validate.validate("visualContainer", vjson) == []
 
 
@@ -638,6 +658,52 @@ def test_dry_run_then_write_then_undo_over_the_mcp_layer(root):
     assert _call("pbi_undo_history")[0]["tool"] == "pbi_set_deneb_spec"
     _call("pbi_undo", steps=2)
     assert snapshot(root) == before                                  # visual + registration reverted
+
+
+def test_bound_fields_count_as_report_usage(state):
+    """The model-usage classifier (and so the measure-delete guard) sees Deneb's fields."""
+    from core.usage import classify_usage
+
+    project = state.require()
+    assert "Complex Measure" not in classify_usage(project)["direct"]["measures"]
+    tools_deneb.add_deneb_visual(state, "details", "bullet", CASES["bullet"][0])
+    assert "Complex Measure" in classify_usage(project)["direct"]["measures"]
+    with pytest.raises(ValueError, match="bound directly in the report"):
+        project.delete_measure("Sales", "Complex Measure")
+
+
+def test_generic_binding_tools_understand_deneb_visuals(root):
+    """A Deneb visual has one bucket, `dataset`: build it blank, give it a custom
+    spec, and change its fields with the ordinary tools."""
+    from core.visual_specs import buckets_for, validate_bindings
+    from report_server.server import STATE
+
+    assert buckets_for(deneb.DENEB_VISUAL_GUID) == {"required": ["dataset"], "optional": []}
+    with pytest.raises(ValueError, match="dataset"):
+        validate_bindings(deneb.DENEB_VISUAL_GUID, {"Values": ["Date.Year"]})
+
+    set_project(STATE, str(root / "Synthetic.pbip"))
+    made = _call("pbi_add_visual", page_id="details", visuals=[{
+        "visual_type": deneb.DENEB_VISUAL_GUID,
+        "bindings": {"dataset": ["Date.Year", "Sales.Net Revenue", "Sales.Margin %"]},
+        "position": {"x": 300, "y": 20, "width": 400, "height": 250}}])
+    vid = made["visual_ids"][0]
+    project = STATE.require()
+    assert project.validate_project()["ok"]
+    assert visual_bindings(project.get_visual("details", vid)) == {
+        "dataset": ["Date.Year", "Sales.Net Revenue", "Sales.Margin %"]}
+
+    _call("pbi_set_deneb_spec", page_id="details", visual_id=vid, spec=CUSTOM_SPEC)
+    _call("pbi_update_bindings", page_id="details", visual_id=vid,
+          bindings={"dataset": ["Date.Date", "Sales.Net Revenue"]})
+    assert visual_bindings(project.get_visual("details", vid)) == {
+        "dataset": ["Date.Date", "Sales.Net Revenue"]}
+    assert deneb.read_deneb_visual(_visual_of(project, "details", vid))["spec"] == CUSTOM_SPEC
+    assert deneb.DENEB_VISUAL_GUID in _call("pbi_capabilities")["visual_types"]
+
+
+def _visual_of(project, page: str, vid: str) -> dict:
+    return json.loads(project._visual_file(page, vid).read_text(encoding="utf-8"))
 
 
 # --- optional: compile against the real Vega-Lite ------------------------------------------------------------------------

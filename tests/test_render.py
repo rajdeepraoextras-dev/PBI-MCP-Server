@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import importlib.util
 import json
 import shutil
 import sys
@@ -157,6 +158,29 @@ def test_design_elements_draw_their_content(root):
     assert 'fill="#FFFFFF"' in svg                                   # the text keeps its color
 
 
+def test_every_shape_kind_draws_as_itself(root):
+    project = PbipProject(root / "Synthetic.pbip")
+    kinds = ["rectangle", "rectangleRounded", "oval", "line", "arrow", "triangle",
+             "hexagon", "pentagon"]
+    for i, kind in enumerate(kinds):
+        project.add_shape("details", kind, fill="#00AA55" if kind != "line" else None,
+                          outline="#112233", outline_weight=2,
+                          position=dict(x=20 + i * 150, y=400, width=120, height=90), z=i)
+    scene = render.build_scene(project, "details")
+    svg = render.scene_to_svg(scene)
+    doc = ET.fromstring(svg)
+    shapes = [g for g in doc.iter(f"{SVG_NS}g") if g.get("data-visual-type") == "shape"]
+    assert len(shapes) == len(kinds)
+    for g in shapes:                                                 # shapes carry no labels
+        assert not list(g.iter(f"{SVG_NS}text"))
+        assert 'fill="#00AA55"' in ET.tostring(g, encoding="unicode") \
+            or 'stroke="#112233"' in ET.tostring(g, encoding="unicode")
+    kinds_drawn = {child.tag.replace(SVG_NS, "") for g in shapes for child in g}
+    assert {"rect", "polygon", "line"} <= kinds_drawn
+    if importlib.util.find_spec("PIL") is not None:
+        assert render.scene_to_png(scene)[:4] == b"\x89PNG"
+
+
 def test_empty_page_still_renders(root):
     project = PbipProject(root / "Synthetic.pbip")
     pid = project.create_page("Blank")
@@ -189,6 +213,37 @@ def test_default_palette_and_theme_colors(root):
     project.set_report_theme(generate_theme("#0B7A75", name="Teal"))
     themed = render.render_page(project, "overview")["svg"]
     assert "#0B7A75" in themed and "#118DFF" not in themed           # theme accent + palette
+
+
+def test_stored_base_theme_is_used_and_custom_theme_wins(root):
+    project = PbipProject(root / "Synthetic.pbip")
+    base_dir = project.report_dir / "StaticResources" / "SharedResources" / "BaseThemes"
+    base_dir.mkdir(parents=True)
+    (base_dir / "CY24SU10.json").write_text(json.dumps({
+        "name": "CY24SU10", "dataColors": ["#AA3300", "#003399", "#00AA33", "#AA00AA"],
+        "foreground": "#111111", "background": "#FEFEFE", "tableAccent": "#AA3300"}))
+    report = project.report_dir / "definition" / "report.json"
+    doc = json.loads(report.read_text())
+    doc["themeCollection"] = {"baseTheme": {"name": "CY24SU10", "type": "SharedResources",
+                                            "reportVersionAtImport": "5.59"}}
+    report.write_text(json.dumps(doc))
+    theme = render.load_theme(project)
+    assert theme["source"] == "base" and theme["dataColors"][0] == "#AA3300"
+    assert theme["accent"] == "#AA3300" and theme["background"] == "#FEFEFE"
+    assert "#AA3300" in render.render_page(project, "overview")["svg"]
+    # a custom theme, when present, overrides the base theme
+    project.set_report_theme(generate_theme("#0B7A75", name="Teal"))
+    doc = json.loads(report.read_text())
+    assert doc["themeCollection"]["baseTheme"]["name"] == "CY24SU10"      # kept alongside
+    theme = render.load_theme(project)
+    assert theme["source"] == "custom" and theme["accent"] == "#0B7A75"
+    assert theme["foreground"] != "#111111"
+    # a missing base file falls back to the Power BI defaults
+    (base_dir / "CY24SU10.json").unlink()
+    project.report_dir.joinpath("StaticResources", "RegisteredResources", "Teal.json").unlink()
+    doc["themeCollection"].pop("customTheme")
+    report.write_text(json.dumps(doc))
+    assert render.load_theme(project)["source"] == "default"
 
 
 def test_page_background_and_wallpaper_come_from_page_objects(root):
@@ -368,6 +423,99 @@ def test_png_without_pillow_explains_the_extra(state, monkeypatch):
     assert tools_render.render_page(state, "overview")["svg"].startswith("<?xml")
 
 
+def test_png_refuses_absurd_sizes_before_allocating(root):
+    pytest.importorskip("PIL.Image")
+    scene = render.build_scene(PbipProject(root / "Synthetic.pbip"), "overview")
+    with pytest.raises(ValueError, match="megapixels"):
+        render.scene_to_png(scene, 200.0)                            # 256000 x 144000 px
+
+
+# --- hardening ---------------------------------------------------------------------------------------
+
+def test_fit_text_is_bounded_and_truncates():
+    long = "W" * 200_000
+    out = render.fit_text(long, 12, 100)
+    assert out.endswith("...") and render.text_width(out, 12) <= 100
+    assert render.fit_text("short", 12, 100) == "short"
+    assert render.fit_text("anything", 12, 0) == ""
+    assert render.fit_text("a\nb\r\x00c", 12, 200) == "a b c"        # newlines flattened, NUL dropped
+    bad = "x" + chr(0xD800) + "y" + chr(0xFFFF) + "z" + chr(0xFFFE)
+    assert render.fit_text(bad, 12, 200) == "xyz"                     # XML-illegal code points
+
+
+def test_deneb_label_follows_the_provider(root):
+    from core import deneb
+
+    project = PbipProject(root / "Synthetic.pbip")
+    added = deneb.add_deneb_visual(project, "details", "line",
+                                   {"category": "Date.Date", "value": "Sales.Net Revenue"})
+    assert "Deneb (Vega-Lite)" in _texts(render.render_page(project, "details")["svg"])
+    deneb.set_deneb_spec(project, "details", added["visual_id"],
+                         {"$schema": "https://vega.github.io/schema/vega/v6.json",
+                          "data": [{"name": "dataset"}], "marks": []})
+    text = _texts(render.render_page(project, "details")["svg"])
+    assert "Deneb (Vega)" in text and "Deneb (Vega-Lite)" not in text
+
+
+def _odd_visuals() -> list[dict]:
+    """Malformed / extreme visual.json bodies a hand-edited report can contain."""
+    lit = lambda v: {"expr": {"Literal": {"Value": v}}}                  # noqa: E731
+    pos = lambda **k: {**dict(x=10, y=10, width=200, height=120), **k}  # noqa: E731
+    return [
+        {"name": "zero", "position": pos(width=0, height=0), "visual": {"visualType": "card"}},
+        {"name": "negative", "position": pos(x=-500, y=-500, width=-20, height=-20),
+         "visual": {"visualType": "lineChart"}},
+        {"name": "huge", "position": pos(x=1e7, y=1e7, width=1e7, height=1e7, z=1e9),
+         "visual": {"visualType": "clusteredBarChart", "query": {"queryState": {"Y": {
+             "projections": [{"queryRef": "Sales.Net Revenue"}]}}}}},
+        {"name": "tiny", "position": pos(width=5, height=5), "visual": {"visualType": "tableEx"}},
+        {"name": "no-type", "position": {"x": 10, "y": 10}, "visual": {}},
+        {"name": "bare", "position": pos()},                                # neither visual nor group
+        {"name": "junk-text", "position": pos(width=300, height=200), "visual": {
+            "visualType": "textbox", "objects": {"general": [{"properties": {"paragraphs": [
+                {"textRuns": "oops"}, {"textRuns": [{"value": 5}]}, "x", None,
+                {"textRuns": [{"value": "ok", "textStyle": {"fontSize": "abcpt", "color": 7}}]}]}}]}}},
+        {"name": "odd-shape", "isHidden": "yes", "position": pos(), "visual": {
+            "visualType": "shape", "objects": {"shape": [{"properties": {"tileShape": lit("'star'")}}],
+                                               "fill": [{"properties": {"fillColor": "not-a-color"}}]}}},
+        {"name": "self-parent", "parentGroupName": "self-parent", "position": pos(),
+         "visual": {"visualType": "card"}},
+        {"name": "g1", "parentGroupName": "g2", "position": pos(width=400, height=300),
+         "visualGroup": {"displayName": "G1 <&> \"q\"", "groupMode": "ScaleMode"}},
+        {"name": "g2", "parentGroupName": "g1", "position": pos(width=400, height=300),
+         "visualGroup": {"displayName": "G2", "groupMode": "ScaleMode"}},
+        {"name": "orphan", "parentGroupName": "missing-group", "position": pos(),
+         "visual": {"visualType": "slicer"}},
+        {"name": "bad-deneb", "position": pos(), "visual": {
+            "visualType": "deneb7E15AEF80B9E4D4F8E12924291ECE89A",
+            "objects": {"vega": [{"properties": {"jsonSpec": lit("'not json'")}}]}}},
+        {"name": "dynamic-title", "position": pos(), "visual": {
+            "visualType": "clusteredBarChart", "visualContainerObjects": {"title": [{"properties": {
+                "text": {"expr": {"Measure": {"Expression": {"SourceRef": {"Entity": "Sales"}},
+                                              "Property": "Net Revenue"}}},
+                "show": lit("true")}}]}}},
+        {"name": "button", "position": pos(), "visual": {
+            "visualType": "actionButton", "objects": {"text": [{"properties": {"text": lit("5L")}}],
+                                                      "fill": [{"properties": {}}]}}},
+    ]
+
+
+def test_renderer_survives_malformed_and_extreme_visuals(root):
+    project = PbipProject(root / "Synthetic.pbip")
+    vdir = project.report_dir / "definition" / "pages" / "details" / "visuals"
+    for body in _odd_visuals():                                      # raw writes: no schema in the way
+        (vdir / body["name"]).mkdir()
+        (vdir / body["name"] / "visual.json").write_text(json.dumps(body), encoding="utf-8")
+    res = render.render_page(project, "details")
+    doc = ET.fromstring(res["svg"])                                  # still well-formed XML
+    assert len(res["visuals"]) == 1 + len(_odd_visuals())            # slicer1 + every odd one
+    assert "G1 <&> \"q\"" in _texts(res["svg"])
+    assert {"zero", "huge", "orphan"} <= {g.get("data-visual-id") for g in doc.iter(f"{SVG_NS}g")}
+    if importlib.util.find_spec("PIL") is not None:                  # the raster back-end copes too
+        scene = render.build_scene(project, "details")
+        assert render.scene_to_png(scene, 0.25)[:4] == b"\x89PNG"
+
+
 # --- theme from image ------------------------------------------------------------------------------
 
 def _logo(path: Path, blocks) -> Path:
@@ -467,6 +615,8 @@ def test_theme_from_image_tool_previews_then_installs(state, root, tmp_path):
     assert preview["installed"] is False and snapshot(root) == before   # nothing written
     installed = tools_render.theme_from_image(state, str(image), "Brand Look", install=True)
     assert installed["installed"] is True and installed["resource"] == "Brand Look.json"
+    assert isinstance(installed["theme"], dict) and installed["theme"]["name"] == "Brand Look"
+    assert installed["theme"] == preview["theme"]                    # same theme JSON either way
     project = state.require()
     theme_file = project.report_dir / "StaticResources" / "RegisteredResources" / "Brand Look.json"
     assert json.loads(theme_file.read_text())["dataColors"] == installed["data_colors"]

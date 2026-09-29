@@ -17,6 +17,7 @@ text classes, structural colors and visual styles stay identical to
 from __future__ import annotations
 
 import colorsys
+import os
 import re
 from pathlib import Path
 
@@ -79,10 +80,11 @@ def extract_swatches(image_path: str | Path, colors: int = QUANTIZE_COLORS) -> l
     transparent background contributes its real colors, not black.
     """
     Image = require_pillow()[0]
-    path = Path(image_path)
+    path = Path(os.path.expanduser(str(image_path)))
     if not path.exists():
         raise FileNotFoundError(f"Image not found: {image_path}")
     with Image.open(path) as im:
+        im.thumbnail((THUMBNAIL[0] * 4, THUMBNAIL[1] * 4))   # cheap pre-shrink of big photos
         img = im.convert("RGBA")
     white = Image.new("RGBA", img.size, (255, 255, 255, 255))
     img = Image.alpha_composite(white, img).convert("RGB")
@@ -166,7 +168,7 @@ def theme_from_image(image_path: str | Path, name: str | None = None,
     """
     if mode not in ("light", "dark"):
         raise ValueError("mode must be 'light' or 'dark'")
-    path = Path(image_path)
+    path = Path(os.path.expanduser(str(image_path)))
     swatches = extract_swatches(path)
     accent, data_colors, ordered = choose_palette(swatches)
     theme = generate_theme(accent, safe_theme_name(name or f"{path.stem} Theme"), mode)

@@ -43,8 +43,9 @@ def theme_from_image(state: ReportState, image_path: str, name: str | None = Non
     result = theme_image.theme_from_image(image_path, name, mode)
     result["installed"] = False
     if install:
-        result.update(project.set_report_theme(result["theme"]))
+        installed = project.set_report_theme(result["theme"])
         result["installed"] = True
+        result["resource"] = installed["resource"]      # keep `theme` = the theme JSON
     return result
 
 

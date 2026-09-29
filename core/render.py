@@ -36,6 +36,7 @@ from pathlib import Path
 #: Inline the SVG text in the tool result only when it is smaller than this.
 INLINE_SVG_LIMIT = 200_000
 MAX_SCALE = 8.0
+MAX_PNG_PIXELS = 64_000_000
 FONT_STACK = "Segoe UI, Helvetica, Arial, sans-serif"
 
 #: Power BI's default palette (the built-in theme) -- used when the report has
@@ -212,6 +213,7 @@ def fit_text(s: str, size: float, max_w: float, bold: bool = False) -> str:
     s = _clean(s)
     if max_w <= 0:
         return ""
+    s = s[: int(max_w / max(size * 0.3, 1.0)) + 4]     # narrowest glyphs bound the length
     if text_width(s, size, bold) <= max_w:
         return s
     while s and text_width(s + "...", size, bold) > max_w:
@@ -219,7 +221,7 @@ def fit_text(s: str, size: float, max_w: float, bold: bool = False) -> str:
     return (s.rstrip() + "...") if s else ""
 
 
-_BAD_XML = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f\ud800-\udfff￾￿]")
+_BAD_XML = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\ud800-\udfff\ufffe\uffff]")
 
 
 def _clean(s: str) -> str:
@@ -287,48 +289,62 @@ def _read_json(path: Path) -> dict | None:
 
 # --- theme ----------------------------------------------------------------------
 
-def load_theme(project) -> dict:
-    """The report's active custom theme merged over the Power BI defaults.
+def _overlay_theme(theme: dict, data: dict) -> None:
+    """Apply the colors / styles of a theme JSON onto `theme` (in place)."""
+    for key in ("name", "background", "secondaryBackground", "foreground",
+                "foregroundNeutralSecondary", "tableAccent"):
+        if isinstance(data.get(key), str):
+            theme[key] = data[key]
+    colors = [c for c in (data.get("dataColors") or [])
+              if isinstance(c, str) and _HEX.match(c)]
+    if colors:
+        theme["dataColors"] = colors
+    if data.get("visualStyles"):
+        theme["visualStyles"] = data["visualStyles"]
 
-    Returns the theme dict plus ``source`` ("custom" | "default") and
+
+def load_theme(project) -> dict:
+    """The report's theme: the Power BI defaults, overlaid with the built-in base
+    theme file when Desktop stored one (``StaticResources/SharedResources/
+    BaseThemes``), overlaid with the active custom theme.
+
+    Returns the theme dict plus ``source`` ("custom" | "base" | "default") and
     ``accent`` (the report accent: first data color, else tableAccent).
     """
     theme = dict(DEFAULT_THEME)
     theme["source"] = "default"
-    custom = None
     try:
         report_dir = project._require_report()
         report = _read_json(report_dir / "definition" / "report.json") or {}
-        ref = (report.get("themeCollection") or {}).get("customTheme")
-        if isinstance(ref, dict) and ref.get("name"):
-            custom = _read_json(report_dir / "StaticResources"
-                                / "RegisteredResources" / ref["name"])
-    except (OSError, FileNotFoundError):
-        custom = None
-    if custom:
-        for key in ("name", "background", "secondaryBackground", "foreground",
-                    "foregroundNeutralSecondary", "tableAccent"):
-            if isinstance(custom.get(key), str):
-                theme[key] = custom[key]
-        colors = [c for c in (custom.get("dataColors") or [])
-                  if isinstance(c, str) and _HEX.match(c)]
-        if colors:
-            theme["dataColors"] = colors
-        theme["visualStyles"] = custom.get("visualStyles") or {}
-        theme["source"] = "custom"
-    for key in ("background", "foreground", "foregroundNeutralSecondary",
-                "tableAccent"):
+        collection = report.get("themeCollection") or {}
+        base_ref, custom_ref = collection.get("baseTheme"), collection.get("customTheme")
+        resources = report_dir / "StaticResources"
+        if isinstance(base_ref, dict) and base_ref.get("name"):
+            stem = str(base_ref["name"])
+            for name in (stem, f"{stem}.json"):
+                base = _read_json(resources / "SharedResources" / "BaseThemes" / name)
+                if base:
+                    _overlay_theme(theme, base)
+                    theme["source"] = "base"
+                    break
+        if isinstance(custom_ref, dict) and custom_ref.get("name"):
+            custom = _read_json(resources / "RegisteredResources" / custom_ref["name"])
+            if custom:
+                _overlay_theme(theme, custom)
+                theme["source"] = "custom"
+    except OSError:
+        pass
+    for key in ("background", "foreground", "foregroundNeutralSecondary", "tableAccent"):
         if not _HEX.match(theme.get(key) or ""):
             theme[key] = DEFAULT_THEME[key]
     accent = None
     try:
         accent = project.report_accent()
-    except (OSError, FileNotFoundError, KeyError, ValueError):
+    except (OSError, KeyError, ValueError):
         accent = None
-    theme["accent"] = norm_hex(accent if accent and _HEX.match(accent)
-                               else (theme["dataColors"][0]
-                                     if theme["source"] == "custom"
-                                     else theme["tableAccent"]))
+    if not (accent and _HEX.match(accent)):
+        accent = theme["dataColors"][0] if theme["source"] == "custom" else theme["tableAccent"]
+    theme["accent"] = norm_hex(accent)
     return theme
 
 
@@ -895,19 +911,20 @@ def _g_ribbon(p: Painter, b, st: Style):
     x, y, w, h = b
     n = 4
     slot = w / n
-    cw = slot * .42
-    splits = [(.0, .5, 1), (.0, .35, 1), (.0, .45, 1), (.0, .6, 1)]
-    tops = [(.55, 1.0), (.4, 1.0), (.62, 1.0), (.5, 1.0)]
-    for i in range(n):
-        lo, hi = tops[i]
-        p.rect(x + i * slot, y + h * (1 - hi + lo * 0.0), cw, h * hi * 0.55,
-               fill=st.palette[0], radius=1.5)
-        p.rect(x + i * slot, y + h * (1 - hi + hi * 0.55), cw, h * hi * 0.45,
-               fill=st.palette[1 % len(st.palette)], radius=1.5)
-    for i in range(n - 1):
+    cw = slot * .40
+    c0, c1 = st.palette[0], st.palette[1 % len(st.palette)]
+    split = [.55, .40, .62, .48]           # where the first series ends, as a share of the height
+    for i, sp in enumerate(split):
+        cx = x + i * slot
+        p.rect(cx, y, cw, h * sp, fill=c0, radius=1.5)
+        p.rect(cx, y + h * sp, cw, h * (1 - sp), fill=c1, radius=1.5)
+    for i in range(n - 1):                 # bands that follow each series to the next column
         x0, x1 = x + i * slot + cw, x + (i + 1) * slot
-        p.poly([(x0, y + h * .45), (x1, y + h * .45), (x1, y + h * .55), (x0, y + h * .55)],
-               fill=st.palette[0], fill_opacity=0.35)
+        a0, a1 = split[i], split[i + 1]
+        p.poly([(x0, y), (x1, y), (x1, y + h * a1), (x0, y + h * a0)],
+               fill=c0, fill_opacity=0.35)
+        p.poly([(x0, y + h * a0), (x1, y + h * a1), (x1, y + h), (x0, y + h)],
+               fill=c1, fill_opacity=0.35)
 
 
 def _g_tree(p: Painter, b, st: Style):
@@ -1117,6 +1134,9 @@ def _visual_scene(items: list, v: VisualView, st: Style, theme: dict,
     if fam == "deneb":
         fam = _MARK_FAMILY.get(deneb_mark(v.raw) or "", "deneb")
     label = type_label(v.vtype)
+    if is_deneb(v.vtype):
+        provider = _literal(_object_props(v.raw, "vega").get("provider"))
+        label = "Deneb (Vega)" if provider == "vega" else "Deneb (Vega-Lite)"
     static, shown = container_title(v.raw)
     auto = auto_title(v.vtype, v.bindings)
     title = static if (static and shown) else auto
@@ -1413,6 +1433,9 @@ def scene_to_png(scene: Scene, scale: float = 1.0) -> bytes:
     """Rasterise a scene with Pillow (default font, 2x supersampling)."""
     Image, ImageDraw, ImageFont = require_pillow()
     width, height = max(1, round(scene.width * scale)), max(1, round(scene.height * scale))
+    if width * height > MAX_PNG_PIXELS:
+        raise ValueError(f"PNG would be {width}x{height} pixels (limit "
+                         f"{MAX_PNG_PIXELS // 1_000_000} megapixels); lower scale or use SVG")
     ss = 2 if width * height <= 4_000_000 else 1
     k = scale * ss
     img = Image.new("RGB", (width * ss, height * ss), norm_hex(scene.background, "#FFFFFF"))

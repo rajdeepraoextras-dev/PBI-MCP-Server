@@ -82,6 +82,18 @@ def is_deneb_type(visual_type: str | None) -> bool:
     return bool(visual_type) and visual_type.lower().startswith("deneb")
 
 
+def register_visual_spec() -> None:
+    """Teach the generic binding tools (pbi_update_bindings, pbi_add_visual,
+    pbi_capabilities) that a Deneb visual has one bucket, ``dataset``, so its
+    fields can be changed like any other visual's. Never overrides an entry."""
+    from core.visual_specs import VISUAL_SPECS
+
+    VISUAL_SPECS.setdefault(DENEB_VISUAL_GUID, {"required": [DATA_ROLE], "optional": []})
+
+
+register_visual_spec()
+
+
 def dataset_field_name(display_name: str) -> str:
     """The name Deneb gives a field in the dataset (reserved characters -> '_')."""
     return _RESERVED.sub("_", display_name)
@@ -193,6 +205,7 @@ class Template:
     options: dict
     build: Callable
     example: dict
+    aliases: tuple = ()      # ((alias, role), ...) accepted spellings of a role
 
 
 def _validate_options(tpl: Template, options: dict | None) -> dict:
@@ -591,7 +604,8 @@ _register(Template(
     {**_COMMON, "points": _opt("boolean", False, "Draw a marker at every point."),
      "interpolate": _OPT_INTERP, "labels": _OPT_LABELS, "format": _OPT_FORMAT},
     _t_line,
-    {"bindings": {"category": "Date.Date", "value": "Sales.Net Revenue"}}))
+    {"bindings": {"category": "Date.Date", "value": "Sales.Net Revenue"}},
+    aliases=(("x", "category"), ("y", "value"))))
 
 _register(Template(
     "area", "Area chart",
@@ -601,7 +615,8 @@ _register(Template(
      _role("series", "dimension", False, "Column that stacks the area by member.")),
     {**_COMMON, "interpolate": _OPT_INTERP, "normalize": _OPT_NORMALIZE, "format": _OPT_FORMAT},
     _t_area,
-    {"bindings": {"category": "Date.Date", "value": "Sales.Net Revenue"}}))
+    {"bindings": {"category": "Date.Date", "value": "Sales.Net Revenue"}},
+    aliases=(("x", "category"), ("y", "value"))))
 
 _register(Template(
     "scatter", "Scatter / bubble chart",
@@ -675,7 +690,8 @@ _register(Template(
         "string", "monotone", "Line interpolation.", ("linear", "monotone", "step")),
      "end_point": _opt("boolean", True, "Mark the last point.")},
     _t_sparkline,
-    {"bindings": {"category": "Date.Date", "value": "Sales.Net Revenue"}}))
+    {"bindings": {"category": "Date.Date", "value": "Sales.Net Revenue"}},
+    aliases=(("x", "category"), ("y", "value"))))
 
 _register(Template(
     "waffle", "Waffle chart",
@@ -714,6 +730,7 @@ def list_templates() -> list[dict]:
                           "description": r.description} for r in tpl.roles],
             "options": tpl.options,
             "example": {"template": tpl.name, **tpl.example},
+            **({"aliases": dict(tpl.aliases)} if tpl.aliases else {}),
         })
     return out
 
@@ -756,12 +773,19 @@ def _normalise_bindings(tpl: Template, bindings: dict) -> dict[str, str]:
         raise ValueError(f"bindings must be an object mapping roles to 'Table.Field', "
                          f"e.g. {tpl.example['bindings']}")
     known = {r.name for r in tpl.roles}
+    aliases = dict(tpl.aliases)
     out: dict[str, str] = {}
     for key, ref in bindings.items():
         role = str(key).strip().lower()
         if role not in known:
+            role = aliases.get(role, role)
+        if role not in known:
             raise ValueError(f"Unknown binding role {key!r} for template {tpl.name!r}; "
-                             f"roles: {[r.name for r in tpl.roles]}")
+                             f"roles: {[r.name for r in tpl.roles]}"
+                             + (f" (aliases: {dict(tpl.aliases)})" if aliases else ""))
+        if role in out:
+            raise ValueError(f"Role {role!r} of template {tpl.name!r} was given twice "
+                             f"(also as an alias); pass it once.")
         if isinstance(ref, (list, tuple)):
             if len(ref) != 1:
                 raise ValueError(f"role {role!r} takes exactly one field, got {list(ref)}")
@@ -978,11 +1002,16 @@ def add_deneb_visual(project, page_id: str, template: str, bindings: dict,
     _validate_options(tpl, options)          # fail before anything is written
     if position is not None and not isinstance(position, dict):
         raise ValueError("position must be an object like {x, y, width, height}")
-    user = {k: v for k, v in (position or {}).items()
-            if k in ("x", "y", "z", "width", "height", "tabOrder")}
+    user = dict(position or {})
+    unknown = sorted(set(user) - {"x", "y", "z", "width", "height", "tabOrder"})
+    if unknown:
+        raise ValueError(f"Unknown position key(s) {unknown}; use x, y, width, height "
+                         f"(and optionally z, tabOrder)")
     for k, v in user.items():
         if not isinstance(v, (int, float)) or isinstance(v, bool):
             raise ValueError(f"position.{k} must be a number")
+    if title is not None and not isinstance(title, str):
+        raise ValueError("title must be a string")
     auto, warning = free_position(project, page_id, user.get("width", 480.0),
                                   user.get("height", 320.0))
     pos = {**auto, **user}
