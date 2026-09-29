@@ -696,15 +696,23 @@ def pbi_project_summary() -> dict:
 @tool(read=True)
 def pbi_lint_page(page_id: str) -> dict:
     """Design lint a page: overlaps, off-canvas visuals, too-small visuals,
-    near-misaligned edges. Returns {ok, findings[]}."""
+    near-misaligned edges, plus accessibility findings (a11y_*: alt text, tab
+    order, small text, WCAG contrast, judged against the active theme).
+    Returns {ok, accessibility_ok, findings[]}: `ok` is the layout verdict
+    (no layout warnings); `accessibility_ok` is true when there are no a11y_*
+    findings."""
     from core.lint import lint_page
 
     project = STATE.require()
     pages = {p.id: p for p in project.list_pages()}
     if page_id not in pages:
         raise KeyError(f"Page {page_id!r} not found")
-    findings = lint_page(pages[page_id], project.list_visuals(page_id))
-    return {"ok": not any(f["severity"] == "warning" for f in findings),
+    findings = lint_page(pages[page_id], project.list_visuals(page_id),
+                         project=project)
+    layout = [f for f in findings if not f["code"].startswith("a11y_")]
+    return {"ok": not any(f["severity"] == "warning" for f in layout),
+            "accessibility_ok": not any(f["code"].startswith("a11y_")
+                                        for f in findings),
             "findings": findings}
 
 

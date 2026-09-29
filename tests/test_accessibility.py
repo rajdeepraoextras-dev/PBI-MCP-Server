@@ -385,7 +385,9 @@ def test_pbi_lint_page_tool_includes_accessibility(tmp_path):
     call("pbi_set_project", path=str(proj / "Synthetic.pbip"))
     res = call("pbi_lint_page", page_id="overview")
     codes = {f["code"] for f in res["findings"]}
-    assert "a11y_missing_alt_text" in codes and res["ok"] is False
+    assert "a11y_missing_alt_text" in codes
+    # accessibility warnings do not change the layout verdict
+    assert res["ok"] is True and res["accessibility_ok"] is False
 
 
 # --- through the MCP server ------------------------------------------------------------------
