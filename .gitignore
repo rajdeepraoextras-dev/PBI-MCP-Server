@@ -25,3 +25,6 @@ tests/fixtures/*
 # Synthetic fixture is generated + safe to commit; real Sample.pbip stays local
 !tests/fixtures/synthetic/
 tests/fixtures/synthetic/**/.pbi/
+# Engine fixture: inline-data PBIP for the live-engine tests; Desktop caches stay local
+!tests/fixtures/engine/
+tests/fixtures/engine/**/.pbi/

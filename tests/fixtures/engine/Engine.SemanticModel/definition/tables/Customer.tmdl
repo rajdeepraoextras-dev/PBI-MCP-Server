@@ -1,0 +1,47 @@
+table Customer
+	lineageTag: 9a4d3b2f-7e5c-4d8b-8f32-1b6c8d4e0a02
+
+	column CustomerId
+		dataType: int64
+		formatString: 0
+		isKey
+		lineageTag: d2a2b3c4-0001-4e5f-8a9b-000000000021
+		summarizeBy: none
+		sourceColumn: CustomerId
+
+		annotation SummarizationSetBy = User
+
+	column Name
+		dataType: string
+		lineageTag: d2a2b3c4-0002-4e5f-8a9b-000000000022
+		summarizeBy: none
+		sourceColumn: Name
+
+		annotation SummarizationSetBy = Automatic
+
+	column Region
+		dataType: string
+		lineageTag: d2a2b3c4-0003-4e5f-8a9b-000000000023
+		summarizeBy: none
+		sourceColumn: Region
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Customer = m
+		mode: import
+		source =
+				let
+				    Source = Table.FromRows(
+				        {
+				            {1, "Alice", "North"},
+				            {2, "Bob", "South"},
+				            {3, "Chen", "East"},
+				            {4, "Dana", "West"}
+				        },
+				        {"CustomerId", "Name", "Region"}),
+				    #"Changed Type" = Table.TransformColumnTypes(Source, {{"CustomerId", Int64.Type}, {"Name", type text}, {"Region", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+
