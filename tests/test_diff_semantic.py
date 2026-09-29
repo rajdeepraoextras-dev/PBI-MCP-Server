@@ -617,6 +617,117 @@ def test_partition_source_change(pair):
     assert any("sales2.csv" in ln for ln in parts["changed"][0]["source"]["diff"])
 
 
+KITCHEN = """table Kitchen
+\tlineageTag: aaaa
+\t/// A described table
+\tdescription: about the table
+
+\t/// Doc comment on a measure
+\tmeasure 'Weird = Name' = 1 + 1
+\t\tformatString: 0
+\t\tlineageTag: bbbb
+
+\t\tannotation PBI_FormatHint = {"isGeneralNumber":true}
+
+\tmeasure Multi =
+\t\t\tVAR a = 1
+\t\t\tRETURN
+\t\t\t\ta
+\t\tdisplayFolder: 'My Folder'
+\t\tisHidden
+
+\tmeasure Fenced = ```
+\t\t\t1
+\t\t\t+ 2
+\t\t\t```
+\t\tformatString: "$"#,0.00
+\t\tannotation Foo = bar
+
+\tcolumn Plain
+\t\tdataType: string
+\t\tlineageTag: cccc
+\t\tsummarizeBy: none
+\t\tsourceColumn: Plain
+\t\tannotation SummarizationSetBy = Automatic
+
+\tcolumn 'Calc Col' = [Plain] & "x"
+\t\tdataType: string
+\t\tisDataTypeInferred
+\t\tlineageTag: dddd
+\t\tsummarizeBy: none
+
+\tcolumn MultiCalc =
+\t\t\tVAR x = 1
+\t\t\tRETURN x
+\t\tdataType: int64
+\t\tsortByColumn: Plain
+
+\thierarchy Geo
+\t\tlineageTag: eeee
+
+\t\tlevel Country
+\t\t\tcolumn: Plain
+
+\tpartition Kitchen = m
+\t\tmode: import
+\t\tsource =
+\t\t\t\tlet
+\t\t\t\t\tSource = 1
+\t\t\t\tin
+\t\t\t\t\tSource
+
+\tannotation PBI_ResultType = Table
+"""
+
+
+def test_tmdl_scanner_handles_desktop_style_constructs():
+    from core.diff_semantic import _scan_table
+
+    t = _scan_table(KITCHEN)
+    assert t["name"] == "Kitchen"
+    assert t["props"]["description"] == "about the table"
+    assert set(t["measures"]) == {"Weird = Name", "Multi", "Fenced"}
+    assert t["measures"]["Weird = Name"]["expr"] == "1 + 1"
+    assert t["measures"]["Weird = Name"]["props"]["formatString"] == "0"
+    assert t["measures"]["Multi"]["expr"] == "VAR a = 1\nRETURN\n\ta"
+    assert t["measures"]["Multi"]["props"]["displayFolder"] == "'My Folder'"
+    assert t["measures"]["Multi"]["props"]["isHidden"] is True
+    assert t["measures"]["Fenced"]["expr"] == "1\n+ 2"
+    assert t["measures"]["Fenced"]["props"]["formatString"] == '"$"#,0.00'
+    assert set(t["columns"]) == {"Plain", "Calc Col", "MultiCalc"}
+    assert t["columns"]["Plain"]["expr"] is None
+    assert t["columns"]["Calc Col"]["expr"] == '[Plain] & "x"'
+    assert t["columns"]["MultiCalc"]["expr"] == "VAR x = 1\nRETURN x"
+    assert t["columns"]["MultiCalc"]["props"]["sortByColumn"] == "Plain"
+    assert t["partitions"]["Kitchen"]["expr"] == "m"
+    assert t["partitions"]["Kitchen"]["props"]["source"] == "let\n\tSource = 1\nin\n\tSource"
+
+
+def test_desktop_style_tmdl_diffs_are_precise_and_eol_bom_insensitive(pair):
+    a, b = pair
+    write(tmdl(a, "Kitchen"), KITCHEN)
+    # same content, but CRLF + BOM like some Desktop files
+    (tmdl(b, "Kitchen")).write_bytes(
+        b"\xef\xbb\xbf" + KITCHEN.replace("\n", "\r\n").encode("utf-8"))
+    assert diff(pair)["identical"] is True
+
+    text = KITCHEN.replace("\t\t\t\ta\n", "\t\t\t\ta + 1\n")
+    text = text.replace("displayFolder: 'My Folder'", "displayFolder: Other")
+    text = text.replace("sortByColumn: Plain", "sortByColumn: 'Calc Col'")
+    (tmdl(b, "Kitchen")).write_bytes(
+        b"\xef\xbb\xbf" + text.replace("\n", "\r\n").encode("utf-8"))
+    d = diff(pair)["model"]
+    assert d["measures"]["changed"] == [{
+        "table": "Kitchen", "name": "Multi",
+        "dax": {"diff": ["--- base", "+++ other", "@@ -2,2 +2,2 @@",
+                         " RETURN", "-\ta", "+\ta + 1"]},
+        "display_folder": {"from": "My Folder", "to": "Other"}}]
+    assert d["columns"]["changed"] == [{
+        "table": "Kitchen", "name": "MultiCalc",
+        "sort_by": {"from": "Plain", "to": "Calc Col"}}]
+    assert d["tables"]["changed"] == [] and d["measures"]["added"] == []
+
+
 EXPR = "Synthetic.SemanticModel/definition/expressions.tmdl"
 
 

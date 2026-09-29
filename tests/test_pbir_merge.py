@@ -382,19 +382,23 @@ def _git(repo, *args, check=True):
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="git not installed")
-def test_real_git_merge_uses_the_driver(tmp_path):
+@pytest.mark.parametrize("pattern, rel", [
+    ("*.Report/**/*.json", "R.Report/definition/report.json"),
+    ("**/*.Report/**/*.json", "sub/dir/R.Report/definition/report.json"),
+])
+def test_real_git_merge_uses_the_driver(tmp_path, pattern, rel):
     repo = tmp_path / "repo"
-    (repo / "R.Report" / "definition").mkdir(parents=True)
+    target = repo / rel
+    target.parent.mkdir(parents=True)
     _git(repo, "init", "-q")
     _git(repo, "checkout", "-q", "-b", "main")
-    (repo / ".gitattributes").write_text("*.Report/**/*.json merge=pbir\n",
+    (repo / ".gitattributes").write_text(f"{pattern} merge=pbir\n",
                                          encoding="utf-8")
     script = SCRIPT.as_posix()
     py = Path(sys.executable).as_posix()
     _git(repo, "config", "merge.pbir.name", "PBIR JSON structural merge")
     _git(repo, "config", "merge.pbir.driver",
          f'"{py}" "{script}" %O %A %B %A %P')
-    target = repo / "R.Report" / "definition" / "report.json"
 
     def save(obj):
         target.write_bytes(_dump(obj, indent=2, trailing=True))
@@ -439,12 +443,12 @@ def test_real_git_merge_uses_the_driver(tmp_path):
     res = _git(repo, "merge", "c1", "-m", "conflict", check=False)
     assert res.returncode != 0
     status = _git(repo, "status", "--porcelain").stdout
-    assert "UU R.Report/definition/report.json" in status
+    assert f"UU {rel}" in status
     assert _load(target)["settings"]["a"] == 200             # ours kept
     reports = [p for p in repo.rglob("*.pbir-conflicts.json")
                if ".git" not in p.parts]
     assert len(reports) == 1
     data = json.loads(reports[0].read_text(encoding="utf-8"))
-    assert data["file"] == "R.Report/definition/report.json"
+    assert data["file"] == rel
     assert data["conflicts"] == [{"path": "$.settings.a", "base": 2,
                                   "ours": 200, "theirs": 100}]
