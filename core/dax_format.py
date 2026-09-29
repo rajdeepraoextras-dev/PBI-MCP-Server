@@ -73,6 +73,12 @@ def _lex(dax: str) -> list[_Atom]:
             gaps.append(cur)
             cur = ""
     gaps.append(cur)
+    for k in range(len(sig) - 1):   # the tokenizer reads an unterminated `/*` as `/` `*`
+        if (sig[k].kind == "OP" and sig[k].text == "/" and sig[k + 1].kind == "OP"
+                and sig[k + 1].text == "*" and not gaps[k + 1]):
+            raise DaxFormatError(
+                f"Cannot format DAX: unterminated block comment at line {sig[k].line}, "
+                f"column {sig[k].col}.")
     atoms: list[_Atom] = []
     last = len(sig) - 1
     for k, t in enumerate(sig):
@@ -345,10 +351,20 @@ def _is_tok(it, kind: str | None = None, text: str | None = None) -> bool:
     return text is None or it.a.text == text
 
 
+# Words that are keywords in queries but also perfectly good table names
+# (`Order[Amount]`, `Table[x]`); directly before a [Column] they are qualifiers.
+_TABLE_LIKE = frozenset({"TABLE", "COLUMN", "MEASURE", "ORDER", "START", "ASC", "DESC"})
+
+
 def _is_qualifier(it) -> bool:
-    return isinstance(it, _T) and (
-        it.a.kind == "TABLE"
-        or (it.a.kind == "IDENT" and it.a.text.upper() not in KEYWORDS))
+    if not isinstance(it, _T):
+        return False
+    if it.a.kind == "TABLE":
+        return True
+    if it.a.kind != "IDENT":
+        return False
+    up = it.a.text.upper()
+    return up not in KEYWORDS or up in _TABLE_LIKE
 
 
 def _unary_position(last) -> bool:

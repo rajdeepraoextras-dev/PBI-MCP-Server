@@ -685,6 +685,21 @@ def _build_relationship(n: Node) -> MRel | None:
         is_active=active)
 
 
+_TABLE_HEADER = re.compile(r"^table[ 	]+(.+?)[ 	]*$", re.MULTILINE)
+
+
+def table_files(project) -> dict[str, Path]:
+    """{table name: TMDL file} without parsing the files (one cheap scan)."""
+    tables_dir = project._require_model() / "definition" / "tables"
+    out: dict[str, Path] = {}
+    if tables_dir.is_dir():
+        for f in sorted(tables_dir.glob("*.tmdl")):
+            m = _TABLE_HEADER.search(_read(f))
+            if m:
+                out.setdefault(unquote_name(m.group(1)), f)
+    return out
+
+
 def load_model(project, with_usage: bool = True) -> BpaModel:
     """Parse the project's TMDL (and report usage) into a :class:`BpaModel`."""
     model = BpaModel()

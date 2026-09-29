@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from core.bpa import Node, parse_nodes
+from core.bpa import Node, parse_nodes, table_files
 from core.dax_format import DaxFormatError, format_dax
 from core.dax_parser import parse_references, tokenize
 
@@ -149,8 +149,13 @@ def format_measures(state: ModelState, table: str | None = None,
     changed: list[dict] = []
     skipped: list[dict] = []
     unchanged = 0
+    files = table_files(project)
     for tname, names in by_table.items():
-        path = project._table_file(tname)
+        path = files.get(tname)
+        if path is None:
+            skipped.extend({"table": tname, "name": n, "reason": "table file not found"}
+                           for n in names)
+            continue
         text = path.read_text(encoding="utf-8-sig")
         nodes = [n for n in parse_nodes(text) if n.kw == "table"]
         tn = next((n for n in nodes if n.name == tname), None)
