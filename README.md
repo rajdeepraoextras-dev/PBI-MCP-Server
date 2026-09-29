@@ -295,6 +295,53 @@ live in `tests/goldens/` (regenerate deliberately with
 always reloads parseable. The reopen-in-Desktop check stays a manual gate
 before each release.
 
+## Live engine (optional)
+
+Everything above works on the project *files*. On Windows with Power BI
+Desktop installed, the `pbi-model` server also exposes read-only tools that
+talk to the **running** model -- the local Analysis Services instance behind
+an open Desktop window -- so DAX can be checked against real data before it
+is written to TMDL. They never modify the project.
+
+| Tool | What it does |
+|------|--------------|
+| `pbi_engine_status()` | ADOMD DLL in use, running Desktop instances (port, databases, tables), the instance matched to the selected project, or why nothing is reachable. Never raises. |
+| `pbi_evaluate_dax(query, max_rows?, port?, database?)` | Run `EVALUATE ...` or a DMV (`SELECT * FROM $SYSTEM....`); rows as JSON scalars, dates ISO 8601, `truncated` flag |
+| `pbi_validate_dax(dax, table?)` | The engine compiles a measure expression (`EVALUATE ROW("v", <dax>)`, or a query-scoped `DEFINE MEASURE` on `table`); nothing is persisted. Errors point into your expression. |
+| `pbi_table_row_counts()` | Row count per table (storage DMV, `COUNTROWS` fallback) |
+| `pbi_column_stats(table?)` | VertiPaq cardinality, dictionary / data / hierarchy size and encoding per column, largest first |
+| `pbi_preview_table(table, top?)` | `EVALUATE TOPN(top, 'table')` |
+| `pbi_engine_connect(connection_string)` | Pin a remote XMLA endpoint (e.g. `Data Source=powerbi://api.powerbi.com/v1.0/myorg/<Workspace>;Initial Catalog=<Dataset>;User ID=;Password=<access token>`) for the session; memory only, `Password=` redacted everywhere. `""` unpins. |
+
+How it works (`core/engine.py`, no pip dependencies): each Desktop instance
+writes its port to `AnalysisServicesWorkspace_<guid>/Data/msmdsrv.port.txt`.
+Those folders are searched under `%USERPROFILE%\Microsoft\Power BI Desktop
+Store App\AnalysisServicesWorkspaces` (Store build), its package-virtualised
+`LocalCache` twin, and `%LOCALAPPDATA%\Microsoft\Power BI Desktop\...` (MSI
+build); only the port file is ever read. A port must accept a TCP connect
+to count, and the instance is matched to the selected project by table
+names. Queries run through ADOMD.NET in a spawned `powershell.exe` that
+`Add-Type`s the AdomdClient DLL shipped with Desktop (about 2 s per tool
+call); query text and connection strings travel in a temp file, never on the
+command line. The DLL is looked up as `PBI_ADOMD_DLL` (env), then the MSI
+install, then the Store package (`Get-AppxPackage`, newest version). When
+nothing is reachable the tools raise a clear `EngineUnavailable` ("open the
+project in Power BI Desktop" / "set PBI_ADOMD_DLL"); on non-Windows they
+always do.
+
+A `.pbip` opens in Desktop **without data**: row counts are 0 and measures are
+blank until the model is refreshed (the banner's *Refresh now*).
+
+`tests/fixtures/engine/Engine.pbip` is a tiny project with inline data (three
+`Table.FromRows` partitions, one relationship, three measures, one card) that
+opens and refreshes in Desktop without any external source or credentials.
+
+```bash
+python scripts/desktop_launch.py tests/fixtures/engine/Engine.pbip --refresh   # open + load data
+python -m pytest tests/test_engine.py -q     # the live tests run when an instance is up, else skip
+python scripts/desktop_launch.py --close     # normal close, answers "Don't save"; Stop-Process last
+```
+
 ## License
 
 MIT.

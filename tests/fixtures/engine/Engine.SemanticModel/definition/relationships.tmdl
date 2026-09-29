@@ -1,0 +1,4 @@
+relationship 3b7f1c2d-8a4e-4f60-9d3b-5e2a1c7f0b11
+	fromColumn: Sales.CustomerId
+	toColumn: Customer.CustomerId
+
