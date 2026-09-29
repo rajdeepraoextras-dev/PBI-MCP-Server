@@ -147,14 +147,58 @@ charts use `Y` + `Y2`, donut charts have no `Category`.
 }
 ```
 
+## Cloud: pbi-service (optional)
+
+A third MCP server, `pbi-service`, talks to the Power BI / Fabric REST APIs so
+the project you built locally can be published, refreshed, promoted and
+exported without leaving the session. It is strictly additive: `pbi-model`
+and `pbi-report` never import it and keep working offline with no auth.
+
+```bash
+pip install -e ".[dev,cloud]"          # cloud = msal, only needed for (c)/(d) below
+python -m service_server.server        # or: pbi-service-server / scripts/launcher.py service
+```
+
+**Auth** is resolved in this order (first configured source wins; check
+`pbi_service_status()`):
+
+1. a token passed to `pbi_service_login(token=...)` (session only)
+2. env `PBI_ACCESS_TOKEN` (e.g. from `az account get-access-token --resource https://analysis.windows.net/powerbi/api`)
+3. a service principal from `AZURE_TENANT_ID` / `AZURE_CLIENT_ID` / `AZURE_CLIENT_SECRET` (msal, cached in memory, refreshed before expiry)
+4. interactive device code via `pbi_service_login(device_code=True)` — requires env `PBI_CLIENT_ID`, the id of a public client app you register yourself (no client id is hard-coded); the first call returns `user_code` + `verification_uri`, a later call completes the sign-in
+
+Tokens never touch disk or logs and every tool result is redacted.
+
+| Tool | What it does |
+|------|--------------|
+| `pbi_service_status()` | Active auth source + identity hints, base URLs, last operation ids |
+| `pbi_service_login(token?, device_code?)` | Store a session token or start/poll a device-code sign-in |
+| `pbi_set_project(path)` | Select the local `.pbip` to publish (only needed for publishing) |
+| `pbi_list_workspaces()` / `pbi_list_items(workspace, type?)` | Browse; workspaces/items accept an id or display name |
+| `pbi_get_item_definition(workspace, item, out_dir, type?)` | Download a SemanticModel (TMDL) or Report (PBIR) into a PBIP-shaped folder the local servers can open |
+| `pbi_publish_project(workspace, name?, update_if_exists?, publish_model?, publish_report?)` | Upload the model (every file except `.pbi/`) then the report bound to it (`definition.pbir` rewritten to `byConnection` in memory) |
+| `pbi_refresh_dataset(workspace, dataset, wait?, timeout?)` / `pbi_refresh_status(...)` | Trigger a refresh, optionally wait; recent history |
+| `pbi_list_deployment_pipelines()` / `pbi_deploy_pipeline_stage(pipeline, source_stage, items?, wait?)` | Deploy all or selected items from a stage |
+| `pbi_export_report(workspace, report, out_path, format="PDF"\|"PPTX"\|"PNG", page_ids?)` | Export to file and download it |
+
+Cloud writes change nothing on disk, so they have **no `dry_run` preview and
+no `pbi_undo`**; the service is the source of truth for them. HTTP goes
+through stdlib `urllib` with retries on 429/5xx (honouring `Retry-After`) and
+long-running operations polled with a timeout. The REST calls follow the
+official Fabric Core Items and Power BI REST references but are exercised in
+this repo only against scripted fakes — treat the first run against a real
+tenant as a smoke test.
+
 ## Layout
 
 ```
 pbi-mcp/
   core/            # PbipProject + TMDL/PBIR read-write, specs, lineage,
-                   # usage classifier, formatting/filter builders, safe I/O
+                   # usage classifier, formatting/filter builders, safe I/O;
+                   # auth.py + fabric_api.py back the optional cloud server
   model_server/    # MCP server: pbi-model
   report_server/   # MCP server: pbi-report
+  service_server/  # MCP server: pbi-service (optional, cloud)
   scripts/         # smoke test, M5 demo, packager
   tests/           # 299 tests; fixtures/ (synthetic + real, gitignored)
 ```

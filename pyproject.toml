@@ -19,17 +19,21 @@ dev = [
 build = [
     "pyinstaller>=6.0",
 ]
+cloud = [
+    "msal>=1.28",  # optional: service-principal / device-code sign-in for pbi-service
+]
 
 [project.scripts]
 pbi-model-server = "model_server.server:main"
 pbi-report-server = "report_server.server:main"
+pbi-service-server = "service_server.server:main"
 
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["core", "model_server", "report_server"]
+packages = ["core", "model_server", "report_server", "service_server"]
 
 [tool.setuptools.package-data]
 "*" = ["resources/schemas/*.json"]
