@@ -368,6 +368,29 @@ def test_and_or_chains_break_only_when_too_long():
     assert all(len(line) <= 60 for line in lines)
 
 
+def test_long_sums_and_concatenations_break_before_the_operator():
+    total = " + ".join(f"[Measure Number {i}]" for i in range(8))
+    assert format_dax(total, max_line=200) == total
+    out = format_dax(total, max_line=60)
+    lines = out.split("\n")
+    assert lines[0] == "[Measure Number 0]"
+    assert all(line == f"    + [Measure Number {i}]" for i, line in enumerate(lines[1:], 1))
+    mixed = format_dax("[A Long Measure Name] - [Another Long Measure] + [Third Long Measure Name]"
+                       " - [Fourth]", max_line=50)
+    assert mixed.split("\n")[1:] == ["    - [Another Long Measure]", "    + [Third Long Measure Name]",
+                                     "    - [Fourth]"]
+    text = format_dax('"a fairly long literal " & [Some Measure] & " and another literal" & [Other]',
+                      max_line=40)
+    assert text.split("\n")[1].startswith("    & ")
+    # a leading sign is not a binary operator, and lower-precedence chains win
+    unary = format_dax("-[Measure Number One] + -[Measure Number Two] - -3", max_line=30)
+    assert unary.split("\n") == ["-[Measure Number One]", "    + -[Measure Number Two]", "    - -3"]
+    boolean = format_dax("[a] + [b] > 0 && [c] + [d] > 0", max_line=20)
+    assert boolean == "[a] + [b] > 0\n    && [c] + [d] > 0"
+    for src in (total, mixed, text, unary):
+        check_props(src, max_line=40)
+
+
 def test_blank_lines_are_collapsed_and_edges_trimmed():
     out = format_dax("\n\n  VAR a = 1\n\n\n\n  VAR b = 2\n\n RETURN\n\n a + b \n\n")
     assert out == "VAR a = 1\nVAR b = 2\nRETURN\n    a + b"
@@ -401,7 +424,7 @@ def test_line_comment_never_swallows_code():
         check_props(src)
     assert format_dax("f(a, // c\n b)") == "F(\n    a, // c\n    b\n)"
     assert format_dax("f(a // c\n)") == "F(\n    a // c\n)"
-    assert format_dax("a + // c\n b") == "a + // c\nb"
+    assert format_dax("a + // c\n b") == "a\n    + // c\n    b"
 
 
 def test_short_style():

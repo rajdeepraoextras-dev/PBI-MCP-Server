@@ -502,8 +502,27 @@ def _flat(items: list, ctx: _Ctx) -> _D:
     return _D(_Cat(out), call)
 
 
-def _expr(items: list, ctx: _Ctx, peel: bool = True) -> _D:
-    """One expression: `||` / `&&` chains get line-break opportunities.
+# Operator chains that may break before the operator when too long, lowest
+# precedence first: `||`, `&&`, `&`, then `+` / `-`.
+_CHAIN_LEVELS = (("||",), ("&&",), ("&",), ("+", "-"))
+
+
+def _chain_points(items: list, ops: tuple) -> list[int]:
+    """Indexes of binary operators from ``ops`` (a leading +/- is unary)."""
+    out: list[int] = []
+    last = None
+    for i, it in enumerate(items):
+        if isinstance(it, _C):
+            continue
+        if _is_tok(it, "OP") and it.a.text in ops and not (
+                it.a.text in ("+", "-") and _unary_position(last)):
+            out.append(i)
+        last = it
+    return out
+
+
+def _expr(items: list, ctx: _Ctx, peel: bool = True, level: int = 0) -> _D:
+    """One expression: operator chains get line-break opportunities.
     Own-line comments before it stay on their own lines (``peel``)."""
     if peel:
         k = 0
@@ -514,19 +533,18 @@ def _expr(items: list, ctx: _Ctx, peel: bool = True) -> _D:
             rest = _expr(items[k:], ctx, peel=False)
             return _D(_Cat([*_lead_docs(items[:k]), rest.doc]), rest.call)
     if not ctx.oneline:
-        for op in ("||", "&&"):
-            idx = [i for i, it in enumerate(items) if _is_tok(it, "OP", op)]
+        for li in range(level, len(_CHAIN_LEVELS)):
+            idx = _chain_points(items, _CHAIN_LEVELS[li])
             if not idx:
                 continue
             cuts = [-1, *idx, len(items)]
             parts = [items[a + 1:b] for a, b in zip(cuts, cuts[1:])]
             if any(not any(not isinstance(x, _C) for x in p) for p in parts):
                 break                       # dangling operator: leave it flat
-            ds = [_expr(p, ctx, peel=False) if op == "||" else _flat(p, ctx)
-                  for p in parts]
+            ds = [_expr(p, ctx, peel=False, level=li + 1) for p in parts]
             rest: list = []
-            for d in ds[1:]:
-                rest += [_Line(" "), _Text(op + " "), d.doc]
+            for k, d in enumerate(ds[1:]):
+                rest += [_Line(" "), _Text(items[idx[k]].a.text + " "), d.doc]
             doc = _Group(_Cat([ds[0].doc, _Nest(1, _Cat(rest))]))
             return _D(doc, any(d.call for d in ds))
     return _flat(items, ctx)

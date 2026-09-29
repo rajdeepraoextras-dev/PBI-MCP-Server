@@ -2150,7 +2150,12 @@ def builtin_rules() -> list[RuleDef]:
     """The rule catalog from ``resources/bpa_rules.json``, bound to its checks."""
     global _CATALOG
     if _CATALOG is None:
-        data = json.loads(RESOURCE_PATH.read_text(encoding="utf-8"))
+        try:
+            data = json.loads(RESOURCE_PATH.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            raise RuntimeError(
+                f"The BPA rule catalog {RESOURCE_PATH} is missing. Packaged builds must "
+                "ship resources/bpa_rules.json next to the core package.") from None
         rules: list[RuleDef] = []
         for r in data["rules"]:
             fn = _CHECKS.get(r["id"])

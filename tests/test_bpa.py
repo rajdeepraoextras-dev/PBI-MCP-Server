@@ -487,6 +487,34 @@ def test_no_report_layer_skips_usage_rules_with_a_note(tmp_path):
     assert quiet["notes"] == []
 
 
+def test_report_that_binds_nothing_skips_usage_rules(tmp_path):
+    def drop_visuals(files):
+        for k in [k for k in files if "/visuals/" in k]:
+            del files[k]
+
+    r = run(tmp_path, [drop_visuals])
+    assert "REMOVE_UNUSED_COLUMNS" not in r["summary"]["by_rule"]
+    assert "UNUSED_MEASURES" not in r["summary"]["by_rule"]
+    assert any("does not reference any model field" in n for n in r["notes"])
+    assert "HIDE_FOREIGN_KEYS" in r["summary"]["by_rule"]          # everything else still runs
+
+
+def test_date_table_name_heuristic_ignores_lookalikes():
+    f = bpa._looks_like_date_table_name
+    for name in ("Date", "Dates", "Calendar", "Dim Date", "tbl_dimensiondate", "fiscalcalendar", "DateTable"):
+        assert f(name), name
+    for name in ("Mandates", "Gold measures_vwfactsalesmandates", "Candidates", "Updates Log",
+                 "Validation", "Sales", "Consolidated"):
+        assert not f(name), name
+
+
+def test_missing_rule_catalog_gives_an_actionable_error(monkeypatch, tmp_path):
+    monkeypatch.setattr(bpa, "_CATALOG", None)
+    monkeypatch.setattr(bpa, "RESOURCE_PATH", tmp_path / "nope.json")
+    with pytest.raises(RuntimeError, match="resources/bpa_rules.json"):
+        bpa.builtin_rules()
+
+
 def test_model_with_no_tables_does_not_crash(tmp_path):
     files = base_files()
     project = build(tmp_path, [])

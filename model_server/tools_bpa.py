@@ -79,7 +79,8 @@ def register(mcp, state, tool) -> None:
         """Apply the Best Practice Analyzer's safe automatic fixes and report
         what changed. Each fix inserts a single property line into the table's
         TMDL file and nothing else: a default format string on numeric measures
-        that lack one (#,0, or 0.0% for percent-like names), isHidden on
+        that lack one (#,0 whole numbers, or 0.0% for percent-like names; set
+        a decimal format afterwards where you need one), isHidden on
         foreign-key columns, and dataCategory on columns named Latitude,
         Longitude, WebUrl or ImageUrl. Re-running is a no-op. `rules` limits the
         fixes to those rule IDs; `table` to one table."""
