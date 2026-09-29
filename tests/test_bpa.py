@@ -33,6 +33,20 @@ MODEL = "definition/model.tmdl"
 SM = "Synthetic.SemanticModel/definition"
 
 
+def tool_payload(result):
+    """MCP tool result -> python object, across mcp majors and result shapes."""
+    structured = None
+    if isinstance(result, tuple):                  # mcp 1.x: (content, structured)
+        result, structured = result
+    structured = (structured or getattr(result, "structured_content", None)
+                  or getattr(result, "structuredContent", None))
+    if structured is not None:
+        return structured.get("result", structured) if isinstance(structured, dict) else structured
+    content = getattr(result, "content", result)
+    items = [json.loads(c.text) for c in content]
+    return items[0] if len(items) == 1 else items
+
+
 # --- project builder ----------------------------------------------------------
 
 def base_files() -> dict[str, str]:
@@ -1030,13 +1044,7 @@ def test_bpa_fix_dry_run_write_and_undo_through_the_server(tmp_path):
     shutil.copytree(SYNTH, proj)
 
     def call(name, **args):
-        res = asyncio.run(srv.mcp.call_tool(name, args))
-        if isinstance(res, tuple):
-            res = res[0]
-        structured = getattr(res, "structured_content", None) or getattr(res, "structuredContent", None)
-        if structured is not None:
-            return structured.get("result", structured)
-        return json.loads(res.content[0].text)
+        return tool_payload(asyncio.run(srv.mcp.call_tool(name, args)))
 
     call("pbi_set_project", path=str(proj / "Synthetic.pbip"))
     before = snapshot(proj)

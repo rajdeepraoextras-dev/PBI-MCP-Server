@@ -31,6 +31,20 @@ SYNTH = Path(__file__).parent / "fixtures" / "synthetic"
 
 # --- helpers -----------------------------------------------------------------
 
+def tool_payload(result):
+    """MCP tool result -> python object, across mcp majors and result shapes."""
+    structured = None
+    if isinstance(result, tuple):                  # mcp 1.x: (content, structured)
+        result, structured = result
+    structured = (structured or getattr(result, "structured_content", None)
+                  or getattr(result, "structuredContent", None))
+    if structured is not None:
+        return structured.get("result", structured) if isinstance(structured, dict) else structured
+    content = getattr(result, "content", result)
+    items = [json.loads(c.text) for c in content]
+    return items[0] if len(items) == 1 else items
+
+
 def sig(s: str) -> list[tuple[str, str]]:
     return [(t.kind, t.text.lower() if t.kind == "IDENT" else t.text)
             for t in tokenize(s) if t.kind not in ("WS", "COMMENT")]
@@ -698,13 +712,7 @@ def test_format_measures_dry_run_then_write_then_undo(proj):
     import model_server.server as srv
 
     def call(name, **args):
-        res = asyncio.run(srv.mcp.call_tool(name, args))
-        if isinstance(res, tuple):
-            res = res[0]
-        structured = getattr(res, "structured_content", None) or getattr(res, "structuredContent", None)
-        if structured is not None:
-            return structured.get("result", structured)
-        return json.loads(res.content[0].text)
+        return tool_payload(asyncio.run(srv.mcp.call_tool(name, args)))
 
     call("pbi_set_project", path=str(proj / "Synthetic.pbip"))
     before = snapshot(proj)
