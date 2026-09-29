@@ -4,7 +4,7 @@
 
 The `pbi-report` server builds and edits the **report** (PBIR) of a Power BI Project: pages, visuals, formatting, themes, filters and design elements. Every report write is validated against the official Fabric schemas before it reaches disk. Call `pbi_set_project(path)` first, then `pbi_capabilities()` to learn the visual types, buckets and filters.
 
-**75 tools** (22 read-only, 53 write).
+**81 tools** (23 read-only, 58 write).
 
 ## How to read this page
 
@@ -382,6 +382,32 @@ Set dry_run=true to preview: the operation runs against a scratch copy and the r
 | `new_name` | string | yes |  |
 | `dry_run` | boolean | no | `false` |
 
+### `pbi_render_page`
+
+**Write** · idempotent
+
+Draw a page as a wireframe-with-content picture: the page canvas at
+its real size with its background, and every visual as a rounded box at
+its position (z-order kept, hidden visuals dashed, groups outlined and
+named) showing its title, visual type, a bindings summary
+("Category: Date.Year | Y: Sales.Net Revenue") and a schematic glyph
+(bars, line, pie, big number, grid, list, ...), colored from the
+report's theme and accent. format is 'svg' (default) or 'png' (needs
+Pillow: pip install pbi-mcp[render]); scale multiplies the size (0-8].
+The file goes to out_path (a file ending in .svg/.png, or a directory)
+or, by default, &lt;Report>/.pbi/mcp-renders/&lt;page_id>.&lt;ext>. Returns the
+path, size, bytes, a per-visual list (id, type, title, geometry) and,
+for SVG when inline is true and the file is under 200 KB, the SVG text
+so hosts can show it.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `page_id` | string | yes |  |
+| `format` | one of "svg", "png" | no | `"svg"` |
+| `out_path` | string | no | `null` |
+| `scale` | number | no | `1.0` |
+| `inline` | boolean | no | `true` |
+
 ### `pbi_reorder_pages`
 
 **Write** · idempotent
@@ -448,6 +474,37 @@ Set dry_run=true to preview: the operation runs against a scratch copy and the r
 | `dry_run` | boolean | no | `false` |
 
 ## Visuals
+
+### `pbi_add_deneb_visual`
+
+**Write**
+
+Add a Deneb (Vega-Lite) chart to a page from a template (see
+`pbi_list_deneb_templates`). bindings maps template roles to model fields,
+e.g. {"category": "Date.Year", "value": "Sales.Net Revenue", "series":
+"Store.Region"}; measures and columns are resolved from the model, must
+exist and fit the role (dimension roles take columns, measure roles take
+measures or numeric columns; 'Sum(Table.Col)' aggregates a column). The
+fields are bound to the visual's dataset so the data flows, and the spec
+reads the dataset by field name. options tunes the template (color,
+palette, orientation, labels, format, ...). position is {x, y, width,
+height} (default: the first free 480x320 slot on the page); title sets
+the container title. The Deneb custom visual must be present in the
+report or organization to render: this lists it in report.json
+publicCustomVisuals when it is not already available. Returns the new
+visual id and the dataset field names the spec uses.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `page_id` | string | yes |  |
+| `template` | string | yes |  |
+| `bindings` | object | yes |  |
+| `position` | object | no | `null` |
+| `title` | string | no | `null` |
+| `options` | object | no | `null` |
+| `dry_run` | boolean | no | `false` |
 
 ### `pbi_add_visual`
 
@@ -739,6 +796,32 @@ Set dry_run=true to preview: the operation runs against a scratch copy and the r
 | `theme` | object | yes |  |
 | `dry_run` | boolean | no | `false` |
 
+### `pbi_theme_from_image`
+
+**Write** · destructive · idempotent
+
+Build a Power BI theme from the colors of an image (logo, photo,
+brand artwork; needs Pillow: pip install pbi-mcp[render]). The image is
+downscaled and quantized to ~16 colors, near-white / near-black / gray
+swatches are dropped, the rest are ordered by saturation then luminance,
+the most saturated mid-tone becomes the accent and 6-8 distinct swatches
+become the theme's dataColors; the theme itself comes from the same
+generator as `pbi_generate_theme` (mode 'light' or 'dark'). Returns the
+theme JSON, the accent, the dataColors and the extracted swatches. Nothing
+is written unless install=true, which installs and activates the theme in
+the report (replacing the current custom theme); name defaults to
+'&lt;image name> Theme'.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `image_path` | string | yes |  |
+| `name` | string | no | `null` |
+| `mode` | one of "light", "dark" | no | `"light"` |
+| `install` | boolean | no | `false` |
+| `dry_run` | boolean | no | `false` |
+
 ## Filters
 
 ### `pbi_add_filter`
@@ -1020,6 +1103,21 @@ percentile, label, color, style, position, measure.
 | `page_id` | string | yes |  |
 | `visual_id` | string | yes |  |
 
+### `pbi_list_deneb_templates`
+
+**Read-only** · idempotent
+
+List the Deneb chart templates `pbi_add_deneb_visual` can build: bar,
+stacked_bar, line, area, scatter, heatmap, histogram, box_plot, bullet,
+sparkline, waffle and dumbbell. Each entry gives its name, a description,
+the bindings it takes (role -> 'Table.Field', required or optional,
+dimension or measure), its options (color, palette, orientation, labels,
+format, ...) with defaults, and an example call (field names are
+illustrative; use your model's). The Deneb custom visual must be present
+in the report or organization for these visuals to render.
+
+_No parameters._
+
 ### `pbi_list_report_measures`
 
 **Read-only** · idempotent
@@ -1071,6 +1169,21 @@ Set dry_run=true to preview: the operation runs against a scratch copy and the r
 | `visual_id` | string | yes |  |
 | `name` | string | yes |  |
 | `dry_run` | boolean | no | `false` |
+
+### `pbi_render_report`
+
+**Write** · idempotent
+
+Render every page of the report with the same wireframe drawing as
+`pbi_render_page`, one file per page (&lt;page_id>.svg or .png) in out_dir or,
+by default, &lt;Report>/.pbi/mcp-renders/. PNG needs Pillow (pip install
+pbi-mcp[render]). Returns one entry per page: page_id, page_name, path,
+width, height, bytes, visual_count (no inline SVG; open the files).
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `format` | one of "svg", "png" | no | `"svg"` |
+| `out_dir` | string | no | `null` |
 
 ### `pbi_semantic_diff`
 
@@ -1177,6 +1290,32 @@ Set dry_run=true to preview: the operation runs against a scratch copy and the r
 | `font_size` | number | no | `null` |
 | `font_family` | string | no | `null` |
 | `background` | string | no | `null` |
+| `dry_run` | boolean | no | `false` |
+
+### `pbi_set_deneb_spec`
+
+**Write** · destructive · idempotent
+
+Replace the Vega-Lite or Vega spec of an existing Deneb visual with an
+arbitrary one (an object, or JSON text); the provider is detected from
+$schema / the spec's keys. config (optional) replaces the Vega config
+(jsonConfig); omitted, the current config is kept. The spec must read the
+bound fields from the data named "dataset" (Vega-Lite: "data": {"name":
+"dataset"}); a warning is returned when it does not. Field names in the
+dataset are the bound fields' display names with \ " . [ ] replaced by _.
+Bindings are not changed: to change the fields, call `pbi_update_bindings`
+with the single bucket "dataset", e.g. {"dataset": ["Date.Year",
+"Sales.Net Revenue"]}. The Deneb custom visual must be present in the
+report or organization to render.
+
+Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.
+
+| Parameter | Type | Required | Default |
+|---|---|---|---|
+| `page_id` | string | yes |  |
+| `visual_id` | string | yes |  |
+| `spec` | object or string | yes |  |
+| `config` | object or string | no | `null` |
 | `dry_run` | boolean | no | `false` |
 
 ### `pbi_set_mobile_layout`

@@ -13,8 +13,8 @@
 tools read and write the on-disk project files Power BI Desktop itself uses.
 
 Build a correctly-bound, themed, filtered, multi-page report — or bulk-author
-hundreds of measures — from a prompt, in minutes. **135 tools** (60 model +
-75 report) across two MCP servers; every report write is pre-flight validated
+hundreds of measures — from a prompt, in minutes. **141 tools** (60 model +
+81 report) across two MCP servers; every report write is pre-flight validated
 against the official Fabric schemas.
 
 **Fastest path:** `pbi_set_project(path)` → `pbi_scaffold_report()` profiles
@@ -282,7 +282,7 @@ pbi-mcp/
   report_server/   # MCP server: pbi-report
   service_server/  # MCP server: pbi-service (optional, cloud)
   scripts/         # smoke test, M5 demo, packager
-  tests/           # 973 tests; fixtures/ (synthetic + real, gitignored)
+  tests/           # 1096 tests; fixtures/ (synthetic + real, gitignored)
 ```
 
 ## Testing
