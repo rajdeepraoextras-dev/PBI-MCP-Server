@@ -44,10 +44,10 @@ def run_server(mcp, transport: str = "stdio", host: str | None = None,
 
     The bind address for the HTTP transports lives in different places:
     mcp 1.x reads it from ``mcp.settings`` (the FastMCP ``Settings`` object)
-    and ``run()`` takes only ``transport``; 2.x dropped the settings object and
-    forwards ``host``/``port`` keyword arguments from ``run()`` to the transport
-    runner. ``host``/``port`` are ignored for stdio. ``None`` keeps the SDK's
-    own default (127.0.0.1:8000 on both).
+    and ``run()`` takes only ``transport``; 2.x moved it to keyword arguments
+    that ``run()`` forwards to the transport runner (``mcp.settings`` no
+    longer decides the bind address). ``host``/``port`` are ignored for stdio.
+    ``None`` keeps the SDK's own default (127.0.0.1:8000 on both).
     """
     if transport == "stdio":
         mcp.run(transport="stdio")

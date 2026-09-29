@@ -147,7 +147,8 @@ def test_manifest_tool_list_is_well_formed(dist, which):
     names = [t["name"] for t in tools]
     assert len(names) == len(set(names))
     assert all(n.startswith("pbi_") and t["description"] for n, t in zip(names, tools))
-    assert "pbi_set_project" in names
+    if which in ("model", "report"):            # the cloud server has its own entry tools
+        assert "pbi_set_project" in names
     assert m["tools_generated"] is False
 
 
@@ -275,12 +276,23 @@ def test_standalone_bundles_the_same_servers():
         assert entry["args"] == [key.removeprefix("pbi-")]
 
 
-def test_standalone_collects_every_server_package():
-    src = (REPO / "scripts" / "build_standalone.py").read_text(encoding="utf-8")
-    # tools_* modules are found with pkgutil at runtime, so each server
-    # package must be collected wholesale or the frozen build loses tools.
-    assert "--collect-submodules" in src and "SERVERS.values()" in src
-    assert {"model_server", "report_server"} <= set(standalone.SERVERS.values())
+def test_standalone_collects_every_server_package(monkeypatch, tmp_path):
+    """tools_* modules are found with pkgutil at runtime, which PyInstaller's
+    static analysis cannot see: each server package must be collected wholesale
+    or the frozen build silently loses those tools."""
+    from types import SimpleNamespace
+    recorded: dict[str, list] = {}
+    monkeypatch.setattr(standalone, "DIST", tmp_path)
+    (tmp_path / standalone.EXE_NAME).write_bytes(b"")          # pretend PyInstaller ran
+    monkeypatch.setattr(standalone, "subprocess", SimpleNamespace(
+        run=lambda cmd, **kw: recorded.setdefault("cmd", cmd)))
+
+    standalone.freeze()
+
+    cmd = recorded["cmd"]
+    collected = {cmd[i + 1] for i, arg in enumerate(cmd) if arg == "--collect-submodules"}
+    assert {"core", "mcp.server", "model_server", "report_server"} <= collected
+    assert collected >= set(standalone.SERVERS.values())
 
 
 # --- versions, metadata, changelog ---------------------------------------------------------
@@ -316,6 +328,19 @@ def test_pyproject_ships_the_vendored_schemas():
     assert "resources.schemas" in find["include"] and find["namespaces"] is True
     assert "*.json" in PYPROJECT["tool"]["setuptools"]["package-data"]["resources.schemas"]
     assert list((REPO / "resources" / "schemas").glob("*.json"))
+
+
+def test_every_top_level_python_package_is_packaged():
+    """Tripwire: a new top-level package must be added to pyproject's
+    [tool.setuptools.packages.find].include (wheel) and to scripts/package.py
+    (bundles), otherwise it silently ships nowhere and fails at import."""
+    top_level = {p.name for p in REPO.iterdir()
+                 if p.is_dir() and (p / "__init__.py").is_file()} - {"tests"}
+    include = PYPROJECT["tool"]["setuptools"]["packages"]["find"]["include"]
+    in_wheel = {pattern.split(".")[0] for pattern in include}
+    in_bundles = {"core", *package.SERVER_PACKAGES.values()}
+    assert top_level <= in_wheel, f"not in the wheel: {sorted(top_level - in_wheel)}"
+    assert top_level <= in_bundles, f"not in the bundles: {sorted(top_level - in_bundles)}"
 
 
 def test_changelog_section_extraction():

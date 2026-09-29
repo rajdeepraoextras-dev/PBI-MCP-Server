@@ -183,6 +183,13 @@ add `--dist DIR` to write elsewhere). The standalone build needs
 `pip install -e ".[build]"`. Validate a `.mcpb` manifest with
 `npx --yes @anthropic-ai/mcpb validate path/to/manifest.json`.
 
+Adding a new **top-level Python package** (a new folder with `__init__.py` next
+to `core/`)? Add it to `[tool.setuptools.packages.find].include` in
+`pyproject.toml` (wheel) and to `scripts/package.py` (`.plugin` / `.mcpb`
+bundles), and to `scripts/build_standalone.py` if it must be frozen.
+`test_every_top_level_python_package_is_packaged` fails until the first two are
+done. New modules *inside* `core/` or a server package need nothing.
+
 ## Releasing
 
 Releases are cut by pushing a tag; the workflows do the rest.

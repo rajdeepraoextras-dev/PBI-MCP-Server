@@ -119,7 +119,7 @@ Download from the
   (1.x or 2.x), `pydantic` and `jsonschema` on the host.
 
 Drag the `.plugin` file into a plugin-aware MCP host. The standalone builds are
-~20 MB, published only as release assets (not tracked in git), and listed with
+~25 MB, published only as release assets (not tracked in git), and listed with
 checksums in `SHA256SUMS.txt`; rebuild one locally with
 `scripts/build_standalone.py`.
 
