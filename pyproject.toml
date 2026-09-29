@@ -45,6 +45,9 @@ cloud = [
 docs = [
     "mkdocs-material>=9",
 ]
+render = [
+    "Pillow>=10",
+]
 
 [project.scripts]
 pbi-mcp = "core.cli:main"
