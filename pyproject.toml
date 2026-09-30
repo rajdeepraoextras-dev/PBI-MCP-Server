@@ -7,7 +7,7 @@ requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Rajdeep Rao" }]
 dependencies = [
-    "mcp>=1.2.0",
+    "mcp>=1.2.0,<2",  # 2.x renamed FastMCP -> MCPServer; servers use the 1.x API
     "pydantic>=2.6",
     "jsonschema>=4.20",
 ]

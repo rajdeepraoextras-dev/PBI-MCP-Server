@@ -5,9 +5,9 @@
 tools read and write the on-disk project files Power BI Desktop itself uses.
 
 Build a correctly-bound, themed, filtered, multi-page report — or bulk-author
-hundreds of measures — from a prompt, in minutes. **56 tools** across two MCP
-servers; every report write is pre-flight validated against the official
-Fabric schemas.
+hundreds of measures — from a prompt, in minutes. **57 tools** (13 model +
+44 report) across two MCP servers; every report write is pre-flight validated
+against the official Fabric schemas.
 
 **Fastest path:** `pbi_set_project(path)` → `pbi_scaffold_report()` profiles
 the model and builds a themed, navigable, multi-page designed report in one
@@ -39,12 +39,16 @@ refuses to open. Every mutation therefore goes through:
 
 ## Download the plugin
 
-For the easiest install, download one of the bundles from `dist/`:
+For the easiest install, grab a bundle from the
+[latest GitHub Release](https://github.com/rajdeepraoextras-dev/PBI-MCP-Server/releases/latest):
 
 - `pbi-mcp-standalone-win32-amd64.plugin` - self-contained Windows build; no
   local Python setup required.
 - `pbi-mcp.plugin` - source plugin bundle; requires Python 3.11+ and the
   package dependencies on the host.
+
+The standalone build is ~20 MB and is published only as a release asset (it
+is not tracked in git); rebuild it locally with `scripts/build_standalone.py`.
 
 Drag the `.plugin` file into a plugin-aware MCP host, then call
 `pbi_set_project(path)` first in both `pbi-model` and `pbi-report` sessions.
@@ -52,7 +56,7 @@ Drag the `.plugin` file into a plugin-aware MCP host, then call
 ## Quickstart
 
 ```bash
-git clone <repo> && cd pbi-mcp
+git clone https://github.com/rajdeepraoextras-dev/PBI-MCP-Server.git && cd PBI-MCP-Server
 python -m venv .venv
 .venv\Scripts\pip install -e ".[dev]"
 .venv\Scripts\python -m pytest          # green suite = good to go
@@ -152,7 +156,7 @@ pbi-mcp/
   model_server/    # MCP server: pbi-model
   report_server/   # MCP server: pbi-report
   scripts/         # smoke test, M5 demo, packager
-  tests/           # 220+ tests; fixtures/ (synthetic + real, gitignored)
+  tests/           # 297 tests; fixtures/ (synthetic + real, gitignored)
 ```
 
 ## Testing
