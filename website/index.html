@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pbi-mcp: talk to your Power BI project</title>
+<meta name="description" content="MCP servers that let Claude build and edit Power BI Projects on disk. 158 tools. Preview every change as a diff, undo it afterwards, keep everything in Git. Open source, MIT.">
+<meta name="theme-color" content="#0e0b1f">
+<link rel="canonical" href="https://rajdeepraoextras-dev.github.io/PBI-MCP-Server/">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="pbi-mcp: talk to your Power BI project">
+<meta property="og:description" content="158 tools. Preview every change, undo it afterwards, keep everything in Git.">
+<meta property="og:url" content="https://rajdeepraoextras-dev.github.io/PBI-MCP-Server/">
+<link rel="preload" href="assets/fonts/poppins-900-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/poppins-500-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/site.css">
+<script>
+  /* pick the theme before first paint: ?theme=, then the saved choice, then the OS */
+  (function () {
+    var q = /[?&]theme=(dark|light)/.exec(location.search), t = q && q[1];
+    try { t = t || localStorage.getItem("pbi-theme"); } catch (e) {}
+    if (!t) t = window.matchMedia && matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", t);
+  })();
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="pbi-mcp home"><i aria-hidden="true">pbi</i>pbi-mcp</a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="#numbers">Numbers</a></li>
+        <li><a href="#safety">Safety</a></li>
+        <li><a href="#tools">Tools</a></li>
+        <li><a href="#install">Install</a></li>
+        <li><a href="docs/">Docs</a></li>
+        <li><a href="https://github.com/rajdeepraoextras-dev/PBI-MCP-Server">GitHub</a></li>
+      </ul>
+    </nav>
+    <button class="icon-btn" id="theme-toggle" type="button" aria-label="Switch between light and dark">&#9680;</button>
+    <a class="btn btn-primary" href="#install">Download</a>
+  </div>
+</header>
+
+<main id="main">
+<div id="top"></div>
+
+<!-- ============ HERO ============ -->
+<section class="hero" aria-labelledby="hero-h">
+  <div class="wrap">
+    <div>
+      <p class="eyebrow">MCP servers for Power BI Projects</p>
+      <h1 id="hero-h">Talk to your <span class="mark">Power BI</span> project.</h1>
+      <p class="lede">Ask Claude to build pages, write DAX, add security roles or restyle a report. pbi-mcp edits the files Power BI Desktop already uses, shows you the diff first, and undoes it on request.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" id="hero-dl" href="#install">
+          <span class="stack"><span id="hero-dl-label">Download</span><small id="hero-dl-meta">latest release</small></span>
+        </a>
+        <a class="btn" href="#safety">See it work</a>
+      </div>
+      <ul class="facts">
+        <li>runs on your machine</li>
+        <li>no sign-in</li>
+        <li>MIT licensed</li>
+      </ul>
+    </div>
+
+    <div class="bignum" aria-label="158 tools across 3 servers">
+      <span class="n count" data-stat="tools">0</span>
+      <span class="l">tools for Power BI</span>
+      <span class="s" id="per-server"></span>
+      <div class="stickers">
+        <span class="sticker st1"><b>0</b> sign-ins</span>
+        <span class="sticker p st2"><b>1</b> call to undo</span>
+        <span class="sticker c st3"><b class="count" data-stat="tests" data-format="short">0</b> tests</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="band" aria-hidden="true"><div class="band-track" id="band"></div></div>
+
+<!-- ============ NUMBERS ============ -->
+<section id="numbers" aria-labelledby="numbers-h">
+  <div class="wrap">
+    <h2 id="numbers-h">The numbers.</h2>
+    <p class="sub">Every figure here is generated from the code by a script, so the page cannot drift from the repo.</p>
+    <div class="bento">
+      <div class="tile big t-violet"><span class="n count" data-stat="tools">0</span><span class="l">tools</span><span class="f" id="tools-foot">model, report and an optional cloud server</span></div>
+      <div class="tile big t-pink"><span class="n count" data-stat="tests">0</span><span class="l">tests in the suite</span><span class="f">run on Python 3.11 to 3.14, against two MCP SDK majors</span></div>
+      <div class="tile t-cyan"><span class="n count" data-stat="families">0</span><span class="l">tool families</span><span class="f">from "start here" to "cloud"</span></div>
+      <div class="tile t-yellow"><span class="n">0</span><span class="l">sign-ins</span><span class="f">the local servers never touch the network</span></div>
+      <div class="tile t-lime"><span class="n">1</span><span class="l">call to undo</span><span class="f">byte-exact copies of what each write replaced</span></div>
+      <div class="tile t-orange"><span class="n count" data-stat="bpa_rules">0</span><span class="l">best-practice rules</span><span class="f">ported from Tabular Editor, with safe fixers</span></div>
+      <div class="tile t-cyan"><span class="n count" data-stat="schemas">0</span><span class="l">Fabric schemas</span><span class="f">every report write is checked before it lands on disk</span></div>
+      <div class="tile t-pink"><span class="n count" data-stat="deneb_templates">0</span><span class="l">Deneb templates</span><span class="f">bar, line, scatter, heatmap, bullet, waffle and more</span></div>
+      <div class="tile t-yellow"><span class="n count" data-stat="read_tools">0</span><span class="l">read-only tools</span><span class="f">marked so a host can approve them without asking</span></div>
+      <div class="tile t-violet"><span class="n">3</span><span class="l">platforms</span><span class="f">Windows, macOS and Linux builds; TMDL and PBIR files on all of them</span></div>
+      <div class="tile t-orange"><span class="n"><span id="py-min">3.11</span><small>to</small> <span id="py-max">3.14</span></span><span class="l">Python</span><span class="f">or the standalone build, which brings its own</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SAFETY ============ -->
+<section id="safety" aria-labelledby="safety-h">
+  <div class="wrap">
+    <div class="demo">
+      <div>
+        <h2 id="safety-h">Nothing changes without a preview.</h2>
+        <p class="sub">Write tools can run as a dry run and return the exact diff. Real writes keep byte-exact copies of what they replaced, so one call puts everything back.</p>
+        <div class="steps" role="tablist" aria-label="Preview, apply, undo" id="steps"></div>
+        <div class="demo-actions">
+          <button class="btn btn-pink btn-sm" id="play-all" type="button">Play all three</button>
+        </div>
+      </div>
+      <div class="term" id="term">
+        <div class="term-bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span>real output, recorded against a sample project</span></div>
+        <pre id="term-out" aria-live="polite"></pre>
+      </div>
+    </div>
+    <div class="pillars">
+      <div class="pillar"><span class="k">diff</span><b>Dry run</b><p>Preview any write as a unified diff. Nothing touches the disk.</p></div>
+      <div class="pillar"><span class="k">undo</span><b>Journal</b><p>Undo one write, several, or a whole transaction.</p></div>
+      <div class="pillar"><span class="k">deny</span><b>Guarded deletes</b><p>Deleting something a measure, visual or filter uses is refused, and lists what depends on it.</p></div>
+      <div class="pillar"><span class="k">check</span><b>Schema-checked</b><p>Report writes are validated against Microsoft's published schemas first.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TOOLS ============ -->
+<section id="tools" aria-labelledby="tools-h">
+  <div class="wrap">
+    <h2 id="tools-h"><span class="count" data-stat="tools">158</span> tools, grouped by what you're doing.</h2>
+    <p class="sub">The model server edits the semantic model, the report server edits pages and visuals, and an optional cloud server publishes and refreshes. Search them all, or browse by family.</p>
+    <div class="search"><label class="sr" for="tool-search">Search tools</label><input id="tool-search" type="search" placeholder="Search tools, for example &quot;hierarchy&quot; or &quot;undo&quot;" autocomplete="off"></div>
+    <div class="explorer">
+      <div class="fam-list" id="fam-list" role="tablist" aria-label="Tool families"></div>
+      <div class="panel" id="panel" role="tabpanel" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ INSTALL ============ -->
+<section id="install" aria-labelledby="install-h">
+  <div class="wrap">
+    <h2 id="install-h">Install it in a minute.</h2>
+    <p class="sub">Works with Claude Desktop, Claude Code, Cursor and VS Code, or any host that speaks MCP.</p>
+    <div class="tabs" role="tablist" aria-label="Install method" id="install-tabs">
+      <button class="tab" role="tab" id="tab-download" aria-controls="p-download" aria-selected="true" type="button">Download</button>
+      <button class="tab hidden" role="tab" id="tab-package" aria-controls="p-package" aria-selected="false" type="button">uvx or pip</button>
+      <button class="tab" role="tab" id="tab-source" aria-controls="p-source" aria-selected="false" type="button">From source</button>
+    </div>
+
+    <div role="tabpanel" id="p-download" aria-labelledby="tab-download">
+      <div class="install-grid">
+        <div class="card">
+          <h3>Get the file</h3>
+          <a class="btn btn-primary" id="dl-primary" href="https://github.com/rajdeepraoextras-dev/PBI-MCP-Server/releases/latest">
+            <span class="stack"><span id="dl-label">Download</span><small id="dl-meta">latest release</small></span>
+          </a>
+          <p class="fine" id="dl-note" style="margin-top:14px"></p>
+          <ul class="dl-list" id="dl-others"></ul>
+          <div class="callout"><b>Windows may warn about an unsigned app.</b> The standalone build is not code-signed yet. Each release lists a SHA-256 checksum for every file, so you can check what you downloaded.</div>
+        </div>
+        <div class="card">
+          <h3>Then</h3>
+          <ol>
+            <li>Add the file to Claude Desktop as a plugin. Drag it in, or use the plugin upload.</li>
+            <li>Start a new chat so the tools load.</li>
+            <li>Point it at a project and check the setup:</li>
+          </ol>
+          <div class="code"><pre><code>Set the project to C:\path\to\Report.pbip and run the doctor.</code></pre><button type="button" data-copy>Copy</button></div>
+          <p class="fine">Work on a copy of a real project the first time. The project needs Power BI Desktop's <em>Power BI Project (.pbip)</em> save option and the <em>PBIR</em> report format turned on.</p>
+        </div>
+      </div>
+    </div>
+
+    <div role="tabpanel" id="p-package" aria-labelledby="tab-package" class="hidden">
+      <div class="install-grid">
+        <div class="card">
+          <h3>Run it with uvx</h3>
+          <div class="code"><pre><code>uvx pbi-mcp report
+uvx pbi-mcp model</code></pre><button type="button" data-copy>Copy</button></div>
+          <p class="fine">Or <code>pip install pbi-mcp</code> and run <code>pbi-mcp report</code>.</p>
+        </div>
+        <div class="card">
+          <h3>Add it to your host</h3>
+          <p><b>Claude Code</b></p>
+          <div class="code"><pre><code>claude mcp add pbi-report -- uvx pbi-mcp report
+claude mcp add pbi-model -- uvx pbi-mcp model</code></pre><button type="button" data-copy>Copy</button></div>
+          <p><b>Claude Desktop, Cursor</b> (<code>mcpServers</code> in the config file)</p>
+          <div class="code"><pre><code>{
+  "mcpServers": {
+    "pbi-report": { "command": "uvx", "args": ["pbi-mcp", "report"] },
+    "pbi-model":  { "command": "uvx", "args": ["pbi-mcp", "model"] }
+  }
+}</code></pre><button type="button" data-copy>Copy</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div role="tabpanel" id="p-source" aria-labelledby="tab-source" class="hidden">
+      <div class="install-grid">
+        <div class="card">
+          <h3>Windows</h3>
+          <div class="code"><pre><code>git clone https://github.com/rajdeepraoextras-dev/PBI-MCP-Server.git
+cd PBI-MCP-Server
+python -m venv .venv
+.venv\Scripts\pip install -e .
+claude mcp add pbi-report -- .venv\Scripts\python -m report_server.server
+claude mcp add pbi-model -- .venv\Scripts\python -m model_server.server</code></pre><button type="button" data-copy>Copy</button></div>
+        </div>
+        <div class="card">
+          <h3>macOS and Linux</h3>
+          <div class="code"><pre><code>git clone https://github.com/rajdeepraoextras-dev/PBI-MCP-Server.git
+cd PBI-MCP-Server
+python3 -m venv .venv
+.venv/bin/pip install -e .
+claude mcp add pbi-report -- .venv/bin/python -m report_server.server
+claude mcp add pbi-model -- .venv/bin/python -m model_server.server</code></pre><button type="button" data-copy>Copy</button></div>
+          <p class="fine">Needs Python 3.11 or newer. Run the tests with <code>pip install -e ".[dev]"</code> and <code>pytest</code>.</p>
+        </div>
+      </div>
+    </div>
+    <p class="fine" id="pkg-note" style="margin-top:18px">The uvx and pip route appears here once the package is on PyPI.</p>
+  </div>
+</section>
+
+<!-- ============ FIT ============ -->
+<section id="fit" aria-labelledby="fit-h">
+  <div class="wrap">
+    <h2 id="fit-h">Where it fits.</h2>
+    <p class="sub">There is an official Microsoft server too. They do different jobs, so pick the one that matches the task.</p>
+    <div class="two">
+      <div class="card hot">
+        <span class="tag">pbi-mcp</span>
+        <h3>Works on the files</h3>
+        <p>Reads and writes the <code>.pbip</code> files on disk. Covers the semantic model and the report layer, so it can build pages and visuals. Every write can be previewed and undone, and lands in Git like any other file change.</p>
+      </div>
+      <div class="card">
+        <span class="tag">Microsoft Power BI Authoring MCP</span>
+        <h3>Works on a live model</h3>
+        <p>Edits semantic models through the engine, in Power BI Desktop and in Fabric workspaces. Its documentation says it does not change report pages. Reach for it when you need to change a model that is running.</p>
+        <p><a href="https://learn.microsoft.com/en-us/power-bi/developer/mcp/power-bi-authoring-mcp">Read Microsoft's documentation</a></p>
+      </div>
+    </div>
+    <p class="fine" style="margin-top:18px">Using one at a time keeps the assistant's tool list short. Two overlapping sets cost context and make it harder to choose the right tool.</p>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="cols">
+      <div>
+        <p><b>pbi-mcp</b> <span class="mono" id="foot-version"></span></p>
+        <p>An independent open source project. It is not affiliated with, endorsed by or sponsored by Microsoft. Power BI is a trademark of Microsoft Corporation.</p>
+        <p>Built by <a href="https://github.com/rajdeepraoextras-dev">Rajdeep Rao</a>. MIT licensed. Fonts: Poppins and JetBrains Mono, SIL Open Font License.</p>
+      </div>
+      <ul aria-label="Project links">
+        <li><a href="https://github.com/rajdeepraoextras-dev/PBI-MCP-Server">GitHub</a></li>
+        <li><a href="docs/">Docs</a></li>
+        <li><a href="https://github.com/rajdeepraoextras-dev/PBI-MCP-Server/releases">Releases</a></li>
+        <li><a href="https://github.com/rajdeepraoextras-dev/PBI-MCP-Server/blob/main/CHANGELOG.md">Changelog</a></li>
+        <li><a href="https://github.com/rajdeepraoextras-dev/PBI-MCP-Server/security/policy">Security</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<noscript><p style="text-align:center;padding:16px">The counters and the demo need JavaScript. Everything is also in the <a href="docs/">docs</a>.</p></noscript>
+<script src="assets/site-data.js"></script>
+<script src="assets/demo-data.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

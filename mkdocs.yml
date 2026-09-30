@@ -1,7 +1,7 @@
 site_name: pbi-mcp
 site_description: MCP servers that read and write Power BI Project (.pbip) files on disk - TMDL semantic models and PBIR reports, with dry-run, undo and schema validation.
 site_author: Rajdeep Rao
-site_url: https://rajdeepraoextras-dev.github.io/PBI-MCP-Server/
+site_url: https://rajdeepraoextras-dev.github.io/PBI-MCP-Server/docs/
 repo_url: https://github.com/rajdeepraoextras-dev/PBI-MCP-Server
 repo_name: rajdeepraoextras-dev/PBI-MCP-Server
 edit_uri: edit/main/docs/
