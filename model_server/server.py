@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from mcp.server.fastmcp import FastMCP
+from core.mcp_compat import Server
 
 from core.pbip import PbipProject
 
@@ -112,12 +112,12 @@ def create_relationship(state: ModelState, from_table: str, from_column: str,
         cardinality, cross_filter, is_active)
 
 
-# --- FastMCP registration --------------------------------------------------
+# --- MCP server registration --------------------------------------------------
 
 STATE = ModelState()
 from core.capabilities import GREETING
 
-mcp = FastMCP(
+mcp = Server(
     "pbi-model",
     instructions=(
         GREETING + "\n\n"

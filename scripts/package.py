@@ -21,7 +21,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 DIST = REPO / "dist"
 
-VERSION = "2.0.0"
+VERSION = "2.0.1"
 
 # Claude plugin metadata (goes in .claude-plugin/plugin.json — same format as
 # the standalone bundle, minus the frozen exe: this variant needs host Python).
@@ -61,11 +61,11 @@ INSTALL_MD = """\
 Drop `pbi-mcp.plugin` onto a plugin-aware MCP host (e.g. Cowork).
 The manifest registers two servers: `pbi-model` and `pbi-report`.
 The host machine needs Python 3.11+ with:
-`pip install "mcp<2" pydantic jsonschema`
+`pip install "mcp<3" pydantic jsonschema`
 
 ## Option B — Claude Desktop (manual)
 1. Unzip the bundle (or clone the repo) somewhere permanent.
-2. `python -m venv .venv && .venv\\Scripts\\pip install "mcp<2" pydantic jsonschema`
+2. `python -m venv .venv && .venv\\Scripts\\pip install "mcp<3" pydantic jsonschema`
 3. Merge `claude_desktop_config.snippet.json` into your
    `claude_desktop_config.json` (fix the two absolute paths).
 4. Restart Claude Desktop; call `pbi_set_project` first in each server.

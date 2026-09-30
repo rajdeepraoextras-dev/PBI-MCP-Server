@@ -24,7 +24,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 DIST = REPO / "dist"
-VERSION = "2.0.0"
+VERSION = "2.0.1"
 
 EXE_NAME = "pbi-mcp.exe" if sys.platform == "win32" else "pbi-mcp"
 

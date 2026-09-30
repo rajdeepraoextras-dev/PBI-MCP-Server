@@ -44,8 +44,8 @@ For the easiest install, grab a bundle from the
 
 - `pbi-mcp-standalone-win32-amd64.plugin` - self-contained Windows build; no
   local Python setup required.
-- `pbi-mcp.plugin` - source plugin bundle; requires Python 3.11+ and the
-  package dependencies on the host.
+- `pbi-mcp.plugin` - source plugin bundle; requires Python 3.11+ plus `mcp`
+  (1.x or 2.x), `pydantic` and `jsonschema` on the host.
 
 The standalone build is ~20 MB and is published only as a release asset (it
 is not tracked in git); rebuild it locally with `scripts/build_standalone.py`.
@@ -156,7 +156,7 @@ pbi-mcp/
   model_server/    # MCP server: pbi-model
   report_server/   # MCP server: pbi-report
   scripts/         # smoke test, M5 demo, packager
-  tests/           # 297 tests; fixtures/ (synthetic + real, gitignored)
+  tests/           # 299 tests; fixtures/ (synthetic + real, gitignored)
 ```
 
 ## Testing
