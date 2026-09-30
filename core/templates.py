@@ -23,9 +23,40 @@ Z_DATA = 1000
 Z_LABEL = 5000
 
 
+NAV_BTN_W = 170          # fits a label like "Customer Name Detail"
+NAV_BTN_MIN_W = 90
+NAV_BTN_H = 32
+NAV_BTN_GAP = 10
+NAV_MAX_SHARE = 0.55     # the nav bar never takes more than this share of the width
+
+
+def nav_layout(n_buttons: int, page_width: float) -> tuple[float, float]:
+    """(button width, total bar width) for `n_buttons` on a page `page_width` wide.
+
+    Buttons are NAV_BTN_W wide and shrink (down to NAV_BTN_MIN_W) when many
+    pages would otherwise squeeze the header title out.
+    """
+    if n_buttons <= 0:
+        return NAV_BTN_W, 0
+    budget = page_width * NAV_MAX_SHARE - (n_buttons - 1) * NAV_BTN_GAP
+    width = min(NAV_BTN_W, max(NAV_BTN_MIN_W, budget / n_buttons))
+    return width, n_buttons * width + (n_buttons - 1) * NAV_BTN_GAP
+
+
+TITLE_H = 34      # 20pt bold text needs about 27px; leave room so it never clips
+SUBTITLE_H = 18   # 10pt text
+TEXT_GAP = 2
+
+
 def _header_band(title: str, subtitle: str | None, width: float,
                  accent: str, fg: str,
-                 style: dict | None = None) -> list[dict]:
+                 style: dict | None = None,
+                 reserve_right: float = 0) -> list[dict]:
+    """Header band: fill + title (+ subtitle) text boxes.
+
+    `reserve_right` keeps that much width at the right edge free of text so a
+    navigation bar can sit there without covering the title.
+    """
     steps: list[dict] = []
     hstyle = (style or {}).get("header", {})
     tstyle = (style or {}).get("title", {})
@@ -36,17 +67,20 @@ def _header_band(title: str, subtitle: str | None, width: float,
     steps.append({"op": "shape", "shape": "rectangle", "fill": band_fill,
                   "position": {"x": 0, "y": 0, "width": width, "height": band_h},
                   "z": Z_HEADER_BG})
+    text_w = max(120, width - 2 * MARGIN - reserve_right)
+    block_h = TITLE_H + ((TEXT_GAP + SUBTITLE_H) if subtitle else 0)
+    top = max(4, (band_h - block_h) // 2)      # centre the text block in the band
     runs = [{"text": title, "bold": True, "size": title_size,
              "color": title_color}]
     steps.append({"op": "text", "runs": runs,
-                  "position": {"x": MARGIN, "y": max(8, (band_h - 32) // 2),
-                               "width": width - 2 * MARGIN,
-                               "height": 32}, "z": Z_LABEL})
+                  "position": {"x": MARGIN, "y": top, "width": text_w,
+                               "height": TITLE_H}, "z": Z_LABEL})
     if subtitle:
         steps.append({"op": "text",
                       "runs": [{"text": subtitle, "size": 10, "color": "#E8EEF5"}],
-                      "position": {"x": MARGIN, "y": band_h - 26,
-                                   "width": width - 2 * MARGIN, "height": 20},
+                      "position": {"x": MARGIN,
+                                   "y": top + TITLE_H + TEXT_GAP,
+                                   "width": text_w, "height": SUBTITLE_H},
                       "z": Z_LABEL})
     return steps, band_h
 
@@ -92,7 +126,8 @@ def exec_summary_plan(title: str, subtitle: str | None,
                       width: float = 1280, accent: str = "#1F3A5F",
                       backplate: str = "#F5F7FA",
                       page_bg: str = "#FFFFFF",
-                      style: dict | None = None) -> list[dict]:
+                      style: dict | None = None,
+                      reserve_right: float = 0) -> list[dict]:
     """Build an executive-summary page plan.
 
     `style` (from core.page_style.extract_page_style) overrides the header
@@ -104,7 +139,7 @@ def exec_summary_plan(title: str, subtitle: str | None,
     steps: list[dict] = [{"op": "style_page", "background_color": page_bg,
                           "wallpaper_color": backplate}]
     header, band_h = _header_band(title, subtitle, width, accent, "#252423",
-                                  style)
+                                  style, reserve_right=reserve_right)
     steps += header
 
     strip, body_top = _kpi_strip(kpis, width, band_h + GUTTER, backplate, style) \

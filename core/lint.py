@@ -32,6 +32,10 @@ def _overlap(a, b) -> bool:
     return not (ax2 <= bx1 or bx2 <= ax1 or ay2 <= by1 or by2 <= ay1)
 
 
+#: single-line by design (labels, buttons): only flag them when truly minuscule
+_LINEAR_TYPES = {"textbox", "actionButton", "image"}
+
+
 def lint_page(page, visuals, *, page_width=1280, page_height=720,
               accessibility=True, project=None) -> list[dict]:
     """Design lint + accessibility findings for one page.
@@ -63,8 +67,11 @@ def lint_page(page, visuals, *, page_width=1280, page_height=720,
                 "severity": "warning", "code": "off_canvas",
                 "message": f"{v.id} extends beyond the page ({pw}x{ph})",
                 "visuals": [v.id]})
-        if v.visual_type not in _BACKPLATE_TYPES and \
-                (v.position.width < MIN_W or v.position.height < MIN_H):
+        if v.visual_type in _LINEAR_TYPES:
+            too_small = v.position.width < 40 or v.position.height < 16
+        else:
+            too_small = v.position.width < MIN_W or v.position.height < MIN_H
+        if v.visual_type not in _BACKPLATE_TYPES and too_small:
             findings.append({
                 "severity": "info", "code": "tiny",
                 "message": f"{v.id} may be too small to read "

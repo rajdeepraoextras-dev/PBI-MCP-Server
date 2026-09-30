@@ -141,9 +141,12 @@ def build_designed_page(state: ReportState, name: str, title: str,
                         template: str = "exec-summary",
                         accent: str | None = None,
                         width: float | None = None,
-                        match_page: str | None = None) -> dict:
+                        match_page: str | None = None,
+                        nav_reserve: float = 0) -> dict:
     """Compose a designed page from a template: header band, KPI strip on
     backplates, chart grid. Executes the plan through validated primitives.
+    `nav_reserve` keeps that much width at the right of the header free of
+    text (scaffold_report uses it for the navigation bar).
 
     When `accent`/`width` are omitted they are inherited from the report's
     existing theme + page size. Pass `match_page` (an existing page id) to also
@@ -178,9 +181,10 @@ def build_designed_page(state: ReportState, name: str, title: str,
     for k in kpis:
         _validate_refs_exist(project, {"_": [k["measure"]]})
 
+    extra = {"reserve_right": nav_reserve} if nav_reserve else {}
     steps, page_height = TEMPLATES[template](
         title, subtitle, kpis, charts, width=width, accent=accent,
-        style=page_style)
+        style=page_style, **extra)
     page_id = project.create_page(name, width, page_height)
 
     made = {"shapes": 0, "texts": 0, "visuals": []}
@@ -460,25 +464,36 @@ def scaffold_report(state: ReportState, accent: str | None = None,
         project.set_report_theme(generate_theme(accent, name="Scaffold Theme",
                                                  mode=proposal["theme_mode"]))
 
+    from core.templates import NAV_BTN_GAP, NAV_BTN_H, nav_layout
+
+    n_nav = len(proposal["pages"]) - 1 if proposal["add_nav_bar"] else 0
+    page_w = project.default_page_size()[0]
+    btn_w, bar_w = nav_layout(n_nav, page_w)
+    reserve = bar_w + 12 if n_nav > 0 else 0
     built_pages = []
     for spec in proposal["pages"]:
         res = build_designed_page(
             state, spec["name"], spec["title"], spec.get("subtitle"),
-            kpis=spec["kpis"], charts=spec["charts"], accent=accent)
+            kpis=spec["kpis"], charts=spec["charts"], accent=accent,
+            nav_reserve=reserve)
         built_pages.append(res["page_id"])
 
-    # a simple nav bar of buttons across the top of each page
-    if proposal["add_nav_bar"] and len(built_pages) > 1:
+    # a nav bar of buttons, right-aligned in each page's header band so it
+    # never covers the title
+    if n_nav > 0 and len(built_pages) > 1:
+        band_h = 72
+        x0 = page_w - 16 - bar_w
         for pid in built_pages:
-            x = 16
+            x = x0
             for target, spec in zip(built_pages, proposal["pages"]):
                 if target == pid:
-                    x += 150
                     continue
-                project.add_nav_button(pid, spec["name"], target,
-                                       position={"x": x, "y": 8, "width": 140,
-                                                 "height": 32}, fill=accent)
-                x += 150
+                project.add_nav_button(
+                    pid, spec["name"], target,
+                    position={"x": round(x), "y": (band_h - NAV_BTN_H) // 2,
+                              "width": round(btn_w), "height": NAV_BTN_H},
+                    fill=accent)
+                x += btn_w + NAV_BTN_GAP
 
     return {"ok": True, "pages": built_pages,
             "profile_summary": profile["summary"]}

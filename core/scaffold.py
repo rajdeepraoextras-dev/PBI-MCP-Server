@@ -38,6 +38,16 @@ def _top_grouping_dims(profile: dict, limit: int = 3) -> list[tuple[str, str]]:
     return out[:limit]
 
 
+def _dim_labels(dims: list[tuple[str, str]]) -> dict[tuple[str, str], str]:
+    """Display name per (table, column): the column name, or "Table Column"
+    when several tables share it (two dimensions with a Name column would
+    otherwise both produce a page called "Name Detail")."""
+    counts: dict[str, int] = {}
+    for _, col in dims:
+        counts[col] = counts.get(col, 0) + 1
+    return {(t, c): (f"{t} {c}" if counts[c] > 1 else c) for t, c in dims}
+
+
 def _date_field(profile: dict) -> str | None:
     for dt in profile["date_tables"]:
         cols = profile["tables"][dt]["date_columns"]
@@ -53,6 +63,7 @@ def propose_report(profile: dict, *, accent: str = "#1F3A5F",
     primary = kpis_refs[0] if kpis_refs else None
     dims = _top_grouping_dims(profile, max_detail_pages)
     date_ref = _date_field(profile)
+    labels = _dim_labels(dims)
 
     pages: list[dict] = []
 
@@ -68,7 +79,7 @@ def propose_report(profile: dict, *, accent: str = "#1F3A5F",
         overview_charts.append({
             "visual_type": "clusteredBarChart",
             "bindings": {"Category": [f"{dt}.{dc}"], "Y": [primary]},
-            "title": f"{primary.split('.')[-1]} by {dc}"})
+            "title": f"{primary.split('.')[-1]} by {labels[(dt, dc)]}"})
     if primary and dims:
         dt, dc = dims[0]
         overview_charts.append({
@@ -87,16 +98,17 @@ def propose_report(profile: dict, *, accent: str = "#1F3A5F",
     for dt, dc in dims:
         if not primary:
             break
+        label = labels[(dt, dc)]
         charts = [
             {"visual_type": "clusteredBarChart",
              "bindings": {"Category": [f"{dt}.{dc}"], "Y": [primary]},
-             "title": f"{primary.split('.')[-1]} by {dc}"},
+             "title": f"{primary.split('.')[-1]} by {label}"},
             {"visual_type": "tableEx",
              "bindings": {"Values": [f"{dt}.{dc}"] + kpis_refs[:3]},
-             "title": f"{dc} detail"},
+             "title": f"{label} detail"},
         ]
         pages.append({
-            "name": f"{dc} Detail", "title": f"{dc} Breakdown",
+            "name": f"{label} Detail", "title": f"{label} Breakdown",
             "subtitle": None,
             "kpis": [{"measure": r, "title": r.split(".")[-1]}
                      for r in kpis_refs[:3]],
