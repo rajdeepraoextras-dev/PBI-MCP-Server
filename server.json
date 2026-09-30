@@ -1,0 +1,67 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.rajdeepraoextras-dev/pbi-mcp",
+  "title": "pbi-mcp — Power BI Project (.pbip) automation",
+  "description": "Edit Power BI Project (.pbip) files on disk: TMDL semantic model + PBIR report, schema-validated.",
+  "repository": {
+    "url": "https://github.com/rajdeepraoextras-dev/PBI-MCP-Server",
+    "source": "github"
+  },
+  "websiteUrl": "https://github.com/rajdeepraoextras-dev/PBI-MCP-Server#readme",
+  "version": "2.1.0",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "pbi-mcp",
+      "version": "2.1.0",
+      "runtimeHint": "uvx",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [
+        {
+          "type": "positional",
+          "valueHint": "server",
+          "value": "report",
+          "description": "Report layer (PBIR): pages, visuals, formatting, themes, filters, design elements, scaffolding."
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "PBI_MCP_PROJECT",
+          "description": "Optional: path to a .pbip file or project folder to preselect (otherwise call pbi_set_project first).",
+          "format": "filepath",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "pbi-mcp",
+      "version": "2.1.0",
+      "runtimeHint": "uvx",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [
+        {
+          "type": "positional",
+          "valueHint": "server",
+          "value": "model",
+          "description": "Semantic model layer (TMDL): measures, columns, relationships, calculation groups, DAX lineage."
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "PBI_MCP_PROJECT",
+          "description": "Optional: path to a .pbip file or project folder to preselect (otherwise call pbi_set_project first).",
+          "format": "filepath",
+          "isRequired": false
+        }
+      ]
+    }
+  ],
+  "remotes": []
+}

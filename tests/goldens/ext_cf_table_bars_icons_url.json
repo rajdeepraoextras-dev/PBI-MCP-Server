@@ -1,0 +1,264 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "table1",
+  "position": {
+    "x": 640,
+    "y": 140,
+    "z": 2,
+    "width": 600,
+    "height": 360,
+    "tabOrder": 2
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Sales"
+                    }
+                  },
+                  "Property": "Net Revenue"
+                }
+              },
+              "queryRef": "Sales.Net Revenue"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Sales"
+                    }
+                  },
+                  "Property": "Margin %"
+                }
+              },
+              "queryRef": "Sales.Margin %"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "dataBars": [
+        {
+          "properties": {
+            "positiveColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#1F8A70'"
+                    }
+                  }
+                }
+              }
+            },
+            "negativeColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#D13438'"
+                    }
+                  }
+                }
+              }
+            },
+            "hideText": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "axisColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#000000'"
+                    }
+                  }
+                }
+              }
+            },
+            "min": {
+              "expr": {
+                "Literal": {
+                  "Value": "0.0D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Sales.Net Revenue"
+          }
+        }
+      ],
+      "icon": [
+        {
+          "properties": {
+            "iconSet": {
+              "expr": {
+                "Conditional": {
+                  "Cases": [
+                    {
+                      "Condition": {
+                        "Comparison": {
+                          "ComparisonKind": 2,
+                          "Left": {
+                            "Measure": {
+                              "Expression": {
+                                "SourceRef": {
+                                  "Entity": "Sales"
+                                }
+                              },
+                              "Property": "Margin %"
+                            }
+                          },
+                          "Right": {
+                            "Literal": {
+                              "Value": "0.5D"
+                            }
+                          }
+                        }
+                      },
+                      "Value": {
+                        "Literal": {
+                          "Value": "'threeArrowsColored_0'"
+                        }
+                      }
+                    },
+                    {
+                      "Condition": {
+                        "And": {
+                          "Left": {
+                            "Comparison": {
+                              "ComparisonKind": 2,
+                              "Left": {
+                                "Measure": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "Sales"
+                                    }
+                                  },
+                                  "Property": "Margin %"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "0.2D"
+                                }
+                              }
+                            }
+                          },
+                          "Right": {
+                            "Comparison": {
+                              "ComparisonKind": 3,
+                              "Left": {
+                                "Measure": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "Sales"
+                                    }
+                                  },
+                                  "Property": "Margin %"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "0.5D"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "Value": {
+                        "Literal": {
+                          "Value": "'threeArrowsColored_1'"
+                        }
+                      }
+                    },
+                    {
+                      "Condition": {
+                        "Comparison": {
+                          "ComparisonKind": 3,
+                          "Left": {
+                            "Measure": {
+                              "Expression": {
+                                "SourceRef": {
+                                  "Entity": "Sales"
+                                }
+                              },
+                              "Property": "Margin %"
+                            }
+                          },
+                          "Right": {
+                            "Literal": {
+                              "Value": "0.2D"
+                            }
+                          }
+                        }
+                      },
+                      "Value": {
+                        "Literal": {
+                          "Value": "'threeArrowsColored_2'"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "style": {
+              "expr": {
+                "Literal": {
+                  "Value": "'threeArrowsColored'"
+                }
+              }
+            },
+            "layout": {
+              "expr": {
+                "Literal": {
+                  "Value": "'rightOfData'"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Sales.Margin %"
+          }
+        }
+      ],
+      "webUrl": [
+        {
+          "properties": {
+            "url": {
+              "expr": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Sales"
+                    }
+                  },
+                  "Property": "Margin %"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Sales.Net Revenue"
+          }
+        }
+      ]
+    }
+  }
+}

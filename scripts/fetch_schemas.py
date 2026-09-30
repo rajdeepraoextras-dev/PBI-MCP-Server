@@ -30,6 +30,10 @@ ROOTS = {
     "visualContainer": BASE + "visualContainer/1.0.0/schema.json",
     "filterConfiguration": BASE + "filterConfiguration/1.0.0/schema.json",
     "bookmark": BASE + "bookmark/1.0.0/schema.json",
+    # report-level measures (definition/reportExtensions.json)
+    "reportExtension": BASE + "reportExtension/1.0.0/schema.json",
+    # per-visual phone layout (pages/<page>/visuals/<visual>/mobile.json)
+    "visualContainerMobileState": BASE + "visualContainerMobileState/1.0.0/schema.json",
 }
 
 

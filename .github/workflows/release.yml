@@ -1,0 +1,145 @@
+name: Release
+
+# On a version tag (vX.Y.Z): build every downloadable artifact, then create or
+# update the GitHub Release for that tag with all of them attached and the
+# matching CHANGELOG.md section as the body. workflow_dispatch builds the
+# artifacts (downloadable from the run) but publishes no release.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  standalone:
+    name: standalone (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[build]"
+      # Writes dist/pbi-mcp-standalone-<sys.platform>-<machine>.plugin
+      - name: Freeze with PyInstaller
+        run: python scripts/build_standalone.py
+      - name: Smoke-test the frozen executable (handshake + tool list)
+        shell: bash
+        run: |
+          python - <<'PY'
+          import asyncio, sys
+          from mcp import ClientSession, StdioServerParameters
+          from mcp.client.stdio import stdio_client
+
+          exe = "dist/pbi-mcp.exe" if sys.platform == "win32" else "dist/pbi-mcp"
+
+          async def names(which):
+              params = StdioServerParameters(command=exe, args=[which])
+              async with stdio_client(params) as (read, write):
+                  async with ClientSession(read, write) as session:
+                      await session.initialize()
+                      return {t.name for t in (await session.list_tools()).tools}
+
+          for which in ("model", "report"):
+              found = asyncio.run(names(which))
+              assert "pbi_set_project" in found and "pbi_undo" in found, (which, sorted(found))
+              print(which, "->", len(found), "tools")
+          PY
+      - uses: actions/upload-artifact@v7
+        with:
+          name: standalone-${{ matrix.os }}
+          path: dist/pbi-mcp-standalone-*.plugin
+          if-no-files-found: error
+
+  package:
+    name: plugin, .mcpb bundles, config snippet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - name: Tag matches the package version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          python - <<'PY'
+          import os, tomllib
+          tag = os.environ["GITHUB_REF_NAME"].removeprefix("v")
+          with open("pyproject.toml", "rb") as f:
+              version = tomllib.load(f)["project"]["version"]
+          assert tag == version, f"tag {tag!r} does not match pyproject version {version!r}"
+          PY
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+      # pbi-mcp.plugin, pbi-mcp-<server>.mcpb and a portable (uvx) Claude
+      # Desktop snippet. Written to out/ so the tracked dist/ is untouched.
+      - name: Build bundles
+        run: python scripts/package.py --dist out --portable
+      - name: Validate .mcpb manifests
+        run: |
+          for bundle in out/*.mcpb; do
+            dir="$(mktemp -d)"
+            unzip -q "$bundle" manifest.json -d "$dir"
+            echo "== $bundle"
+            npx --yes @anthropic-ai/mcpb validate "$dir/manifest.json"
+          done
+      - uses: actions/upload-artifact@v7
+        with:
+          name: bundles
+          path: |
+            out/pbi-mcp.plugin
+            out/*.mcpb
+            out/claude_desktop_config.snippet.json
+          if-no-files-found: error
+
+  release:
+    name: GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [standalone, package]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # create/update the release and upload assets
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - uses: actions/download-artifact@v8
+        with:
+          path: release-assets
+          merge-multiple: true
+      - name: Release notes from CHANGELOG.md
+        id: notes
+        run: |
+          if python scripts/changelog_section.py "$GITHUB_REF_NAME" > release-notes.md; then
+            echo "has_notes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No CHANGELOG.md section for $GITHUB_REF_NAME; falling back to generated notes."
+            echo "See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/CHANGELOG.md)." > release-notes.md
+            echo "has_notes=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Checksums
+        working-directory: release-assets
+        run: sha256sum * > SHA256SUMS.txt
+      - uses: softprops/action-gh-release@v3
+        with:
+          body_path: release-notes.md
+          files: release-assets/*
+          fail_on_unmatched_files: true
+          generate_release_notes: ${{ steps.notes.outputs.has_notes != 'true' }}
+          prerelease: ${{ contains(github.ref_name, '-') }}

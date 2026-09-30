@@ -1,0 +1,76 @@
+site_name: pbi-mcp
+site_description: MCP servers that read and write Power BI Project (.pbip) files on disk - TMDL semantic models and PBIR reports, with dry-run, undo and schema validation.
+site_author: Rajdeep Rao
+site_url: https://rajdeepraoextras-dev.github.io/PBI-MCP-Server/
+repo_url: https://github.com/rajdeepraoextras-dev/PBI-MCP-Server
+repo_name: rajdeepraoextras-dev/PBI-MCP-Server
+edit_uri: edit/main/docs/
+copyright: MIT licensed. Built by Rajdeep Rao.
+
+docs_dir: docs
+# build/ is already git-ignored; `mkdocs gh-deploy` builds in a temp dir anyway.
+site_dir: build/site
+
+theme:
+  name: material
+  language: en
+  features:
+    - content.code.copy
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - search.highlight
+    - search.suggest
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+# Broken links and anchors fail `mkdocs build --strict`.
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
+
+nav:
+  - Home: index.md
+  - Install: install.md
+  - Quickstart: quickstart.md
+  - Tool reference:
+      - Model server: tools/model.md
+      - Report server: tools/report.md
+      - Service server (optional): tools/service.md
+  - Cookbook: cookbook.md
+  - Safety model: safety.md
+  - Cloud publishing: cloud.md
+  - Development: development.md
+  - FAQ: faq.md

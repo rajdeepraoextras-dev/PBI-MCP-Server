@@ -1,0 +1,56 @@
+table Product
+	lineageTag: 0b5e4c3a-8f6d-4e9c-9a43-2c7d9e5f1b03
+
+	column ProductId
+		dataType: int64
+		formatString: 0
+		isKey
+		lineageTag: d3a2b3c4-0001-4e5f-8a9b-000000000031
+		summarizeBy: none
+		sourceColumn: ProductId
+
+		annotation SummarizationSetBy = User
+
+	column Name
+		dataType: string
+		lineageTag: d3a2b3c4-0002-4e5f-8a9b-000000000032
+		summarizeBy: none
+		sourceColumn: Name
+
+		annotation SummarizationSetBy = Automatic
+
+	column Category
+		dataType: string
+		lineageTag: d3a2b3c4-0003-4e5f-8a9b-000000000033
+		summarizeBy: none
+		sourceColumn: Category
+
+		annotation SummarizationSetBy = Automatic
+
+	column ListPrice
+		dataType: double
+		lineageTag: d3a2b3c4-0004-4e5f-8a9b-000000000034
+		summarizeBy: sum
+		sourceColumn: ListPrice
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition Product = m
+		mode: import
+		source =
+				let
+				    Source = Table.FromRows(
+				        {
+				            {1, "Widget", "Hardware", 25.0},
+				            {2, "Gadget", "Hardware", 40.0},
+				            {3, "Service Plan", "Services", 150.0}
+				        },
+				        {"ProductId", "Name", "Category", "ListPrice"}),
+				    #"Changed Type" = Table.TransformColumnTypes(Source, {{"ProductId", Int64.Type}, {"Name", type text}, {"Category", type text}, {"ListPrice", type number}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

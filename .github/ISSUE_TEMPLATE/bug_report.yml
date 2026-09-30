@@ -1,0 +1,117 @@
+name: Bug report
+description: A tool failed, gave a wrong result, or wrote a project Power BI Desktop will not open
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this.
+
+        **Please do not attach a real `.pbip` project or dataset** - it can contain business data.
+        The failing tool call plus its output, or a minimal synthetic project, is enough.
+        If a write produced a project Desktop refuses to open, say so explicitly and
+        whether `pbi_undo` (or the `*.bak-*` backup) restored it.
+
+  - type: input
+    id: version
+    attributes:
+      label: pbi-mcp version
+      description: Output of `pbi-mcp --version`, the release tag, or the commit you built from.
+      placeholder: "2.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install it?
+      options:
+        - uvx / pip (PyPI)
+        - Standalone .plugin bundle (frozen executable)
+        - Source .plugin bundle
+        - .mcpb (Claude Desktop extension)
+        - From source (git clone)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: server
+    attributes:
+      label: Which server?
+      options:
+        - pbi-model (semantic model / TMDL)
+        - pbi-report (report / PBIR)
+        - pbi-service (Power BI Service / Fabric)
+        - More than one / not sure
+    validations:
+      required: true
+
+  - type: input
+    id: host
+    attributes:
+      label: MCP host and version
+      description: The client that launched the server.
+      placeholder: "Claude Desktop 1.x, Claude Code 2.x, Cursor, VS Code, ..."
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: OS, Python and MCP SDK versions
+      description: "Skip Python/SDK for the standalone build. `pip show mcp` prints the SDK version."
+      placeholder: "Windows 11, Python 3.13, mcp 2.2.0"
+    validations:
+      required: true
+
+  - type: input
+    id: desktop
+    attributes:
+      label: Power BI Desktop version
+      description: Only if the issue involves opening the project in Desktop.
+      placeholder: "2.14x (Help > About)"
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you ask for, and what did the tool do instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: The tool calls in order, with arguments (redact anything sensitive).
+      placeholder: |
+        1. pbi_set_project(path=...)
+        2. pbi_create_measure(table="Sales", name="Margin %", dax="...")
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Tool output, errors and server log
+      description: Paste the tool result or traceback. The server log is in your MCP host's log folder.
+      render: shell
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and the changelog.
+          required: true
+        - label: I am not attaching confidential data or a real project.
+          required: true

@@ -1,8 +1,8 @@
 """Single entry point for the frozen (standalone) build.
 
-Usage: pbi-mcp <model|report>
+Usage: pbi-mcp <model|report|service>
 The plugin manifest launches this with one arg, so one bundled executable
-serves both MCP servers. When frozen by PyInstaller, the Python runtime,
+serves every MCP server (``service`` is the optional cloud server). When frozen by PyInstaller, the Python runtime,
 dependencies, and vendored schemas are all inside the binary — the host needs
 nothing installed.
 """
@@ -30,8 +30,11 @@ def main() -> None:
         from model_server.server import main as run
     elif which in ("report", "pbi-report"):
         from report_server.server import main as run
+    elif which in ("service", "pbi-service"):
+        from service_server.server import main as run
     else:
-        sys.stderr.write(f"unknown server {which!r}; use 'model' or 'report'\n")
+        sys.stderr.write(f"unknown server {which!r}; use 'model', 'report' "
+                         "or 'service'\n")
         sys.exit(2)
     run()
 

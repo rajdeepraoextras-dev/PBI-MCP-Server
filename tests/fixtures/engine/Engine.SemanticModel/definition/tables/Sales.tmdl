@@ -1,0 +1,82 @@
+table Sales
+	lineageTag: 8f3c2a1e-6d4b-4c7a-9e21-0a5b7c3d9f01
+
+	measure 'Total Amount' = SUM(Sales[Amount])
+		formatString: #,0.00
+		lineageTag: c1a2b3d4-0001-4e5f-8a9b-000000000001
+
+	measure 'Order Count' = COUNTROWS(Sales)
+		formatString: 0
+		lineageTag: c1a2b3d4-0002-4e5f-8a9b-000000000002
+
+	measure 'Average Amount' = DIVIDE([Total Amount], [Order Count])
+		formatString: #,0.00
+		lineageTag: c1a2b3d4-0003-4e5f-8a9b-000000000003
+
+	column Id
+		dataType: int64
+		formatString: 0
+		lineageTag: d1a2b3c4-0001-4e5f-8a9b-000000000011
+		summarizeBy: none
+		sourceColumn: Id
+
+		annotation SummarizationSetBy = User
+
+	column CustomerId
+		dataType: int64
+		formatString: 0
+		lineageTag: d1a2b3c4-0002-4e5f-8a9b-000000000012
+		summarizeBy: none
+		sourceColumn: CustomerId
+
+		annotation SummarizationSetBy = User
+
+	column ProductId
+		dataType: int64
+		formatString: 0
+		lineageTag: d1a2b3c4-0003-4e5f-8a9b-000000000013
+		summarizeBy: none
+		sourceColumn: ProductId
+
+		annotation SummarizationSetBy = User
+
+	column OrderDate
+		dataType: dateTime
+		lineageTag: d1a2b3c4-0004-4e5f-8a9b-000000000014
+		summarizeBy: none
+		sourceColumn: OrderDate
+
+		annotation SummarizationSetBy = Automatic
+
+	column Amount
+		dataType: double
+		lineageTag: d1a2b3c4-0005-4e5f-8a9b-000000000015
+		summarizeBy: sum
+		sourceColumn: Amount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition Sales = m
+		mode: import
+		source =
+				let
+				    Source = Table.FromRows(
+				        {
+				            {1, 1, 1, #datetime(2024, 1, 15, 0, 0, 0), 120.5},
+				            {2, 2, 1, #datetime(2024, 1, 20, 0, 0, 0), 80.0},
+				            {3, 1, 2, #datetime(2024, 2, 3, 0, 0, 0), 45.25},
+				            {4, 3, 3, #datetime(2024, 2, 14, 0, 0, 0), 210.0},
+				            {5, 2, 2, #datetime(2024, 3, 1, 0, 0, 0), 60.0},
+				            {6, 4, 1, #datetime(2024, 3, 9, 0, 0, 0), 99.99},
+				            {7, 3, 2, #datetime(2024, 3, 21, 0, 0, 0), 15.5},
+				            {8, 1, 3, #datetime(2024, 4, 2, 0, 0, 0), 305.0}
+				        },
+				        {"Id", "CustomerId", "ProductId", "OrderDate", "Amount"}),
+				    #"Changed Type" = Table.TransformColumnTypes(Source, {{"Id", Int64.Type}, {"CustomerId", Int64.Type}, {"ProductId", Int64.Type}, {"OrderDate", type datetime}, {"Amount", type number}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+
