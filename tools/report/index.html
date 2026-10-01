@@ -1,0 +1,6237 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="MCP servers that read and write Power BI Project (.pbip) files on disk - TMDL semantic models and PBIR reports, with dry-run, undo and schema validation.">
+      
+      
+        <meta name="author" content="Rajdeep Rao">
+      
+      
+        <link rel="canonical" href="https://rajdeepraoextras-dev.github.io/PBI-MCP-Server/tools/report/">
+      
+      
+        <link rel="prev" href="../model/">
+      
+      
+        <link rel="next" href="../service/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Report server - pbi-mcp</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#report-server-tools" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="pbi-mcp" class="md-header__button md-logo" aria-label="pbi-mcp" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pbi-mcp
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Report server
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/rajdeepraoextras-dev/PBI-MCP-Server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    rajdeepraoextras-dev/PBI-MCP-Server
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="pbi-mcp" class="md-nav__button md-logo" aria-label="pbi-mcp" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    pbi-mcp
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/rajdeepraoextras-dev/PBI-MCP-Server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    rajdeepraoextras-dev/PBI-MCP-Server
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Install
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tool reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tool reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Report server
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Report server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-read-this-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to read this page
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#project-and-diagnostics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Project and diagnostics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Project and diagnostics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_capabilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_capabilities
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_doctor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_doctor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_project_diff" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_project_diff
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_project_summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_project_summary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_project" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_project
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#undo-transactions-and-recovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Undo, transactions and recovery
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Undo, transactions and recovery">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_begin_transaction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_begin_transaction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_commit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_commit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_list_trash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_list_trash
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_restore_visual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_restore_visual
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_rollback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_rollback
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_undo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_undo
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_undo_history" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_undo_history
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation-and-lint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation and lint
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Validation and lint">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_lint_page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_lint_page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_validate_project" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_validate_project
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#autopilot-and-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Autopilot and analysis
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Autopilot and analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_model_usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_model_usage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_profile_model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_profile_model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_scaffold_report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_scaffold_report
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#building-pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Building pages
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Building pages">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_build_designed_page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_build_designed_page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_build_page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_build_page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_create_page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_create_page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_duplicate_page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_duplicate_page
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pages
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pages">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_delete_page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_delete_page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_hide_page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_hide_page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_import_pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_import_pages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_list_pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_list_pages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_page_style" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_page_style
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_rename_page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_rename_page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_render_page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_render_page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_reorder_pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_reorder_pages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_page_role" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_page_role
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_tooltip_page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_tooltip_page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_style_page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_style_page
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#visuals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visuals
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Visuals">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_add_deneb_visual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_add_deneb_visual
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_add_visual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_add_visual
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_add_visual_raw" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_add_visual_raw
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_delete_visual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_delete_visual
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_format_visual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_format_visual
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_get_visual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_get_visual
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_group_visuals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_group_visuals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_import_visuals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_import_visuals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_list_visuals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_list_visuals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_move_visual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_move_visual
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_visual_interactions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_visual_interactions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_sort_visual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_sort_visual
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_update_bindings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_update_bindings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design-elements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design elements
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Design elements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_add_image" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_add_image
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_add_shape" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_add_shape
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_add_text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_add_text
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#themes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Themes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Themes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_generate_theme" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_generate_theme
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_report_theme" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_report_theme
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_theme_from_image" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_theme_from_image
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#filters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Filters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_add_filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_add_filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_list_filters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_list_filters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_remove_filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_remove_filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#navigation-and-bookmarks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Navigation and bookmarks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Navigation and bookmarks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_add_nav_button" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_add_nav_button
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_create_bookmark" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_create_bookmark
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#other-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Other tools
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Other tools">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_accessibility_report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_accessibility_report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_add_analytics_line" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_add_analytics_line
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_add_visual_calculation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_add_visual_calculation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_auto_alt_text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_auto_alt_text
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_auto_tab_order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_auto_tab_order
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_clear_conditional_format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_clear_conditional_format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_create_report_measure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_create_report_measure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_delete_report_measure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_delete_report_measure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_get_mobile_layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_get_mobile_layout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_list_analytics_lines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_list_analytics_lines
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_list_deneb_templates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_list_deneb_templates
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_list_report_measures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_list_report_measures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_list_visual_calculations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_list_visual_calculations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_remove_analytics_line" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_remove_analytics_line
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_remove_visual_calculation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_remove_visual_calculation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_render_report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_render_report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_semantic_diff" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_semantic_diff
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_alt_text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_alt_text
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_conditional_format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_conditional_format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_data_labels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_data_labels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_deneb_spec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_deneb_spec
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_mobile_layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_mobile_layout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_slicer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_slicer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_tab_order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_tab_order
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_update_report_measure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_update_report_measure
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../service/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service server (optional)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cookbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cookbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../safety/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Safety model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cloud/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cloud publishing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-read-this-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to read this page
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#project-and-diagnostics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Project and diagnostics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Project and diagnostics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_capabilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_capabilities
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_doctor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_doctor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_project_diff" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_project_diff
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_project_summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_project_summary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_project" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_project
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#undo-transactions-and-recovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Undo, transactions and recovery
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Undo, transactions and recovery">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_begin_transaction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_begin_transaction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_commit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_commit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_list_trash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_list_trash
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_restore_visual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_restore_visual
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_rollback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_rollback
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_undo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_undo
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_undo_history" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_undo_history
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation-and-lint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation and lint
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Validation and lint">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_lint_page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_lint_page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_validate_project" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_validate_project
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#autopilot-and-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Autopilot and analysis
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Autopilot and analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_model_usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_model_usage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_profile_model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_profile_model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_scaffold_report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_scaffold_report
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#building-pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Building pages
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Building pages">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_build_designed_page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_build_designed_page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_build_page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_build_page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_create_page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_create_page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_duplicate_page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_duplicate_page
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pages
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pages">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_delete_page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_delete_page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_hide_page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_hide_page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_import_pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_import_pages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_list_pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_list_pages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_page_style" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_page_style
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_rename_page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_rename_page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_render_page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_render_page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_reorder_pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_reorder_pages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_page_role" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_page_role
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_tooltip_page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_tooltip_page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_style_page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_style_page
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#visuals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visuals
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Visuals">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_add_deneb_visual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_add_deneb_visual
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_add_visual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_add_visual
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_add_visual_raw" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_add_visual_raw
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_delete_visual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_delete_visual
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_format_visual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_format_visual
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_get_visual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_get_visual
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_group_visuals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_group_visuals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_import_visuals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_import_visuals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_list_visuals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_list_visuals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_move_visual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_move_visual
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_visual_interactions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_visual_interactions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_sort_visual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_sort_visual
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_update_bindings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_update_bindings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design-elements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design elements
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Design elements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_add_image" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_add_image
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_add_shape" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_add_shape
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_add_text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_add_text
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#themes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Themes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Themes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_generate_theme" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_generate_theme
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_report_theme" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_report_theme
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_theme_from_image" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_theme_from_image
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#filters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Filters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_add_filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_add_filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_list_filters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_list_filters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_remove_filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_remove_filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#navigation-and-bookmarks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Navigation and bookmarks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Navigation and bookmarks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_add_nav_button" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_add_nav_button
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_create_bookmark" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_create_bookmark
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#other-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Other tools
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Other tools">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_accessibility_report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_accessibility_report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_add_analytics_line" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_add_analytics_line
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_add_visual_calculation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_add_visual_calculation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_auto_alt_text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_auto_alt_text
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_auto_tab_order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_auto_tab_order
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_clear_conditional_format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_clear_conditional_format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_create_report_measure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_create_report_measure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_delete_report_measure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_delete_report_measure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_get_mobile_layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_get_mobile_layout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_list_analytics_lines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_list_analytics_lines
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_list_deneb_templates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_list_deneb_templates
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_list_report_measures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_list_report_measures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_list_visual_calculations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_list_visual_calculations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_remove_analytics_line" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_remove_analytics_line
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_remove_visual_calculation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_remove_visual_calculation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_render_report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_render_report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_semantic_diff" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_semantic_diff
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_alt_text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_alt_text
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_conditional_format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_conditional_format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_data_labels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_data_labels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_deneb_spec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_deneb_spec
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_mobile_layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_mobile_layout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_slicer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_slicer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_tab_order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_tab_order
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_update_report_measure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_update_report_measure
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<!-- Generated by scripts/gen_tool_reference.py from the live servers. Do not edit by hand; run the script instead. -->
+
+<h1 id="report-server-tools">Report server tools<a class="headerlink" href="#report-server-tools" title="Permanent link">&para;</a></h1>
+<p>The <code>pbi-report</code> server builds and edits the <strong>report</strong> (PBIR) of a Power BI Project: pages, visuals, formatting, themes, filters and design elements. Every report write is validated against the official Fabric schemas before it reaches disk. Call <code>pbi_set_project(path)</code> first, then <code>pbi_capabilities()</code> to learn the visual types, buckets and filters.</p>
+<p><strong>81 tools</strong> (23 read-only, 58 write).</p>
+<h2 id="how-to-read-this-page">How to read this page<a class="headerlink" href="#how-to-read-this-page" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Read-only</strong> tools never change the project. <strong>Write</strong> tools do.</li>
+<li><strong>Destructive</strong> marks tools that delete or overwrite content, so hosts can
+  ask before running them. <strong>Idempotent</strong> means repeating the call with the
+  same arguments changes nothing further.</li>
+<li>Write tools that edit project files accept <code>dry_run=true</code>: the operation
+  runs on a scratch copy and returns the unified diff, and nothing is
+  written. Every real write is journaled and can be reverted with
+  <code>pbi_undo</code>. Do not use <code>dry_run</code> with the restore tools that take a path
+  into the project. See <a href="../../safety/#dry-run">Safety</a>.</li>
+<li>Types are JSON Schema types. A parameter is <strong>required</strong> when it has no
+  default.</li>
+</ul>
+<h2 id="project-and-diagnostics">Project and diagnostics<a class="headerlink" href="#project-and-diagnostics" title="Permanent link">&para;</a></h2>
+<h3 id="pbi_capabilities"><code>pbi_capabilities</code><a class="headerlink" href="#pbi_capabilities" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong> · idempotent</p>
+<p>What this server can build: visual types + buckets, filters, formatting,
+design elements, workflow, and a worked example. Call after set_project.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_doctor"><code>pbi_doctor</code><a class="headerlink" href="#pbi_doctor" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong> · idempotent</p>
+<p>Diagnose the environment and the selected project (read-only,
+never raises). Reports Python, mcp SDK and pbi-mcp versions; whether
+the report is PBIR (editable) or legacy report.json and the model is
+TMDL or legacy model.bim; declared $schema versions vs the vendored
+ones; table, measure, page and visual counts; backup, undo-journal
+and trash sizes; and (Windows) the installed Power BI Desktop version
+and whether a Desktop instance is running. Works before
+<code>pbi_set_project</code> for the environment checks. Returns {ok,
+findings[{severity, check, message, fix?}], environment, project}; ok
+is false only if a finding has severity 'error'.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_project_diff"><code>pbi_project_diff</code><a class="headerlink" href="#pbi_project_diff" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>Diff the current project against another .pbip (or a backup dir):
+measures/pages/visuals/relationships added/removed/changed.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>other_path</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_project_summary"><code>pbi_project_summary</code><a class="headerlink" href="#pbi_project_summary" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>A compact overview: tables, measures, relationships, pages, visuals,
+and field-usage counts.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_set_project"><code>pbi_set_project</code><a class="headerlink" href="#pbi_set_project" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong> · idempotent</p>
+<p>Point the report server at a Power BI Project (.pbip). Call this first.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="undo-transactions-and-recovery">Undo, transactions and recovery<a class="headerlink" href="#undo-transactions-and-recovery" title="Permanent link">&para;</a></h2>
+<h3 id="pbi_begin_transaction"><code>pbi_begin_transaction</code><a class="headerlink" href="#pbi_begin_transaction" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Mark a point so several writes can be reverted together with
+<code>pbi_rollback</code>, or kept with <code>pbi_commit</code>. One open transaction at a time.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_commit"><code>pbi_commit</code><a class="headerlink" href="#pbi_commit" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Close the open transaction, keeping every write made since
+<code>pbi_begin_transaction</code>.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_list_trash"><code>pbi_list_trash</code><a class="headerlink" href="#pbi_list_trash" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>List recoverable deleted pages/visuals in .pbi/mcp-trash.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_restore_visual"><code>pbi_restore_visual</code><a class="headerlink" href="#pbi_restore_visual" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Restore a deleted visual (path from <code>pbi_list_trash</code>) back onto its page.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>trash_path</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_rollback"><code>pbi_rollback</code><a class="headerlink" href="#pbi_rollback" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive</p>
+<p>Revert every write made since <code>pbi_begin_transaction</code> and close the
+transaction.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_undo"><code>pbi_undo</code><a class="headerlink" href="#pbi_undo" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive</p>
+<p>Revert the latest <code>steps</code> journaled writes (newest first), restoring
+every changed file byte-for-byte and deleting files those writes
+added. Not journaled itself, so it cannot be undone.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>steps</code></td>
+<td>integer</td>
+<td>no</td>
+<td><code>1</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_undo_history"><code>pbi_undo_history</code><a class="headerlink" href="#pbi_undo_history" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong> · idempotent</p>
+<p>Journaled writes for the selected project, newest first: id, tool,
+time and the files it added/modified/deleted. Both servers share the
+history; any entry can be reverted with <code>pbi_undo</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>limit</code></td>
+<td>integer</td>
+<td>no</td>
+<td><code>20</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="validation-and-lint">Validation and lint<a class="headerlink" href="#validation-and-lint" title="Permanent link">&para;</a></h2>
+<h3 id="pbi_lint_page"><code>pbi_lint_page</code><a class="headerlink" href="#pbi_lint_page" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>Design lint a page: overlaps, off-canvas visuals, too-small visuals,
+near-misaligned edges, plus accessibility findings (a11y_<em>: alt text, tab
+order, small text, WCAG contrast, judged against the active theme).
+Returns {ok, accessibility_ok, findings[]}: <code>ok</code> is the layout verdict
+(no layout warnings); <code>accessibility_ok</code> is true when there are no a11y_</em>
+findings.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_validate_project"><code>pbi_validate_project</code><a class="headerlink" href="#pbi_validate_project" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>Validate every report JSON against the official Fabric schemas.
+Returns {ok, checked, errors[]}. Catches shapes Desktop would reject.</p>
+<p><em>No parameters.</em></p>
+<h2 id="autopilot-and-analysis">Autopilot and analysis<a class="headerlink" href="#autopilot-and-analysis" title="Permanent link">&para;</a></h2>
+<h3 id="pbi_model_usage"><code>pbi_model_usage</code><a class="headerlink" href="#pbi_model_usage" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>Classify model fields as direct (bound in report), indirect (needed by
+a bound measure or a relationship), or unused. The deletion fail-safe.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_profile_model"><code>pbi_profile_model</code><a class="headerlink" href="#pbi_profile_model" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>Classify the model (fact/dimension/date tables, measure roles, grouping
+columns) — the analysis that drives <code>pbi_scaffold_report</code>.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_scaffold_report"><code>pbi_scaffold_report</code><a class="headerlink" href="#pbi_scaffold_report" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>AUTOPILOT: profile the model and build a full designed report — themed
+overview page (KPI strip + trend + breakdown + table) plus per-dimension
+detail pages with a nav bar. dry_run=true returns the proposal to edit
+first. Omit accent to inherit the report's existing theme (won't overwrite
+it). Fastest path from a raw model to an epic report.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>accent</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>max_detail_pages</code></td>
+<td>integer</td>
+<td>no</td>
+<td><code>3</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td><code>theme</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>true</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="building-pages">Building pages<a class="headerlink" href="#building-pages" title="Permanent link">&para;</a></h2>
+<h3 id="pbi_build_designed_page"><code>pbi_build_designed_page</code><a class="headerlink" href="#pbi_build_designed_page" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Build a fully DESIGNED page in one call: header band, KPI strip on
+rounded backplates, and a chart grid — themed and laid out.
+kpis: [{"measure": "Table.M", "title": "..."}]. charts: normal visual
+specs (positions auto-assigned). accent is the header/brand '#hex' —
+omit it to inherit the report's existing theme color; page size is
+inherited too. Pass match_page=&lt;existing page id&gt; to copy that page's
+header/KPI composition so the new page matches it closely.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>subtitle</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>kpis</code></td>
+<td>array</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>charts</code></td>
+<td>array</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>template</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>"exec-summary"</code></td>
+</tr>
+<tr>
+<td><code>accent</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>match_page</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_build_page"><code>pbi_build_page</code><a class="headerlink" href="#pbi_build_page" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Create a page AND add visuals in one call. Visuals without a
+"position" get an automatic layout (KPI cards top row, charts on a
+2-column grid). Size defaults to the existing pages' dimensions.
+Same visual spec shape as <code>pbi_add_visual</code>.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visuals</code></td>
+<td>array of object</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>width</code></td>
+<td>number</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>height</code></td>
+<td>number</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_create_page"><code>pbi_create_page</code><a class="headerlink" href="#pbi_create_page" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Create a report page; returns page_id. Size defaults to the existing
+pages' dimensions so orientation matches the rest of the report.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>width</code></td>
+<td>number</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>height</code></td>
+<td>number</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_duplicate_page"><code>pbi_duplicate_page</code><a class="headerlink" href="#pbi_duplicate_page" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Duplicate a page and its visuals; returns the new page id.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>new_name</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="pages">Pages<a class="headerlink" href="#pages" title="Permanent link">&para;</a></h2>
+<h3 id="pbi_delete_page"><code>pbi_delete_page</code><a class="headerlink" href="#pbi_delete_page" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive</p>
+<p>Delete a page (recoverable via .pbi/mcp-trash).</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_hide_page"><code>pbi_hide_page</code><a class="headerlink" href="#pbi_hide_page" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Hide or show a page in view mode.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>hidden</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_import_pages"><code>pbi_import_pages</code><a class="headerlink" href="#pbi_import_pages" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Copy pages from another PBIP (from_path: project root, .pbip or
+*.Report folder) into the selected report: page.json, every visual
+folder, the registered images they use (copied and re-registered in
+report.json when needed) and, with include_bookmarks, the bookmarks
+that open those pages. Ids that are taken get new ones (page ids from
+the display name, "-2" suffixes); navigation buttons, bookmarks and
+pageBinding follow. rename_map is {source page id: new display name};
+position is the 0-based index in the page order (omit to append);
+imported pages keep their source order. Every field the imported
+visuals and filters bind is checked against the target model and the
+import is refused with the list of missing fields unless
+allow_missing_fields is true. Returns {id_map (old -&gt; new page id),
+pages, bookmarks, resources, order, missing_fields, warnings}.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>from_path</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>page_ids</code></td>
+<td>array of string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>rename_map</code></td>
+<td>object</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>include_bookmarks</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>allow_missing_fields</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td><code>position</code></td>
+<td>integer</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_list_pages"><code>pbi_list_pages</code><a class="headerlink" href="#pbi_list_pages" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>List report pages: id, display name, size, visual count, hidden flag.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_page_style"><code>pbi_page_style</code><a class="headerlink" href="#pbi_page_style" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>Inspect a page's header/KPI composition (band height+color, title font,
+card height, backplate) — what <code>pbi_build_designed_page</code>(match_page=...)
+copies.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_rename_page"><code>pbi_rename_page</code><a class="headerlink" href="#pbi_rename_page" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Rename a page's display name.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>new_name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_render_page"><code>pbi_render_page</code><a class="headerlink" href="#pbi_render_page" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Draw a page as a wireframe-with-content picture: the page canvas at
+its real size with its background, and every visual as a rounded box at
+its position (z-order kept, hidden visuals dashed, groups outlined and
+named) showing its title, visual type, a bindings summary
+("Category: Date.Year | Y: Sales.Net Revenue") and a schematic glyph
+(bars, line, pie, big number, grid, list, ...), colored from the
+report's theme and accent. format is 'svg' (default) or 'png' (needs
+Pillow: pip install pbi-mcp[render]); scale multiplies the size (0-8].
+The file goes to out_path (a file ending in .svg/.png, or a directory)
+or, by default, &lt;Report&gt;/.pbi/mcp-renders/&lt;page_id&gt;.&lt;ext&gt;. Returns the
+path, size, bytes, a per-visual list (id, type, title, geometry) and,
+for SVG when inline is true and the file is under 200 KB, the SVG text
+so hosts can show it.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>format</code></td>
+<td>one of "svg", "png"</td>
+<td>no</td>
+<td><code>"svg"</code></td>
+</tr>
+<tr>
+<td><code>out_path</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>scale</code></td>
+<td>number</td>
+<td>no</td>
+<td><code>1.0</code></td>
+</tr>
+<tr>
+<td><code>inline</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>true</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_reorder_pages"><code>pbi_reorder_pages</code><a class="headerlink" href="#pbi_reorder_pages" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Set page order (list of page ids). Omitted pages keep their order after.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>order</code></td>
+<td>array</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_set_page_role"><code>pbi_set_page_role</code><a class="headerlink" href="#pbi_set_page_role" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Make a page a drillthrough or tooltip page. role in
+drillthrough|tooltip|default.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>role</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>tooltip_width</code></td>
+<td>integer</td>
+<td>no</td>
+<td><code>320</code></td>
+</tr>
+<tr>
+<td><code>tooltip_height</code></td>
+<td>integer</td>
+<td>no</td>
+<td><code>240</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_set_tooltip_page"><code>pbi_set_tooltip_page</code><a class="headerlink" href="#pbi_set_tooltip_page" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Show a report tooltip page when hovering a visual (visualTooltip type
+'ReportPage' + section). tooltip_page_id must already be a tooltip-role
+page (<code>pbi_set_page_role</code>). Pass tooltip_page_id=None to revert to the
+default tooltip.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visual_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>tooltip_page_id</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_style_page"><code>pbi_style_page</code><a class="headerlink" href="#pbi_style_page" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Style a page's canvas background and wallpaper (outspace).
+Colors are '#hex'; transparency 0.0-1.0.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>background_color</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>background_transparency</code></td>
+<td>number</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>wallpaper_color</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="visuals">Visuals<a class="headerlink" href="#visuals" title="Permanent link">&para;</a></h2>
+<h3 id="pbi_add_deneb_visual"><code>pbi_add_deneb_visual</code><a class="headerlink" href="#pbi_add_deneb_visual" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Add a Deneb (Vega-Lite) chart to a page from a template (see
+<code>pbi_list_deneb_templates</code>). bindings maps template roles to model fields,
+e.g. {"category": "Date.Year", "value": "Sales.Net Revenue", "series":
+"Store.Region"}; measures and columns are resolved from the model, must
+exist and fit the role (dimension roles take columns, measure roles take
+measures or numeric columns; 'Sum(Table.Col)' aggregates a column). The
+fields are bound to the visual's dataset so the data flows, and the spec
+reads the dataset by field name. options tunes the template (color,
+palette, orientation, labels, format, ...). position is {x, y, width,
+height} (default: the first free 480x320 slot on the page); title sets
+the container title. The Deneb custom visual must be present in the
+report or organization to render: this lists it in report.json
+publicCustomVisuals when it is not already available. Returns the new
+visual id and the dataset field names the spec uses.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>template</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>bindings</code></td>
+<td>object</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>position</code></td>
+<td>object</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>options</code></td>
+<td>object</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_add_visual"><code>pbi_add_visual</code><a class="headerlink" href="#pbi_add_visual" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Add visuals to a page (batch). Each: {"visual_type", "bindings":
+{bucket: ["Table.Field",...]}, "position"?: {x,y,width,height},
+"title"?, "id"?}. Bindings are validated against the visual type's
+buckets and the model before writing.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visuals</code></td>
+<td>array of object</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_add_visual_raw"><code>pbi_add_visual_raw</code><a class="headerlink" href="#pbi_add_visual_raw" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Escape hatch: add a prebuilt visual.json (validated against the schema)
+for third-party visuals this server doesn't model. Get a real one via
+<code>pbi_get_visual</code>, tweak it, and pass it here.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visual_json</code></td>
+<td>object</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>base</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>"visual"</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_delete_visual"><code>pbi_delete_visual</code><a class="headerlink" href="#pbi_delete_visual" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive</p>
+<p>Delete a visual (recoverable: moved into the report's .pbi/mcp-trash).</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visual_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_format_visual"><code>pbi_format_visual</code><a class="headerlink" href="#pbi_format_visual" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Format a visual. target='container' (title, background, border) or
+'visual' (axes, legend, labels). objects={objectName: {prop: value}} —
+plain strings/numbers/bools/'#hex' colors are auto-encoded.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visual_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>target</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>objects</code></td>
+<td>object</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_get_visual"><code>pbi_get_visual</code><a class="headerlink" href="#pbi_get_visual" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>Full configuration of one visual (including raw visual.json).</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visual_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_group_visuals"><code>pbi_group_visuals</code><a class="headerlink" href="#pbi_group_visuals" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Group visuals so they move and style as one block. Needs &gt;= 2 ids.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visual_ids</code></td>
+<td>array</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>"Group"</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_import_visuals"><code>pbi_import_visuals</code><a class="headerlink" href="#pbi_import_visuals" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Copy individual visuals from page <code>page_id</code> of another PBIP
+(from_path) onto <code>target_page_id</code> of the selected report. Visual ids
+already used on the target page get a "-2"/"-3" suffix; offset
+{"x": 20, "y": 10} shifts every imported visual; selecting a group
+also imports its members. Bound fields are checked against the target
+model (refused with the list of missing fields unless
+allow_missing_fields is true) and referenced images are copied.
+Returns {id_map (old -&gt; new visual id), count, missing_fields,
+resources, warnings}.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>from_path</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visual_ids</code></td>
+<td>array of string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>target_page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>offset</code></td>
+<td>object</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>allow_missing_fields</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_list_visuals"><code>pbi_list_visuals</code><a class="headerlink" href="#pbi_list_visuals" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>List visuals on a page with type, position, title, and field bindings.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_move_visual"><code>pbi_move_visual</code><a class="headerlink" href="#pbi_move_visual" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Move/resize a visual; only passed fields change.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visual_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>x</code></td>
+<td>number</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>y</code></td>
+<td>number</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>width</code></td>
+<td>number</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>height</code></td>
+<td>number</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_set_visual_interactions"><code>pbi_set_visual_interactions</code><a class="headerlink" href="#pbi_set_visual_interactions" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Control cross-filtering: interactions = {target_visual_id:
+'Filter'|'Highlight'|'NoFilter'} for clicks on source_visual.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>source_visual</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>interactions</code></td>
+<td>object</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_sort_visual"><code>pbi_sort_visual</code><a class="headerlink" href="#pbi_sort_visual" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Sort a visual by a field (Ascending|Descending). Pairs with a TopN
+filter to make a real top-N chart.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visual_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>field</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>direction</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>"Descending"</code></td>
+</tr>
+<tr>
+<td><code>is_measure</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_update_bindings"><code>pbi_update_bindings</code><a class="headerlink" href="#pbi_update_bindings" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Replace a visual's field bindings ({bucket: ["Table.Field",...]});
+formatting and position are preserved. Validated before writing.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visual_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>bindings</code></td>
+<td>object</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="design-elements">Design elements<a class="headerlink" href="#design-elements" title="Permanent link">&para;</a></h2>
+<h3 id="pbi_add_image"><code>pbi_add_image</code><a class="headerlink" href="#pbi_add_image" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Upload a local image into the report's resources and place it (logos,
+icons, backgrounds). scaling in Fit|Fill|Normal.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>image_path</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>position</code></td>
+<td>object</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>scaling</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>z</code></td>
+<td>integer</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_add_shape"><code>pbi_add_shape</code><a class="headerlink" href="#pbi_add_shape" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Add a shape (rectangle/rectangleRounded/oval/line/arrow…): KPI
+backplates, dividers, accent bars. fill/outline are '#hex'. Use a LOW z
+to sit behind data visuals.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>shape</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>"rectangle"</code></td>
+</tr>
+<tr>
+<td><code>fill</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>outline</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>outline_weight</code></td>
+<td>number</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>position</code></td>
+<td>object</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>round_corners</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td><code>z</code></td>
+<td>integer</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_add_text"><code>pbi_add_text</code><a class="headerlink" href="#pbi_add_text" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Add a textbox (titles, headers, commentary). <code>runs</code> is a string or a
+list of run dicts {text, bold, italic, size, color, font, align, url}.
+Use a high z to keep text above backplates.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>runs</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>position</code></td>
+<td>object</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>z</code></td>
+<td>integer</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="themes">Themes<a class="headerlink" href="#themes" title="Permanent link">&para;</a></h2>
+<h3 id="pbi_generate_theme"><code>pbi_generate_theme</code><a class="headerlink" href="#pbi_generate_theme" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Generate a coherent Power BI theme from a brand color (palette + text
+classes + visual styles, light|dark). install=True (the default) applies
+it to the report now; install=False only returns the theme JSON.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>brand</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>"#1F3A5F"</code></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>"MCP Brand Theme"</code></td>
+</tr>
+<tr>
+<td><code>mode</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>"light"</code></td>
+</tr>
+<tr>
+<td><code>install</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_set_report_theme"><code>pbi_set_report_theme</code><a class="headerlink" href="#pbi_set_report_theme" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive</p>
+<p>Install a custom report theme (standard Power BI theme JSON with a
+'name' field) and activate it in report.json.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>theme</code></td>
+<td>object</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_theme_from_image"><code>pbi_theme_from_image</code><a class="headerlink" href="#pbi_theme_from_image" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive · idempotent</p>
+<p>Build a Power BI theme from the colors of an image (logo, photo,
+brand artwork; needs Pillow: pip install pbi-mcp[render]). The image is
+downscaled and quantized to ~16 colors, near-white / near-black / gray
+swatches are dropped, the rest are ordered by saturation then luminance,
+the most saturated mid-tone becomes the accent and 6-8 distinct swatches
+become the theme's dataColors; the theme itself comes from the same
+generator as <code>pbi_generate_theme</code> (mode 'light' or 'dark'). Returns the
+theme JSON, the accent, the dataColors and the extracted swatches. Nothing
+is written unless install=true, which installs and activates the theme in
+the report (replacing the current custom theme); name defaults to
+'&lt;image name&gt; Theme'.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>image_path</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>mode</code></td>
+<td>one of "light", "dark"</td>
+<td>no</td>
+<td><code>"light"</code></td>
+</tr>
+<tr>
+<td><code>install</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="filters">Filters<a class="headerlink" href="#filters" title="Permanent link">&para;</a></h2>
+<h3 id="pbi_add_filter"><code>pbi_add_filter</code><a class="headerlink" href="#pbi_add_filter" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Add a filter at report/page/visual scope. field='Table.Field'.
+Categorical: values=[...]. Advanced: comparison in eq|gt|ge|lt|le +
+comparison_value. TopN: top_n (rank by the visual's value field).
+RelativeDate: last_n + relative_unit in day|week|month|year.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scope</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>field</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>filter_type</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>"Categorical"</code></td>
+</tr>
+<tr>
+<td><code>values</code></td>
+<td>array</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>comparison</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>comparison_value</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>top_n</code></td>
+<td>integer</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>order_by</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>last_n</code></td>
+<td>integer</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>relative_unit</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>visual_id</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>is_measure</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_list_filters"><code>pbi_list_filters</code><a class="headerlink" href="#pbi_list_filters" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>List filters at report/page/visual scope.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scope</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>visual_id</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_remove_filter"><code>pbi_remove_filter</code><a class="headerlink" href="#pbi_remove_filter" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive</p>
+<p>Remove a filter by name (from <code>pbi_list_filters</code>).</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scope</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>filter_name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>visual_id</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="navigation-and-bookmarks">Navigation and bookmarks<a class="headerlink" href="#navigation-and-bookmarks" title="Permanent link">&para;</a></h2>
+<h3 id="pbi_add_nav_button"><code>pbi_add_nav_button</code><a class="headerlink" href="#pbi_add_nav_button" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Add a page-navigation button (click -&gt; go to target_page_id). Build a
+nav bar by adding one per page.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>label</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>target_page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>position</code></td>
+<td>object</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>fill</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>"#1F3A5F"</code></td>
+</tr>
+<tr>
+<td><code>text_color</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>"#FFFFFF"</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_create_bookmark"><code>pbi_create_bookmark</code><a class="headerlink" href="#pbi_create_bookmark" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Capture the current report state (active page + filters) as a bookmark.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>display_name</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="other-tools">Other tools<a class="headerlink" href="#other-tools" title="Permanent link">&para;</a></h2>
+<h3 id="pbi_accessibility_report"><code>pbi_accessibility_report</code><a class="headerlink" href="#pbi_accessibility_report" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong> · idempotent</p>
+<p>Audit a page: missing alt text, tab-order duplicates/gaps, text
+below 9 pt, and text/background contrast under WCAG 2.1 AA (4.5:1),
+using the active theme's colours (defaults #252423 on #FFFFFF).
+Returns {ok, counts, theme, findings[]}; each finding has severity,
+code, visual_id, message and a fix hint.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_add_analytics_line"><code>pbi_add_analytics_line</code><a class="headerlink" href="#pbi_add_analytics_line" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Add an Analytics-pane line to a cartesian visual. kind: constant
+(needs value) | min | max | average | median | percentile (needs
+percentile 0-100) | trend (line/clustered/scatter/area only). measure
+= 'Table.Measure' the aggregate line summarises (optional); color '#hex';
+style dashed|solid|dotted; transparency 0-100; position behind|front;
+label = legend text. Returns the line's index for
+<code>pbi_remove_analytics_line</code>.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visual_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td>number</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>measure</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>color</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>style</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>"dashed"</code></td>
+</tr>
+<tr>
+<td><code>label</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>transparency</code></td>
+<td>number</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>position</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>"behind"</code></td>
+</tr>
+<tr>
+<td><code>percentile</code></td>
+<td>number</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_add_visual_calculation"><code>pbi_add_visual_calculation</code><a class="headerlink" href="#pbi_add_visual_calculation" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Add a visual calculation (visual-level DAX such as
+'RUNNINGSUM([Net Revenue])' or '[Net Revenue] / COLLAPSE([Net Revenue],
+ROWS)') as a NativeVisualCalculation projection. Fields are referenced
+as [nativeQueryRef] — every existing field gets one (its field name);
+the response lists them and warns about unknown references. bucket
+defaults to Values/Y/Data. hidden=true keeps a helper calculation out
+of the visual. Note: <code>pbi_update_bindings</code> rewrites the query and drops
+visual calculations.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visual_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>expression</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>format_string</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>hidden</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td><code>bucket</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_auto_alt_text"><code>pbi_auto_alt_text</code><a class="headerlink" href="#pbi_auto_alt_text" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Generate alt text for a page's content visuals that lack it, as
+'&lt;visual type&gt; of &lt;measures&gt; by &lt;category&gt;' (prefixed by the title when
+it adds information). Existing alt text is kept unless overwrite=true.
+Text boxes and decorative shapes are skipped. Returns what was set.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>overwrite</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_auto_tab_order"><code>pbi_auto_tab_order</code><a class="headerlink" href="#pbi_auto_tab_order" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Set tab order to reading order (top-to-bottom, left-to-right), with
+hidden and decorative visuals last. Returns the order and what
+changed.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_clear_conditional_format"><code>pbi_clear_conditional_format</code><a class="headerlink" href="#pbi_clear_conditional_format" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive · idempotent</p>
+<p>Remove the conditional format of one target (background|font|
+data_bars|icons|web_url) from a bound field; returns how many
+properties/entries were removed (0 = nothing was set).</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visual_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>field</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>target</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_create_report_measure"><code>pbi_create_report_measure</code><a class="headerlink" href="#pbi_create_report_measure" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Create a report-level measure (stored in the report's
+definition/reportExtensions.json, created if absent, not in the
+semantic model). <code>table</code> must be an existing model table; <code>name</code> must
+be unique across model and report measures. data_type is one of
+Double (default), Integer, Decimal, Text, Boolean, Date, DateTime.
+Visuals bind it like any measure ("Table.Name"). Returns the created
+measure plus any DAX warnings.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dax</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>format_string</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>data_type</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_delete_report_measure"><code>pbi_delete_report_measure</code><a class="headerlink" href="#pbi_delete_report_measure" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive</p>
+<p>Delete a report-level measure. Refused while a visual, filter or
+bookmark binds it, or another report measure's DAX references it,
+unless force=true. Returns what was removed and anything forced
+past.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>force</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_get_mobile_layout"><code>pbi_get_mobile_layout</code><a class="headerlink" href="#pbi_get_mobile_layout" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong> · idempotent</p>
+<p>A page's phone layout: enabled flag, canvas size, the placed
+visuals with their mobile x/y/width/height (top to bottom), and the
+visuals that have no phone placement.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_list_analytics_lines"><code>pbi_list_analytics_lines</code><a class="headerlink" href="#pbi_list_analytics_lines" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>List a visual's Analytics-pane lines: index, kind, object, value/
+percentile, label, color, style, position, measure.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visual_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_list_deneb_templates"><code>pbi_list_deneb_templates</code><a class="headerlink" href="#pbi_list_deneb_templates" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong> · idempotent</p>
+<p>List the Deneb chart templates <code>pbi_add_deneb_visual</code> can build: bar,
+stacked_bar, line, area, scatter, heatmap, histogram, box_plot, bullet,
+sparkline, waffle and dumbbell. Each entry gives its name, a description,
+the bindings it takes (role -&gt; 'Table.Field', required or optional,
+dimension or measure), its options (color, palette, orientation, labels,
+format, ...) with defaults, and an example call (field names are
+illustrative; use your model's). The Deneb custom visual must be present
+in the report or organization for these visuals to render.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_list_report_measures"><code>pbi_list_report_measures</code><a class="headerlink" href="#pbi_list_report_measures" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong> · idempotent</p>
+<p>List the report-level measures in reportExtensions.json: table,
+name, dax, data_type, format_string, description. Empty when the
+report has none.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_list_visual_calculations"><code>pbi_list_visual_calculations</code><a class="headerlink" href="#pbi_list_visual_calculations" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>List a visual's visual calculations: bucket, name, expression,
+format, hidden.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visual_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_remove_analytics_line"><code>pbi_remove_analytics_line</code><a class="headerlink" href="#pbi_remove_analytics_line" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive</p>
+<p>Remove the analytics line at <code>index</code> (from <code>pbi_list_analytics_lines</code>).</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visual_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>index</code></td>
+<td>integer</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_remove_visual_calculation"><code>pbi_remove_visual_calculation</code><a class="headerlink" href="#pbi_remove_visual_calculation" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive</p>
+<p>Remove a visual calculation by name.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visual_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_render_report"><code>pbi_render_report</code><a class="headerlink" href="#pbi_render_report" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Render every page of the report with the same wireframe drawing as
+<code>pbi_render_page</code>, one file per page (&lt;page_id&gt;.svg or .png) in out_dir or,
+by default, &lt;Report&gt;/.pbi/mcp-renders/. PNG needs Pillow (pip install
+pbi-mcp[render]). Returns one entry per page: page_id, page_name, path,
+width, height, bytes, visual_count (no inline SVG; open the files).</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>format</code></td>
+<td>one of "svg", "png"</td>
+<td>no</td>
+<td><code>"svg"</code></td>
+</tr>
+<tr>
+<td><code>out_dir</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_semantic_diff"><code>pbi_semantic_diff</code><a class="headerlink" href="#pbi_semantic_diff" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>Structured, deterministic diff between the selected project and
+another PBIP (a backup, another branch checkout or a sibling copy):
+other_path is a project root, .pbip file or <em>.Report / </em>.SemanticModel
+folder. Report layer: pages added/removed/renamed/reordered/resized/
+hidden; per page, visuals added/removed and, per surviving visual
+(matched by id), moved/resized/z-order/type/title, bindings added or
+removed per bucket, formatting property changes as flattened paths
+(old -&gt; new, at most max_format_changes entries in total, with true
+counts), filters at report/page/visual scope, theme (name + which
+dataColors), bookmarks and report-level measures. Model layer (skip
+with include_model=false): tables, measures (DAX as unified diff
+lines, format string, folder, hidden), columns (type, format, hidden,
+sort-by), relationships (cardinality, direction, active), calculation
+groups, partitions and shared expressions/parameters. page_id limits
+the report part to one page.
+Returns {identical, summary (counts), report, model}; a layer missing
+on one side is flagged instead of enumerated.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>other_path</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>include_model</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>max_format_changes</code></td>
+<td>integer</td>
+<td>no</td>
+<td><code>200</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_set_alt_text"><code>pbi_set_alt_text</code><a class="headerlink" href="#pbi_set_alt_text" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Set a visual's alt text (visualContainerObjects.general.altText,
+read aloud by screen readers). An empty string clears it. Groups and
+decorative shapes are not valid targets. Returns the stored text.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visual_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>text</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_set_conditional_format"><code>pbi_set_conditional_format</code><a class="headerlink" href="#pbi_set_conditional_format" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Apply conditional formatting to a field bound in a visual. field is
+the bound 'Table.Column'/'Table.Measure' (its queryRef). target:
+background|font (table/matrix cells via <code>values</code>, chart marks via
+<code>dataPoint.fill</code>, chart/card data-label color via <code>labels.color</code>),
+data_bars|icons|web_url (table/matrix only). rule shapes — gradient:
+{"kind":"gradient","measure":"T.M","min":{"color":"#hex","value"?:n},
+"mid"?:{...},"max":{...},"null_color"?:"#hex"}; rules: {"kind":"rules",
+"measure":"T.M","rules":[{"min"?:n,"max"?:n,"min_inclusive"?:true,
+"max_inclusive"?:false,"color":"#hex"}],"default_color"?:"#hex"};
+field value: {"kind":"field","measure":"T.M"}; data_bars:
+{"positive_color","negative_color","axis_color"?,"show_bar_only"?,
+"min"?,"max"?}; icons: {"style":"threeArrowsColored","rules":[{"min"?,
+"max"?,"icon":0}],"layout"?:"leftOfData|rightOfData|dataOnly",
+"measure"?}; web_url: {"kind":"field","measure"|"column":"T.F"}.
+Returns the object/property/selector written. Re-running replaces the
+same rule.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visual_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>field</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>target</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>rule</code></td>
+<td>object</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_set_data_labels"><code>pbi_set_data_labels</code><a class="headerlink" href="#pbi_set_data_labels" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Data labels. Charts/pie/donut -&gt; <code>labels</code> (show, position e.g.
+OutsideEnd|InsideEnd|InsideCenter|InsideBase for columns, Above|Below|
+Center for lines, Outside|Inside for pie; display_units auto|none|
+thousands|millions|billions|trillions or a number; decimals; color
+'#hex'; font_size; font_family; background '#hex' or false). Card -&gt;
+<code>labels</code> (color/size/family/units/decimals). Table/matrix -&gt; <code>values</code>
+(color, font_size, font_family, background only). Other visual types
+are rejected.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visual_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>show</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>position</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>display_units</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>decimals</code></td>
+<td>integer</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>color</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>font_size</code></td>
+<td>number</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>font_family</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>background</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_set_deneb_spec"><code>pbi_set_deneb_spec</code><a class="headerlink" href="#pbi_set_deneb_spec" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive · idempotent</p>
+<p>Replace the Vega-Lite or Vega spec of an existing Deneb visual with an
+arbitrary one (an object, or JSON text); the provider is detected from
+$schema / the spec's keys. config (optional) replaces the Vega config
+(jsonConfig); omitted, the current config is kept. The spec must read the
+bound fields from the data named "dataset" (Vega-Lite: "data": {"name":
+"dataset"}); a warning is returned when it does not. Field names in the
+dataset are the bound fields' display names with \ " . [ ] replaced by _.
+Bindings are not changed: to change the fields, call <code>pbi_update_bindings</code>
+with the single bucket "dataset", e.g. {"dataset": ["Date.Year",
+"Sales.Net Revenue"]}. The Deneb custom visual must be present in the
+report or organization to render.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visual_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>spec</code></td>
+<td>object or string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>config</code></td>
+<td>object or string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_set_mobile_layout"><code>pbi_set_mobile_layout</code><a class="headerlink" href="#pbi_set_mobile_layout" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Set a page's phone layout (per-visual mobile.json; report.json
+layoutOptimization is kept in sync). mode='auto' stacks the page's
+visible visuals top-left first on the 320-wide phone canvas keeping
+aspect ratios (min height 80); mode='manual' takes
+visuals=[{"visual_id","x","y","width","height"}] (x+width &lt;= 320);
+mode='off' removes the phone layout. Returns the resulting layout.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>mode</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>"auto"</code></td>
+</tr>
+<tr>
+<td><code>visuals</code></td>
+<td>array of object</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_set_slicer"><code>pbi_set_slicer</code><a class="headerlink" href="#pbi_set_slicer" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Configure a slicer. style: list|dropdown|tile|between|relative_date|
+before|after (data.mode; tile = list + horizontal). single_select,
+select_all (selection), search (search box), header (true/false or the
+header text), orientation vertical|horizontal. sync_group='Name'
+joins a sync group across pages (syncGroup.groupName with
+fieldChanges/filterChanges, default true); sync_group='' leaves it.
+Only settings you pass change.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>visual_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>style</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>single_select</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>select_all</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>sync_group</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>sync_field_changes</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>sync_filter_changes</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>search</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>header</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>orientation</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_set_tab_order"><code>pbi_set_tab_order</code><a class="headerlink" href="#pbi_set_tab_order" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Set keyboard tab order (position.tabOrder) from a list of visual
+ids, first to last, numbered 0..n-1. Visuals not listed follow in
+reading order. Returns the full resulting order and what changed.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>order</code></td>
+<td>array of string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_update_report_measure"><code>pbi_update_report_measure</code><a class="headerlink" href="#pbi_update_report_measure" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Update a report-level measure; omitted fields are kept and an empty
+string clears format_string or description. Returns the updated
+measure and any DAX warnings.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dax</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>format_string</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../model/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Model server">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Model server
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../service/" class="md-footer__link md-footer__link--next" aria-label="Next: Service server (optional)">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Service server (optional)
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      MIT licensed. Built by Rajdeep Rao.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "navigation.sections", "navigation.top", "navigation.footer", "search.highlight", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

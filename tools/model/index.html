@@ -1,0 +1,4416 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="MCP servers that read and write Power BI Project (.pbip) files on disk - TMDL semantic models and PBIR reports, with dry-run, undo and schema validation.">
+      
+      
+        <meta name="author" content="Rajdeep Rao">
+      
+      
+        <link rel="canonical" href="https://rajdeepraoextras-dev.github.io/PBI-MCP-Server/tools/model/">
+      
+      
+        <link rel="prev" href="../../quickstart/">
+      
+      
+        <link rel="next" href="../report/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Model server - pbi-mcp</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#model-server-tools" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="pbi-mcp" class="md-header__button md-logo" aria-label="pbi-mcp" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pbi-mcp
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Model server
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/rajdeepraoextras-dev/PBI-MCP-Server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    rajdeepraoextras-dev/PBI-MCP-Server
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="pbi-mcp" class="md-nav__button md-logo" aria-label="pbi-mcp" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    pbi-mcp
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/rajdeepraoextras-dev/PBI-MCP-Server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    rajdeepraoextras-dev/PBI-MCP-Server
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Install
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tool reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tool reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model server
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-read-this-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to read this page
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#project-and-diagnostics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Project and diagnostics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Project and diagnostics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_doctor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_doctor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_project" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_project
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reading-the-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reading the model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Reading the model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_get_model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_get_model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_list_measures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_list_measures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_model_lineage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_model_lineage
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#measures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Measures
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Measures">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_bulk_create_measures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_bulk_create_measures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_create_measure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_create_measure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_delete_measure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_delete_measure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_format_measures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_format_measures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_rename_measure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_rename_measure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_measure_properties" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_measure_properties
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_update_measure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_update_measure
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#columns-relationships-and-calculation-groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Columns, relationships and calculation groups
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Columns, relationships and calculation groups">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_column_stats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_column_stats
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_create_calc_group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_create_calc_group
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_create_column" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_create_column
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_create_relationship" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_create_relationship
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_delete_column" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_delete_column
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_list_columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_list_columns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_rename_column" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_rename_column
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_column_permission" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_column_permission
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_update_column" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_update_column
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#undo-transactions-and-backups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Undo, transactions and backups
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Undo, transactions and backups">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_begin_transaction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_begin_transaction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_commit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_commit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_list_backups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_list_backups
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_restore_backup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_restore_backup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_rollback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_rollback
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_undo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_undo
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_undo_history" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_undo_history
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#other-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Other tools
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Other tools">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_add_culture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_add_culture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_bpa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_bpa
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_bpa_fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_bpa_fix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_bpa_rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_bpa_rules
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_create_calculated_table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_create_calculated_table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_create_expression" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_create_expression
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Report server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../service/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service server (optional)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cookbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cookbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../safety/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Safety model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cloud/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cloud publishing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-read-this-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to read this page
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#project-and-diagnostics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Project and diagnostics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Project and diagnostics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_doctor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_doctor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_project" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_project
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reading-the-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reading the model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Reading the model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_get_model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_get_model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_list_measures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_list_measures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_model_lineage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_model_lineage
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#measures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Measures
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Measures">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_bulk_create_measures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_bulk_create_measures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_create_measure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_create_measure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_delete_measure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_delete_measure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_format_measures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_format_measures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_rename_measure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_rename_measure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_measure_properties" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_measure_properties
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_update_measure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_update_measure
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#columns-relationships-and-calculation-groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Columns, relationships and calculation groups
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Columns, relationships and calculation groups">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_column_stats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_column_stats
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_create_calc_group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_create_calc_group
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_create_column" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_create_column
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_create_relationship" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_create_relationship
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_delete_column" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_delete_column
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_list_columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_list_columns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_rename_column" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_rename_column
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_set_column_permission" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_set_column_permission
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_update_column" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_update_column
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#undo-transactions-and-backups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Undo, transactions and backups
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Undo, transactions and backups">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_begin_transaction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_begin_transaction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_commit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_commit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_list_backups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_list_backups
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_restore_backup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_restore_backup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_rollback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_rollback
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_undo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_undo
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_undo_history" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_undo_history
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#other-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Other tools
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Other tools">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pbi_add_culture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_add_culture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_bpa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_bpa
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_bpa_fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_bpa_fix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_bpa_rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_bpa_rules
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_create_calculated_table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_create_calculated_table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pbi_create_expression" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pbi_create_expression
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<!-- Generated by scripts/gen_tool_reference.py from the live servers. Do not edit by hand; run the script instead. -->
+
+<h1 id="model-server-tools">Model server tools<a class="headerlink" href="#model-server-tools" title="Permanent link">&para;</a></h1>
+<p>The <code>pbi-model</code> server reads and edits the <strong>semantic model</strong> (TMDL) of a Power BI Project: measures, columns, relationships, calculation groups and DAX lineage. Edits are surgical text changes, so partitions, annotations and M source survive byte for byte. Call <code>pbi_set_project(path)</code> first.</p>
+<p><strong>73 tools</strong> (28 read-only, 45 write).</p>
+<h2 id="how-to-read-this-page">How to read this page<a class="headerlink" href="#how-to-read-this-page" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Read-only</strong> tools never change the project. <strong>Write</strong> tools do.</li>
+<li><strong>Destructive</strong> marks tools that delete or overwrite content, so hosts can
+  ask before running them. <strong>Idempotent</strong> means repeating the call with the
+  same arguments changes nothing further.</li>
+<li>Write tools that edit project files accept <code>dry_run=true</code>: the operation
+  runs on a scratch copy and returns the unified diff, and nothing is
+  written. Every real write is journaled and can be reverted with
+  <code>pbi_undo</code>. Do not use <code>dry_run</code> with the restore tools that take a path
+  into the project. See <a href="../../safety/#dry-run">Safety</a>.</li>
+<li>Types are JSON Schema types. A parameter is <strong>required</strong> when it has no
+  default.</li>
+</ul>
+<h2 id="project-and-diagnostics">Project and diagnostics<a class="headerlink" href="#project-and-diagnostics" title="Permanent link">&para;</a></h2>
+<h3 id="pbi_doctor"><code>pbi_doctor</code><a class="headerlink" href="#pbi_doctor" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong> · idempotent</p>
+<p>Diagnose the environment and the selected project (read-only,
+never raises). Reports Python, mcp SDK and pbi-mcp versions; whether
+the project is PBIR + TMDL (editable) or legacy report.json /
+model.bim; declared $schema versions vs the vendored ones; table,
+measure, page and visual counts; backup, undo-journal and trash
+sizes; and (Windows) the installed Power BI Desktop version and
+whether a Desktop instance is running. Works before <code>pbi_set_project</code>
+for the environment checks. Returns {ok, findings[{severity, check,
+message, fix?}], environment, project}; ok is false only if a finding
+has severity 'error'.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_set_project"><code>pbi_set_project</code><a class="headerlink" href="#pbi_set_project" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong> · idempotent</p>
+<p>Point the model server at a Power BI Project (.pbip). Call this first.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="reading-the-model">Reading the model<a class="headerlink" href="#reading-the-model" title="Permanent link">&para;</a></h2>
+<h3 id="pbi_get_model"><code>pbi_get_model</code><a class="headerlink" href="#pbi_get_model" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>Return tables, columns, measures, and relationships for the project.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_list_measures"><code>pbi_list_measures</code><a class="headerlink" href="#pbi_list_measures" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>List measures with DAX and format; optionally filter to one table.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_model_lineage"><code>pbi_model_lineage</code><a class="headerlink" href="#pbi_model_lineage" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>Dependency graph (who references whom). Pass a measure for its deps + dependents.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>measure</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="measures">Measures<a class="headerlink" href="#measures" title="Permanent link">&para;</a></h2>
+<h3 id="pbi_bulk_create_measures"><code>pbi_bulk_create_measures</code><a class="headerlink" href="#pbi_bulk_create_measures" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Create many measures at once. measures: [{"table","name","dax",
+"format"?,"display_folder"?}, ...]. The whole batch is validated before
+any write happens.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>measures</code></td>
+<td>array of object</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_create_measure"><code>pbi_create_measure</code><a class="headerlink" href="#pbi_create_measure" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Create a measure in <code>table</code>. Fails if the measure name already exists.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dax</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>format</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>display_folder</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_delete_measure"><code>pbi_delete_measure</code><a class="headerlink" href="#pbi_delete_measure" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive</p>
+<p>Delete a measure. Refuses if other measures OR the report depend on it
+unless force=true. dry_run=true previews without writing.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>force</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_format_measures"><code>pbi_format_measures</code><a class="headerlink" href="#pbi_format_measures" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Reformat measure DAX in place (all measures, one table, or one
+measure) and report which measures changed. Only the expression lines
+are rewritten; format strings, folders, lineage tags and annotations are
+untouched, and already-formatted measures are skipped, so re-running is
+a no-op. Measures the formatter cannot handle safely are listed under
+<code>skipped</code> and left as they were.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>measure</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>style</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>"long"</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_rename_measure"><code>pbi_rename_measure</code><a class="headerlink" href="#pbi_rename_measure" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Rename a measure everywhere: its TMDL definition, every DAX
+expression that references it (measures, calculated columns, roles),
+perspectives and translations, and every report binding, filter,
+bookmark and conditional-format selector that uses it. Power Query
+sources are never touched. Returns the list of files changed; use
+<code>pbi_undo</code> to revert the whole cascade.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>old_name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>new_name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_set_measure_properties"><code>pbi_set_measure_properties</code><a class="headerlink" href="#pbi_set_measure_properties" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Set a measure's <code>///</code> description ("" removes), isHidden and/or its
+KPI without touching the DAX (use <code>pbi_update_measure</code> for DAX/format).
+kpi = {"target_measure": "Table.Measure" OR "target_dax": "&lt;DAX&gt;",
+"status_dax": "&lt;DAX returning -1/0/1&gt;", "trend_dax"?: "&lt;DAX&gt;",
+"status_graphic"?: "Traffic Light - Single", "trend_graphic"?:
+"Standard Arrow", "description"?, "target_format_string"?,
+"status_description"?, "trend_description"?, "annotations"?: {name:
+value}} writes (or replaces) the TMDL <code>kpi</code> block with targetExpression,
+statusExpression, statusGraphic, trendExpression/trendGraphic and the
+GoalType / KpiStatusType annotations. Returns {ok, changed, is_hidden,
+description, kpi}.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>is_hidden</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>kpi</code></td>
+<td>object</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_update_measure"><code>pbi_update_measure</code><a class="headerlink" href="#pbi_update_measure" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Update an existing measure's DAX/format/folder. Omitted fields are kept.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dax</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>format</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>display_folder</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="columns-relationships-and-calculation-groups">Columns, relationships and calculation groups<a class="headerlink" href="#columns-relationships-and-calculation-groups" title="Permanent link">&para;</a></h2>
+<h3 id="pbi_column_stats"><code>pbi_column_stats</code><a class="headerlink" href="#pbi_column_stats" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>VertiPaq statistics per column from the live model, largest first:
+cardinality (distinct values), rows, encoding (HASH or VALUE),
+data_type, and sizes in bytes -- dictionary_size, data_size,
+hierarchy_size, total_size. Also returns per-table totals. Optional
+<code>table</code> filters to one table. Use it to find the columns that make
+the model big or slow (high-cardinality text columns first).</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_create_calc_group"><code>pbi_create_calc_group</code><a class="headerlink" href="#pbi_create_calc_group" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Create a calculation group table. items: [{"name","dax"}, ...] using
+SELECTEDMEASURE() patterns; order becomes the display order.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>precedence</code></td>
+<td>integer</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>items</code></td>
+<td>array of object</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_create_column"><code>pbi_create_column</code><a class="headerlink" href="#pbi_create_column" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Create a column in <code>table</code>. Pass dax for a calculated column;
+otherwise source_column defaults to the column name.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>data_type</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>summarize_by</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>source_column</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dax</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_create_relationship"><code>pbi_create_relationship</code><a class="headerlink" href="#pbi_create_relationship" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Create a relationship (many-to-one from -&gt; to by default).
+Both endpoint columns must already exist.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>from_table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>from_column</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>to_table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>to_column</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>cardinality</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>cross_filter</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>is_active</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_delete_column"><code>pbi_delete_column</code><a class="headerlink" href="#pbi_delete_column" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive</p>
+<p>Delete a column. Refuses (listing the dependents) while any measure
+or calculated column references it, a relationship joins on it,
+another column sorts by it, a hierarchy level uses it, or a report
+visual/filter binds it. force=true deletes anyway and also removes the
+dependent relationship blocks, hierarchy levels (empty hierarchies too)
+and sortByColumn lines; measures, calculated columns and visuals that
+reference it are left for you to fix. Returns {ok, removed,
+still_referenced_by}.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>force</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_list_columns"><code>pbi_list_columns</code><a class="headerlink" href="#pbi_list_columns" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>List columns (all tables, or one <code>table</code>) with the properties
+Desktop stores in TMDL: name, data_type, is_hidden, is_key,
+summarize_by, format_string, data_category, sort_by_column,
+display_folder, description, is_calculated (+ its dax), source_column.
+Returns a list of column objects.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_rename_column"><code>pbi_rename_column</code><a class="headerlink" href="#pbi_rename_column" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Rename a column everywhere: its TMDL definition, sortByColumn and
+hierarchy levels, relationships, every DAX expression referencing
+Table[Column] (and bare [Column] inside its own table), role column
+permissions, perspectives, translations, and every report binding,
+filter, sort and bookmark. Power Query sources are never touched.
+Returns the files changed; <code>pbi_undo</code> reverts the cascade.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>old_name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>new_name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_set_column_permission"><code>pbi_set_column_permission</code><a class="headerlink" href="#pbi_set_column_permission" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Object-level security: set <code>columnPermission</code> for one column inside
+a role's tablePermission block (created without a row filter when the
+table has none). <code>permission</code> is "none" (column hidden from the role),
+"read", or "default" (removes the setting). Returns the resulting
+permission.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>role</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>column</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>permission</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>"none"</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_update_column"><code>pbi_update_column</code><a class="headerlink" href="#pbi_update_column" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Partially update a column's properties by editing only its block:
+omitted arguments are kept, "" removes a text property. description
+(multi-line ok) becomes <code>///</code> doc lines; format_string, display_folder
+are free text; data_category must be one of Address, City, Continent,
+Country, County, Image, ImageUrl, Latitude, Longitude, Organization,
+Place, PostalCode, StateOrProvince, WebUrl, Barcode; sort_by_column
+must be another column of the table; summarize_by one of none, sum,
+count, min, max, average, distinctCount, default; data_type one of
+string, int64, double, dateTime, boolean, decimal, binary, variant.
+Returns {ok, changed, column_after}.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>format_string</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>data_category</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>sort_by_column</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>is_hidden</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>display_folder</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>summarize_by</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>data_type</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="undo-transactions-and-backups">Undo, transactions and backups<a class="headerlink" href="#undo-transactions-and-backups" title="Permanent link">&para;</a></h2>
+<h3 id="pbi_begin_transaction"><code>pbi_begin_transaction</code><a class="headerlink" href="#pbi_begin_transaction" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Mark a point so several writes can be reverted together with
+<code>pbi_rollback</code>, or kept with <code>pbi_commit</code>. One open transaction at a time.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_commit"><code>pbi_commit</code><a class="headerlink" href="#pbi_commit" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Close the open transaction, keeping every write made since
+<code>pbi_begin_transaction</code>.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_list_backups"><code>pbi_list_backups</code><a class="headerlink" href="#pbi_list_backups" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>List every .bak-* snapshot the server has written, newest first.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_restore_backup"><code>pbi_restore_backup</code><a class="headerlink" href="#pbi_restore_backup" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive</p>
+<p>Restore a backup file (path from <code>pbi_list_backups</code>) over its original.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>backup</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_rollback"><code>pbi_rollback</code><a class="headerlink" href="#pbi_rollback" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive</p>
+<p>Revert every write made since <code>pbi_begin_transaction</code> and close the
+transaction.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_undo"><code>pbi_undo</code><a class="headerlink" href="#pbi_undo" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive</p>
+<p>Revert the latest <code>steps</code> journaled writes (newest first), restoring
+every changed file byte-for-byte and deleting files those writes
+added. Not journaled itself, so it cannot be undone.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>steps</code></td>
+<td>integer</td>
+<td>no</td>
+<td><code>1</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_undo_history"><code>pbi_undo_history</code><a class="headerlink" href="#pbi_undo_history" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong> · idempotent</p>
+<p>Journaled writes for the selected project, newest first: id, tool,
+time and the files it added/modified/deleted. Both servers share the
+history; any entry can be reverted with <code>pbi_undo</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>limit</code></td>
+<td>integer</td>
+<td>no</td>
+<td><code>20</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="other-tools">Other tools<a class="headerlink" href="#other-tools" title="Permanent link">&para;</a></h2>
+<h3 id="pbi_add_culture"><code>pbi_add_culture</code><a class="headerlink" href="#pbi_add_culture" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Add a translation culture, e.g. "de-DE": creates cultures/&lt;code&gt;.tmdl
+(cultureInfo plus the minimal linguisticMetadata Desktop writes) and a
+<code>ref cultureInfo</code> line in model.tmdl. Add captions afterwards with
+<code>pbi_set_translation</code>. Returns the file.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>code</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_bpa"><code>pbi_bpa</code><a class="headerlink" href="#pbi_bpa" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>Best Practice Analyzer: check the semantic model against ~60 rules
+ported from Tabular Editor / Microsoft's standard BPA (performance, DAX,
+error prevention, maintenance, naming, formatting) and any custom rules
+in &lt;project&gt;/.pbi-mcp/bpa_rules.json. Read-only.</p>
+<p>Each finding has rule_id, category, severity (3 = most severe), the
+object it is about (object_type, table, name), a fix-oriented message and
+<code>fixable</code> (<code>pbi_bpa_fix</code> can repair it). The response also carries a
+summary per category / severity / rule and <code>fixable_count</code>.</p>
+<p>Filters: <code>categories</code> (Performance, DAX Expressions, Error Prevention,
+Maintenance, Naming Conventions, Formatting), <code>severity_min</code> (1-3),
+<code>table</code>, <code>rules</code> / <code>exclude_rules</code> (rule IDs or aliases; see
+<code>pbi_bpa_rules</code>). Usage-based rules (unused columns / measures) need a
+report layer. At most <code>max_findings</code> findings are returned; the summary
+always counts everything.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>categories</code></td>
+<td>array of string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>severity_min</code></td>
+<td>integer</td>
+<td>no</td>
+<td><code>1</code></td>
+</tr>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>rules</code></td>
+<td>array of string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>exclude_rules</code></td>
+<td>array of string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>max_findings</code></td>
+<td>integer</td>
+<td>no</td>
+<td><code>500</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_bpa_fix"><code>pbi_bpa_fix</code><a class="headerlink" href="#pbi_bpa_fix" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Apply the Best Practice Analyzer's safe automatic fixes and report
+what changed. Each fix inserts a single property line into the table's
+TMDL file and nothing else: a default format string on numeric measures
+that lack one (#,0 whole numbers, or 0.0% for percent-like names; set
+a decimal format afterwards where you need one), isHidden on
+foreign-key columns, and dataCategory on columns named Latitude,
+Longitude, WebUrl or ImageUrl. Re-running is a no-op. <code>rules</code> limits the
+fixes to those rule IDs; <code>table</code> to one table.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rules</code></td>
+<td>array of string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_bpa_rules"><code>pbi_bpa_rules</code><a class="headerlink" href="#pbi_bpa_rules" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>List every Best Practice Analyzer rule: id, aliases, category,
+severity, description, scopes, whether <code>pbi_bpa_fix</code> can repair it and
+whether it needs a report layer. Includes the project's custom rules
+when a project is selected.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_create_calculated_table"><code>pbi_create_calculated_table</code><a class="headerlink" href="#pbi_create_calculated_table" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Create a DAX calculated table: tables/&lt;name&gt;.tmdl with <code>partition
+&lt;name&gt; = calculated</code>, mode import and the DAX as source, registered in
+model.tmdl. No columns are written — Power BI Desktop infers them from
+the expression when it loads the model. Refuses if the table exists.
+Returns {ok, table, file, partition, warnings?}.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dax</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_create_expression"><code>pbi_create_expression</code><a class="headerlink" href="#pbi_create_expression" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Add a shared expression to expressions.tmdl. kind="query": a named
+M query (multi-line <code>let ... in</code> allowed) with lineageTag and
+Desktop's PBI_NavigationStepName / PBI_ResultType annotations.
+kind="parameter": a single-line M literal ("text", 42, true,</p>
+<h1 id="datetime2024-1-1-0-0-0-emitted-as-expression-name-value">datetime(2024, 1, 1, 0, 0, 0)) emitted as `expression Name = value<a class="headerlink" href="#datetime2024-1-1-0-0-0-emitted-as-expression-name-value" title="Permanent link">&para;</a></h1>
+<p>meta [IsParameterQuery=true, Type=<inferred>,
+IsParameterQueryRequired=true]`; parameter_meta merges extra/override
+keys into that record (e.g. {"Type": "Number", "List": [1, 2]}).
+Refuses duplicate names. Returns {ok, name, kind, meta, result_type}.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>m</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>"query"</code></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>parameter_meta</code></td>
+<td>object</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_create_field_parameter"><code>pbi_create_field_parameter</code><a class="headerlink" href="#pbi_create_field_parameter" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Create a field parameter (a slicer that switches which column or
+measure a visual shows) as a calculated table <code>{("Label",
+NAMEOF('T'[C]), 0), ...}</code> with the Desktop column layout: visible
+<code>&lt;name&gt;</code>, hidden <code>&lt;name&gt; Fields</code> (ParameterMetadata kind 2) and hidden
+<code>&lt;name&gt; Order</code>, registered in model.tmdl. <code>fields</code> are "Table.Column"
+or "Table.[Measure]" strings (or {"field": ..., "label": ...} to set
+the slicer label; default label is the field name); all must exist.
+<code>default_index</code> moves that field to the first position, which is what a
+single-select slicer starts on (Power BI stores no other default).
+Returns the table, file and fields in order.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>fields</code></td>
+<td>array of string or object</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>default_index</code></td>
+<td>integer</td>
+<td>no</td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_create_hierarchy"><code>pbi_create_hierarchy</code><a class="headerlink" href="#pbi_create_hierarchy" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Create a hierarchy in <code>table</code>. levels = [{"name": "Year", "column":
+"Year"}, ...] in drill order (name defaults to the column); every
+column must exist in the table. Optional <code>///</code> description and hidden
+flag. Returns {ok, hierarchy}.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>levels</code></td>
+<td>array of object</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>hidden</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_create_perspective"><code>pbi_create_perspective</code><a class="headerlink" href="#pbi_create_perspective" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Create a perspective (perspectives/&lt;name&gt;.tmdl, registered with
+<code>ref perspective</code>). <code>tables</code> maps a table to {"columns": [...],
+"measures": [...], "hierarchies": [...]} (or {"include_all": true});
+every listed object must exist in that table. Returns the file and
+tables.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>tables</code></td>
+<td>object</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_create_role"><code>pbi_create_role</code><a class="headerlink" href="#pbi_create_role" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Create a row-level-security role (roles/&lt;name&gt;.tmdl, registered with
+<code>ref role</code> in model.tmdl). <code>table_filters</code> maps a table name to a DAX
+boolean filter, e.g. {"Sales": "[Region] = USERPRINCIPALNAME()"}; the
+expressions are checked for balanced brackets and existing Table[Column]
+references before anything is written. <code>model_permission</code> is read
+(default), readRefresh, refresh, administrator or none. Role members
+are assigned in the Power BI service, not here. Returns the file, the
+filtered tables and any non-blocking warnings.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>model_permission</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>"read"</code></td>
+</tr>
+<tr>
+<td><code>table_filters</code></td>
+<td>object</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_create_table"><code>pbi_create_table</code><a class="headerlink" href="#pbi_create_table" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Create an import table fed by a Power Query (M) expression: writes
+tables/&lt;name&gt;.tmdl (lineageTag, columns, one <code>partition &lt;name&gt; = m</code>
+with mode import and the M source, Desktop's PBI_ResultType=Table
+annotation) and registers <code>ref table &lt;name&gt;</code> in model.tmdl. Refuses
+if the table exists. columns: [{"name", "data_type" (string | int64 |
+double | decimal | dateTime | boolean), "source_column"?,
+"summarize_by"? (none | sum | ...), "format_string"?, "is_hidden"?,
+"data_category"?}]; description becomes <code>///</code> doc lines; hidden sets
+isHidden. Returns {ok, table, file, columns, partition}.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>m_source</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>columns</code></td>
+<td>array of object</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>hidden</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_create_whatif_parameter"><code>pbi_create_whatif_parameter</code><a class="headerlink" href="#pbi_create_whatif_parameter" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Create a what-if parameter: a calculated table
+<code>GENERATESERIES(minimum, maximum, increment)</code> with column <code>&lt;name&gt;</code>
+(ParameterMetadata version 0) and the measure <code>&lt;name&gt; Value</code> =
+SELECTEDVALUE('&lt;name&gt;'[&lt;name&gt;], default), registered in model.tmdl.
+<code>default</code> defaults to <code>minimum</code> and must lie in the range;
+<code>format_string</code> defaults to 0 / 0.00 based on the decimals used.
+Rejects an existing table or measure name and ranges above 1,000,000
+rows. Returns the table, column, measure and row count.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>minimum</code></td>
+<td>number</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>maximum</code></td>
+<td>number</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>increment</code></td>
+<td>number</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>default</code></td>
+<td>number</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>format_string</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_dax_references"><code>pbi_dax_references</code><a class="headerlink" href="#pbi_dax_references" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>Parse a DAX expression and list what it references: measures,
+qualified columns (Table[Col]), tables, functions, VAR variables and bare
+[Name] references that are not measures ('unqualified', likely columns
+read in row context). With a project selected, bare references are
+resolved against the model's measure names and columns are marked
+column / measure / unknown. Comments and strings are never references.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dax</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>resolve_against_model</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>true</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_delete_culture"><code>pbi_delete_culture</code><a class="headerlink" href="#pbi_delete_culture" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive</p>
+<p>Delete a culture and all its translations: removes cultures/&lt;code&gt;.tmdl
+(a .bak copy stays beside it) and its <code>ref cultureInfo</code> line. Revert
+with <code>pbi_undo</code>.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>code</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_delete_hierarchy"><code>pbi_delete_hierarchy</code><a class="headerlink" href="#pbi_delete_hierarchy" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive</p>
+<p>Delete a hierarchy. Refuses while a report visual or filter binds one
+of its levels unless force=true. Returns {ok, forced_past_report_usage}.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>force</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_delete_perspective"><code>pbi_delete_perspective</code><a class="headerlink" href="#pbi_delete_perspective" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive</p>
+<p>Delete a perspective: removes perspectives/&lt;name&gt;.tmdl (a .bak copy
+stays beside it) and its <code>ref perspective</code> line. Revert with <code>pbi_undo</code>.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_delete_role"><code>pbi_delete_role</code><a class="headerlink" href="#pbi_delete_role" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive</p>
+<p>Delete a security role: removes roles/&lt;name&gt;.tmdl (a .bak copy stays
+beside it) and its <code>ref role</code> line. Revert with <code>pbi_undo</code>.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_delete_table"><code>pbi_delete_table</code><a class="headerlink" href="#pbi_delete_table" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive</p>
+<p>Delete a table: removes tables/&lt;name&gt;.tmdl (with a backup), its
+<code>ref table</code> line in model.tmdl and every relationship touching it.
+Refuses — listing the dependents — when other tables' measures,
+calculated columns or calculated tables reference it (DAX lineage),
+when relationships touch it, or when report visuals/filters use its
+fields; force=true deletes anyway and reports what was removed plus
+the references left dangling. Returns {ok, table, removed: {file,
+ref_table, relationships}, dangling_references}.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>force</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_engine_connect"><code>pbi_engine_connect</code><a class="headerlink" href="#pbi_engine_connect" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong> · idempotent</p>
+<p>Pin an XMLA connection string for this session so the engine tools
+query it instead of a local Desktop instance, e.g. "Data Source=
+powerbi://api.powerbi.com/v1.0/myorg/&lt;Workspace&gt;;Initial Catalog=
+&lt;Dataset&gt;;User ID=;Password=&lt;access token&gt;". The string is verified
+with a probe query, kept in memory only and never written or logged;
+Password= is redacted in every response. Pass "" to unpin.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>connection_string</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_engine_status"><code>pbi_engine_status</code><a class="headerlink" href="#pbi_engine_status" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>Report what the live-engine tools can reach: the ADOMD DLL in use,
+every running Power BI Desktop Analysis Services instance (port,
+databases, table names), the instance matched to the selected project
+by table names, any pinned remote connection, and otherwise the reason
+nothing is reachable. Never raises; safe to call first.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_evaluate_dax"><code>pbi_evaluate_dax</code><a class="headerlink" href="#pbi_evaluate_dax" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>Run a DAX query (EVALUATE ...) or a DMV (SELECT * FROM $SYSTEM....)
+against the live model of the selected project in Power BI Desktop (or
+the pinned connection); the running instance is matched to the project
+by table names. Pass port/database to target a specific instance
+(<code>pbi_engine_status</code> lists them). Returns columns, rows (JSON scalars:
+null for blank, dates as ISO 8601, "Infinity"/"NaN" as strings),
+row_count, truncated (true when max_rows cut the result), elapsed_ms
+and the connection used. Read-only: nothing is written anywhere.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>query</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>max_rows</code></td>
+<td>integer</td>
+<td>no</td>
+<td><code>200</code></td>
+</tr>
+<tr>
+<td><code>port</code></td>
+<td>integer</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>database</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_find_references"><code>pbi_find_references</code><a class="headerlink" href="#pbi_find_references" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>Preview where a measure, column (table required) or table is
+referenced: DAX expressions (as table/measure pairs) and report
+fields (Entity.Property) bound anywhere in the report. Use before a
+rename or delete to see the blast radius.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_format_dax"><code>pbi_format_dax</code><a class="headerlink" href="#pbi_format_dax" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>Format DAX (read-only). Pass <code>dax</code> to format text, or <code>measure</code>
+(optionally with <code>table</code>) to preview how a model measure would be
+formatted; <code>table</code> alone previews every measure of that table.</p>
+<p>Long style (DAX Formatter-like): keywords and function names upper-cased,
+one argument per line when a call is long or contains nested calls,
+VAR / RETURN on their own lines with the body indented, spaced
+operators, commas at line ends, comments kept in place. Short style: one
+line when the whole expression fits in 100 characters, else long.
+Table, column and measure names, strings and comments are never changed;
+formatting is idempotent.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dax</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>measure</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>style</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>"long"</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_list_expressions"><code>pbi_list_expressions</code><a class="headerlink" href="#pbi_list_expressions" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>Shared Power Query expressions from expressions.tmdl: [{name, kind
+("parameter" when meta says IsParameterQuery=true, else "query"), m,
+meta (parsed record, e.g. {IsParameterQuery, Type,
+IsParameterQueryRequired}), lineage_tag, query_group, description,
+result_type, annotations}].</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_list_field_parameters"><code>pbi_list_field_parameters</code><a class="headerlink" href="#pbi_list_field_parameters" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong> · idempotent</p>
+<p>List field-parameter tables: label/fields/order column names, and the
+fields in order with label, table, name, kind (column|measure) and
+whether the referenced object still exists.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_list_hierarchies"><code>pbi_list_hierarchies</code><a class="headerlink" href="#pbi_list_hierarchies" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>List hierarchies (all tables, or one <code>table</code>): name, description,
+is_hidden, display_folder and ordered levels [{name, column}].</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_list_partitions"><code>pbi_list_partitions</code><a class="headerlink" href="#pbi_list_partitions" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>Partitions per table (all tables, or just <code>table</code>): [{table,
+partitions: [{name, kind (m | calculated | entity | calculationGroup),
+mode (import | directQuery | ...), source (M or DAX text; null for
+entity partitions, whose entityName sits in properties),
+source_form, properties}]}].</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_list_perspectives"><code>pbi_list_perspectives</code><a class="headerlink" href="#pbi_list_perspectives" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong> · idempotent</p>
+<p>List perspectives: name, description, file and, per table, the
+include_all flag and the columns / measures / hierarchies exposed.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_list_roles"><code>pbi_list_roles</code><a class="headerlink" href="#pbi_list_roles" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong> · idempotent</p>
+<p>List security roles in model.tmdl order: name, description,
+model_permission, file, per-table row filter plus object-level security
+(metadata_permission, columns {name: permission}), and members.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_list_translations"><code>pbi_list_translations</code><a class="headerlink" href="#pbi_list_translations" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong> · idempotent</p>
+<p>Without <code>culture</code>: the model's cultures (file, whether it is the
+model default, how many objects are translated). With <code>culture</code>: every
+translated table / column / measure / hierarchy with its caption,
+description and display_folder.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>culture</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_list_whatif_parameters"><code>pbi_list_whatif_parameters</code><a class="headerlink" href="#pbi_list_whatif_parameters" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong> · idempotent</p>
+<p>List what-if parameter tables: table, column, minimum / maximum /
+increment (parsed from GENERATESERIES), the value measure and its
+default, and the format string.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_preview_table"><code>pbi_preview_table</code><a class="headerlink" href="#pbi_preview_table" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>First <code>top</code> rows of a table from the live model via EVALUATE
+TOPN(top, 'table'). Column names come back as Table[Column]. Returns
+columns, rows, row_count, truncated, elapsed_ms, connection.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>top</code></td>
+<td>integer</td>
+<td>no</td>
+<td><code>20</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_remove_kpi"><code>pbi_remove_kpi</code><a class="headerlink" href="#pbi_remove_kpi" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive · idempotent</p>
+<p>Remove the KPI block from a measure (its DAX and other properties
+stay). No-op when the measure has none. Returns {ok, changed}.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_remove_refresh_policy"><code>pbi_remove_refresh_policy</code><a class="headerlink" href="#pbi_remove_refresh_policy" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · destructive</p>
+<p>Remove the <code>refreshPolicy</code> block from <code>table</code> (turns incremental
+refresh off; the partition query is untouched and RangeStart/RangeEnd
+stay). Errors if the table has no policy. Returns {ok, table}.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_rename_table"><code>pbi_rename_table</code><a class="headerlink" href="#pbi_rename_table" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong></p>
+<p>Rename a table everywhere: its TMDL file and header, partitions
+named after it, model.tmdl <code>ref table</code>, relationships, every DAX
+qualifier and bare table reference (ALL(Table)...), roles,
+perspectives, translations, and every report Entity reference and
+queryRef. Power Query sources are never touched. Returns the files
+changed; <code>pbi_undo</code> reverts the cascade (including the file rename).</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>old_name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>new_name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_set_refresh_policy"><code>pbi_set_refresh_policy</code><a class="headerlink" href="#pbi_set_refresh_policy" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Configure incremental refresh on an import table: writes or
+replaces its <code>refreshPolicy</code> block (policyType basic,
+rollingWindowGranularity/Periods = data kept, incrementalGranularity/
+Periods = window refreshed each time, optional
+incrementalPeriodsOffset, mode hybrid for a DirectQuery tail,
+sourceExpression = the M used for new partitions). Granularities:
+day | month | quarter | year. source_expression defaults to the
+table's M partition source and must filter on RangeStart/RangeEnd
+(e.g. Table.SelectRows(Source, each [OrderDate] &gt;= RangeStart and
+[OrderDate] &lt; RangeEnd)). Adds RangeStart/RangeEnd DateTime
+parameters to expressions.tmdl when missing (Desktop requires them).
+Returns {ok, action, table, policy, parameters_added, warnings?}.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>rolling_window_granularity</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>rolling_window_periods</code></td>
+<td>integer</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>incremental_granularity</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>incremental_periods</code></td>
+<td>integer</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>source_expression</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>mode</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>"import"</code></td>
+</tr>
+<tr>
+<td><code>incremental_periods_offset</code></td>
+<td>integer</td>
+<td>no</td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_set_table_permission_metadata"><code>pbi_set_table_permission_metadata</code><a class="headerlink" href="#pbi_set_table_permission_metadata" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Object-level security for a whole table: <code>metadataPermission</code> on the
+role's tablePermission block. "none" hides the entire table from the
+role, "read" grants it explicitly, "default" removes the setting.
+Returns the resulting permission.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>role</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>metadata_permission</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>"none"</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_set_translation"><code>pbi_set_translation</code><a class="headerlink" href="#pbi_set_translation" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Set translated metadata in an existing culture. <code>object_type</code> is
+"table", "column", "measure" or "hierarchy"; <code>table</code> is the owning table
+and <code>name</code> the column/measure/hierarchy (omit for a table). Pass any of
+<code>caption</code>, <code>description</code>, <code>display_folder</code> (tables have no display
+folder); "" removes a value, omitted values are kept. The object must
+exist in the model. Returns the translated object.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>culture</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>object_type</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>caption</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>display_folder</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_table_row_counts"><code>pbi_table_row_counts</code><a class="headerlink" href="#pbi_table_row_counts" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>Row count of every table in the live model (from the storage engine
+DMV, falling back to COUNTROWS). Returns {tables: [{name, rows,
+internal}], source, connection}; <code>rows</code> is null for tables without
+loaded storage and <code>internal</code> marks Desktop's auto date/time helper
+tables. A freshly opened .pbip has no data until it is refreshed in
+Desktop, so every count is 0 until then.</p>
+<p><em>No parameters.</em></p>
+<h3 id="pbi_update_expression"><code>pbi_update_expression</code><a class="headerlink" href="#pbi_update_expression" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Replace the M of an existing shared expression or parameter value;
+its meta record, lineageTag, description and annotations are kept.
+Returns {ok, action, name, kind, meta}.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>m</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_update_partition"><code>pbi_update_partition</code><a class="headerlink" href="#pbi_update_partition" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Replace the <code>source =</code> expression (M, or DAX for a calculated
+partition) of one partition of <code>table</code>, leaving every other byte of
+the file intact. partition defaults to the table's only partition and
+is required when the table has several. Returns {ok, action, table,
+partition, kind, mode}.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>m_source</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>partition</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_update_perspective"><code>pbi_update_perspective</code><a class="headerlink" href="#pbi_update_perspective" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Edit a perspective. Removals run first, then additions: <code>remove_tables</code>
+[table, ...], <code>remove_objects</code> {table: {"columns": [...], "measures":
+[...], "hierarchies": [...]}}, then <code>tables</code> (same shape as
+<code>pbi_create_perspective</code>) adds objects. <code>description</code> "" clears it.
+Returns what changed.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>tables</code></td>
+<td>object</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>remove_tables</code></td>
+<td>array of string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>remove_objects</code></td>
+<td>object</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_update_role"><code>pbi_update_role</code><a class="headerlink" href="#pbi_update_role" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Edit a role in place; only the parts you pass change. <code>description</code>
+("" removes it), <code>model_permission</code>, <code>table_filters</code> {table: DAX} to
+add or replace row filters, and <code>remove_tables</code> [table, ...] to clear
+the row filter of those tables (object-level-security settings on the
+table are kept). Returns what changed.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>model_permission</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>table_filters</code></td>
+<td>object</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>remove_tables</code></td>
+<td>array of string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_update_table"><code>pbi_update_table</code><a class="headerlink" href="#pbi_update_table" title="Permanent link">&para;</a></h3>
+<p><strong>Write</strong> · idempotent</p>
+<p>Set a table's <code>///</code> description ("" removes it) and/or isHidden.
+Returns {ok, changed, is_hidden, description}.</p>
+<p>Set dry_run=true to preview: the operation runs against a scratch copy and the response carries the unified diff; nothing is written.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>is_hidden</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="pbi_validate_dax"><code>pbi_validate_dax</code><a class="headerlink" href="#pbi_validate_dax" title="Permanent link">&para;</a></h3>
+<p><strong>Read-only</strong></p>
+<p>Compile a measure expression against the real model before
+creating it. <code>dax</code> is the bare expression (e.g. SUM(Sales[Amount])),
+not a query and without a "Name =" prefix; pass <code>table</code> to define it on
+that table so row context and table-relative references resolve as
+they would for a real measure. The engine evaluates it once via a
+query-scoped measure, so nothing is persisted. Returns {ok, error
+(the engine's message, with positions relative to <code>dax</code>, when ok is
+false), value (the result when ok), query, connection}. Use it before
+<code>pbi_create_measure</code> / <code>pbi_update_measure</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dax</code></td>
+<td>string</td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>table</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../quickstart/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Quickstart">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Quickstart
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../report/" class="md-footer__link md-footer__link--next" aria-label="Next: Report server">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Report server
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      MIT licensed. Built by Rajdeep Rao.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "navigation.sections", "navigation.top", "navigation.footer", "search.highlight", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
