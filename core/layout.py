@@ -80,10 +80,19 @@ def layout_page(visuals: list[dict], *, width: float = 1280,
     row_h = 300
     col_cursor = 0  # 0 = left half, 6 = right half
     max_y = y
+    lone = None     # left-half chart still waiting for a right-half partner
+
+    def _widen(chart: dict) -> None:
+        pos = chart["position"]
+        chart["position"] = grid.span(0, COLS, pos["y"], pos["height"])
+
     for v in charts:
         full_width = v["visual_type"] in ("tableEx", "pivotTable")
         if full_width:
-            if col_cursor == 6:      # close the half-open row first
+            if col_cursor == 6:      # close the half-open row first ...
+                if lone is not None:
+                    _widen(lone)     # ... and don't leave its right half empty
+                    lone = None
                 y += row_h + GUTTER
                 col_cursor = 0
             v["position"] = grid.span(0, COLS, y, row_h)
@@ -92,10 +101,14 @@ def layout_page(visuals: list[dict], *, width: float = 1280,
             v["position"] = grid.span(col_cursor, 6, y, row_h)
             if col_cursor == 0:
                 col_cursor = 6
+                lone = v
             else:
                 col_cursor = 0
+                lone = None
                 y += row_h + GUTTER
         max_y = max(max_y, v["position"]["y"] + v["position"]["height"])
+    if col_cursor == 6 and lone is not None:   # odd chart count: last one spans the row
+        _widen(lone)
 
     page_height = max(height, max_y + footer_height + MARGIN)
     return visuals, page_height
