@@ -9,6 +9,17 @@ Release notes for each GitHub Release are taken from the matching section below
 
 ## [Unreleased]
 
+### Added
+
+- **Website** (`website/`): a landing page for the GitHub Pages site, with a
+  download button that picks the visitor's platform from the latest release,
+  a tool explorer, and a preview / apply / undo transcript. Every number and
+  tool on it is generated from the servers by `scripts/gen_site_assets.py`
+  (checked in CI and by `tests/test_site_assets.py`). The page is set strictly
+  in self-hosted Poppins, with no second typeface and no fallback glyphs. The
+  docs moved under `/docs/`; the Docs workflow now deploys through the GitHub
+  Pages actions.
+
 ## [2.1.0] - 2026-09-29
 
 ### Added

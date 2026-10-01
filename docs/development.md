@@ -179,36 +179,50 @@ page missing from the nav fails the build. To add a page, create the Markdown
 file under `docs/` and list it under `nav:` in `mkdocs.yml`. Do not hard-code
 tool or test totals in prose; the generated pages and the README carry them.
 
-## Deploying the docs
+## Deploying the site
 
-`.github/workflows/docs.yml` builds the site on every pull request (a strict
-build plus a check that the tool reference is current) and, on every push to
-`main`, regenerates the reference and publishes with:
+The GitHub Pages site has two parts: the landing page in `website/` at the
+root, and this documentation under `/docs/`. `.github/workflows/docs.yml`
+builds both on every pull request (a strict mkdocs build plus checks that the
+generated tool reference and the site's data file are current) and, on every
+push to `main`, regenerates them and publishes with the GitHub Pages actions
+(`actions/upload-pages-artifact` and `actions/deploy-pages`). The job needs no
+token: it asks for `pages: write` and `id-token: write`.
 
-```bash
-mkdocs gh-deploy --force
-```
-
-That commits the built site to a `gh-pages` branch. The job asks for
-`contents: write` permission, so it needs no personal access token. The site is
-served from `https://rajdeepraoextras-dev.github.io/PBI-MCP-Server/`.
+The site is served from `https://rajdeepraoextras-dev.github.io/PBI-MCP-Server/`
+and the docs from `https://rajdeepraoextras-dev.github.io/PBI-MCP-Server/docs/`.
 
 !!! important "One-time GitHub Pages setting"
-    Enable Pages once, after the first successful run of the workflow has
-    created the `gh-pages` branch:
+    Repository **Settings > Pages**: under *Build and deployment*, set
+    **Source** to **GitHub Actions**. Nothing else is needed. (The API
+    equivalent is `gh api -X POST repos/<owner>/<repo>/pages -f build_type=workflow`.)
 
-    1. Repository **Settings > Pages**.
-    2. Under *Build and deployment*, set **Source** to **Deploy from a branch**.
-    3. Choose branch **gh-pages** and folder **/ (root)**, then save.
+### The landing page
 
-    If deployment fails with a permissions error, open **Settings > Actions >
-    General** and set *Workflow permissions* to **Read and write permissions**
-    (an organisation policy can otherwise cap the job's `contents: write`).
+`website/index.html`, `website/assets/site.css` and `website/assets/site.js`
+are plain files with no build step. Every number the page shows and the whole
+tool explorer come from `website/assets/site-data.js`, and the preview /
+apply / undo transcript from `website/assets/demo-data.js`; both are written
+by `scripts/gen_site_assets.py` from the live servers. After adding or
+renaming a tool, classify it in that script's `FAMILIES` table and run:
 
-Prefer GitHub's artifact-based Pages flow? Replace the deploy job with
-`actions/upload-pages-artifact` plus `actions/deploy-pages`, grant the job
-`pages: write` and `id-token: write`, and set the Pages source to *GitHub
-Actions* instead. Use one flow or the other, not both.
+```bash
+python scripts/gen_site_assets.py          # rewrites both data files
+python scripts/gen_site_assets.py --check  # what CI and the tests run
+```
+
+The generator refuses to run while a tool is missing from `FAMILIES`, so the
+site can never silently omit one.
+
+The page is set strictly in Poppins: every letter and number, code included.
+The six weights are self-hosted in `website/assets/fonts/`, icons are drawn as
+SVG or CSS shapes instead of typed characters, and the generator refuses any
+character the font cannot draw (it would otherwise render in a fallback
+font). `tests/test_site_assets.py` enforces all of this, so do not add a
+second `font-family`, an icon glyph or a symbol such as an arrow to the page.
+The generator also stamps the numbers into `index.html`, so the page is right
+without JavaScript. Preview the page with any static server,
+for example `python -m http.server 8000 --directory website`.
 
 ## Releasing
 
