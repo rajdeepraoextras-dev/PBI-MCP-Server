@@ -212,7 +212,16 @@ python scripts/gen_site_assets.py --check  # what CI and the tests run
 ```
 
 The generator refuses to run while a tool is missing from `FAMILIES`, so the
-site can never silently omit one. Preview the page with any static server,
+site can never silently omit one.
+
+The page is set strictly in Poppins: every letter and number, code included.
+The six weights are self-hosted in `website/assets/fonts/`, icons are drawn as
+SVG or CSS shapes instead of typed characters, and the generator refuses any
+character the font cannot draw (it would otherwise render in a fallback
+font). `tests/test_site_assets.py` enforces all of this, so do not add a
+second `font-family`, an icon glyph or a symbol such as an arrow to the page.
+The generator also stamps the numbers into `index.html`, so the page is right
+without JavaScript. Preview the page with any static server,
 for example `python -m http.server 8000 --directory website`.
 
 ## Releasing

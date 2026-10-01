@@ -34,10 +34,21 @@ def test_every_tool_is_in_exactly_one_family(gen):
     assert len(seen) == len(set(seen)) == len(tools)
 
 
-def test_committed_site_data_is_current(gen):
-    fresh = gen._without_tests(gen.render_js("PBI_SITE", gen.build_site_data(tests=0)))
-    current = gen._without_tests((ASSETS / "site-data.js").read_text(encoding="utf-8"))
-    assert current == fresh, "run scripts/gen_site_assets.py"
+def test_committed_site_data_is_current(gen, capsys):
+    assert gen.main(["--check"]) == 0, capsys.readouterr().out + " (run scripts/gen_site_assets.py)"
+
+
+def test_numbers_are_stamped_into_the_html(gen):
+    """The page shows the right numbers before, or without, JavaScript."""
+    stats = _data(ASSETS / "site-data.js")["stats"]
+    html = (REPO / "website" / "index.html").read_text(encoding="utf-8")
+    found = dict(re.findall(r'data-stat="(\w+)"[^>]*>([^<]*)<', html))
+    assert {"tools", "tests", "families", "bpa_rules", "schemas", "deneb_templates", "read_tools"} <= set(found)
+    for key, text in re.findall(r'data-stat="(\w+)"[^>]*>([^<]*)<', html):
+        assert text == f"{stats[key]:,}", (key, text)
+    assert stats["read_tools"] + stats["write_tools"] == stats["tools"]
+    assert gen.stamp_html('<b data-stat="tools">0</b> <i data-stat="python_min">x</i>', {"tools": 1234, "python_min": "3.11"}) \
+        == '<b data-stat="tools">1,234</b> <i data-stat="python_min">x</i>'
 
 
 def test_site_data_numbers_are_sane():
@@ -65,11 +76,60 @@ def test_demo_transcript_is_real_and_scrubbed():
     assert not re.search(r"[A-Za-z]:\\\\|/Users/|/home/|resod", text), "a local path leaked into the demo"
 
 
+# --- strictly Poppins ------------------------------------------------------------------
+
+def _site_text() -> dict[str, str]:
+    web = REPO / "website"
+    return {rel: (web / rel).read_text(encoding="utf-8")
+            for rel in ("index.html", "assets/site.css", "assets/site.js",
+                        "assets/site-data.js", "assets/demo-data.js")}
+
+
+def test_poppins_is_the_only_typeface():
+    css = (ASSETS / "site.css").read_text(encoding="utf-8")
+    faces = re.findall(r'@font-face\s*\{[^}]*font-family:\s*"([^"]+)"', css)
+    assert faces and set(faces) == {"Poppins"}
+    assert "font-display: swap" not in css          # block: no other face may flash
+    values = {v.strip() for v in re.findall(r"font-family:\s*([^;}]+)", css)}
+    assert values <= {'"Poppins"', "inherit", "var(--font)"}, values
+    assert re.search(r'--font:\s*"Poppins",\s*sans-serif;', css)
+    for name, text in _site_text().items():
+        assert "font-family" not in text or name.endswith("site.css"), name
+        assert not re.search(r"monospace|JetBrains|Grotesk|Consolas|Segoe|system-ui", text), name
+    # and nothing but Poppins is shipped
+    fonts = sorted(p.name for p in (ASSETS / "fonts").iterdir())
+    assert fonts == ["OFL-Poppins.txt"] + [f"poppins-{w}-latin.woff2" for w in (400, 500, 600, 700, 800, 900)]
+
+
+def test_every_character_on_the_site_exists_in_poppins(gen):
+    """A character outside the font renders in a fallback face: icons are drawn
+    as SVG or CSS shapes, never typed."""
+    for name, text in _site_text().items():
+        decoded = text
+        decoded += "".join(chr(int(h, 16)) for h in re.findall(r'content:\s*"\\([0-9A-Fa-f]{2,6})', text))
+        decoded += "".join(chr(int(h, 16)) for h in re.findall(r"\\u([0-9A-Fa-f]{4})", text))
+        decoded += "".join(chr(int(d)) for d in re.findall(r"&#(\d+);", text))
+        decoded += "".join(chr(int(h, 16)) for h in re.findall(r"&#x([0-9A-Fa-f]+);", text))
+        bad = gen.outside_poppins(decoded)
+        assert not bad, f"{name}: {[f'U+{ord(c):04X}' for c in bad]} cannot be drawn by Poppins"
+    assert not re.search(r"&(?!amp;|lt;|gt;|quot;|middot;|nbsp;|#)\w+;", _site_text()["index.html"]), \
+        "named HTML entity: check that Poppins has the glyph"
+
+
+def test_generator_refuses_characters_outside_poppins(gen):
+    assert gen.outside_poppins("plain text, 123 · … —") == []
+    assert gen.outside_poppins("check ✓ arrow →") == ["→", "✓"]
+    assert gen._summary("Moves A → B. More.") == "Moves A -> B."
+    with pytest.raises(SystemExit, match="Poppins cannot draw"):
+        gen.render_js("X", {"text": "◐"})
+
+
 def test_page_references_only_files_that_exist():
     html = (REPO / "website" / "index.html").read_text(encoding="utf-8")
     for ref in re.findall(r'(?:href|src)="(assets/[^"]+)"', html):
         assert (REPO / "website" / ref).is_file(), ref
     css = (ASSETS / "site.css").read_text(encoding="utf-8")
     for ref in re.findall(r'url\("([^"]+)"\)', css):
-        assert (ASSETS / ref).is_file(), ref
+        if not ref.startswith("data:"):               # inline SVG icons are not files
+            assert (ASSETS / ref).is_file(), ref
     assert 'src="assets/site-data.js"' in html and 'src="assets/demo-data.js"' in html

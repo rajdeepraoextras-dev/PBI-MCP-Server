@@ -12,7 +12,12 @@
 <meta property="og:title" content="pbi-mcp: talk to your Power BI project">
 <meta property="og:description" content="158 tools. Preview every change, undo it afterwards, keep everything in Git.">
 <meta property="og:url" content="https://rajdeepraoextras-dev.github.io/PBI-MCP-Server/">
+<!-- Poppins is the only typeface on this page. The weights used above the fold are
+     preloaded and the faces use font-display: block, so no other font ever shows. -->
 <link rel="preload" href="assets/fonts/poppins-900-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/poppins-800-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/poppins-700-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/poppins-600-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/poppins-500-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/site.css">
 <script>
@@ -41,7 +46,9 @@
         <li><a href="https://github.com/rajdeepraoextras-dev/PBI-MCP-Server">GitHub</a></li>
       </ul>
     </nav>
-    <button class="icon-btn" id="theme-toggle" type="button" aria-label="Switch between light and dark">&#9680;</button>
+    <button class="icon-btn" id="theme-toggle" type="button" aria-label="Switch between light and dark">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>
+    </button>
     <a class="btn btn-primary" href="#install">Download</a>
   </div>
 </header>
@@ -70,13 +77,13 @@
     </div>
 
     <div class="bignum" aria-label="158 tools across 3 servers">
-      <span class="n count" data-stat="tools">0</span>
+      <span class="n count" data-stat="tools">158</span>
       <span class="l">tools for Power BI</span>
       <span class="s" id="per-server"></span>
       <div class="stickers">
         <span class="sticker st1"><b>0</b> sign-ins</span>
         <span class="sticker p st2"><b>1</b> call to undo</span>
-        <span class="sticker c st3"><b class="count" data-stat="tests" data-format="short">0</b> tests</span>
+        <span class="sticker c st3"><b class="count" data-stat="tests">1,716</b> tests</span>
       </div>
     </div>
   </div>
@@ -90,15 +97,15 @@
     <h2 id="numbers-h">The numbers.</h2>
     <p class="sub">Every figure here is generated from the code by a script, so the page cannot drift from the repo.</p>
     <div class="bento">
-      <div class="tile big t-violet"><span class="n count" data-stat="tools">0</span><span class="l">tools</span><span class="f" id="tools-foot">model, report and an optional cloud server</span></div>
-      <div class="tile big t-pink"><span class="n count" data-stat="tests">0</span><span class="l">tests in the suite</span><span class="f">run on Python 3.11 to 3.14, against two MCP SDK majors</span></div>
-      <div class="tile t-cyan"><span class="n count" data-stat="families">0</span><span class="l">tool families</span><span class="f">from "start here" to "cloud"</span></div>
+      <div class="tile big t-violet"><span class="n count" data-stat="tools">158</span><span class="l">tools</span><span class="f" id="tools-foot">model, report and an optional cloud server</span></div>
+      <div class="tile big t-pink"><span class="n count" data-stat="tests">1,716</span><span class="l">tests in the suite</span><span class="f">run on Python 3.11 to 3.14, against two MCP SDK majors</span></div>
+      <div class="tile t-cyan"><span class="n count" data-stat="families">13</span><span class="l">tool families</span><span class="f">from "start here" to "cloud"</span></div>
       <div class="tile t-yellow"><span class="n">0</span><span class="l">sign-ins</span><span class="f">the local servers never touch the network</span></div>
       <div class="tile t-lime"><span class="n">1</span><span class="l">call to undo</span><span class="f">byte-exact copies of what each write replaced</span></div>
-      <div class="tile t-orange"><span class="n count" data-stat="bpa_rules">0</span><span class="l">best-practice rules</span><span class="f">ported from Tabular Editor, with safe fixers</span></div>
-      <div class="tile t-cyan"><span class="n count" data-stat="schemas">0</span><span class="l">Fabric schemas</span><span class="f">every report write is checked before it lands on disk</span></div>
-      <div class="tile t-pink"><span class="n count" data-stat="deneb_templates">0</span><span class="l">Deneb templates</span><span class="f">bar, line, scatter, heatmap, bullet, waffle and more</span></div>
-      <div class="tile t-yellow"><span class="n count" data-stat="read_tools">0</span><span class="l">read-only tools</span><span class="f">marked so a host can approve them without asking</span></div>
+      <div class="tile t-orange"><span class="n count" data-stat="bpa_rules">63</span><span class="l">best-practice rules</span><span class="f">ported from Tabular Editor, with safe fixers</span></div>
+      <div class="tile t-cyan"><span class="n count" data-stat="schemas">12</span><span class="l">Fabric schemas</span><span class="f">every report write is checked before it lands on disk</span></div>
+      <div class="tile t-pink"><span class="n count" data-stat="deneb_templates">12</span><span class="l">Deneb templates</span><span class="f">bar, line, scatter, heatmap, bullet, waffle and more</span></div>
+      <div class="tile t-yellow"><span class="n count" data-stat="read_tools">53</span><span class="l">read-only tools</span><span class="f">marked so a host can approve them without asking</span></div>
       <div class="tile t-violet"><span class="n">3</span><span class="l">platforms</span><span class="f">Windows, macOS and Linux builds; TMDL and PBIR files on all of them</span></div>
       <div class="tile t-orange"><span class="n"><span id="py-min">3.11</span><small>to</small> <span id="py-max">3.14</span></span><span class="l">Python</span><span class="f">or the standalone build, which brings its own</span></div>
     </div>
@@ -174,7 +181,7 @@
             <li>Point it at a project and check the setup:</li>
           </ol>
           <div class="code"><pre><code>Set the project to C:\path\to\Report.pbip and run the doctor.</code></pre><button type="button" data-copy>Copy</button></div>
-          <p class="fine">Work on a copy of a real project the first time. The project needs Power BI Desktop's <em>Power BI Project (.pbip)</em> save option and the <em>PBIR</em> report format turned on.</p>
+          <p class="fine">Work on a copy of a real project the first time. The project needs Power BI Desktop's <b>Power BI Project (.pbip)</b> save option and the <b>PBIR</b> report format turned on.</p>
         </div>
       </div>
     </div>
@@ -257,9 +264,9 @@ claude mcp add pbi-model -- .venv/bin/python -m model_server.server</code></pre>
   <div class="wrap">
     <div class="cols">
       <div>
-        <p><b>pbi-mcp</b> <span class="mono" id="foot-version"></span></p>
+        <p><b>pbi-mcp</b> <span id="foot-version"></span></p>
         <p>An independent open source project. It is not affiliated with, endorsed by or sponsored by Microsoft. Power BI is a trademark of Microsoft Corporation.</p>
-        <p>Built by <a href="https://github.com/rajdeepraoextras-dev">Rajdeep Rao</a>. MIT licensed. Fonts: Poppins and JetBrains Mono, SIL Open Font License.</p>
+        <p>Built by <a href="https://github.com/rajdeepraoextras-dev">Rajdeep Rao</a>. MIT licensed. Set in Poppins, SIL Open Font License.</p>
       </div>
       <ul aria-label="Project links">
         <li><a href="https://github.com/rajdeepraoextras-dev/PBI-MCP-Server">GitHub</a></li>

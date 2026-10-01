@@ -7,8 +7,7 @@
   const REPO = "rajdeepraoextras-dev/PBI-MCP-Server";
   const SITE = window.PBI_SITE || { version: "", stats: {}, families: [] };
   const DEMO = window.PBI_DEMO || { steps: [] };
-  const STATS = Object.assign({}, SITE.stats);
-  if (STATS.tools != null && STATS.write_tools != null) STATS.read_tools = STATS.tools - STATS.write_tools;
+  const STATS = SITE.stats || {};
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -37,15 +36,20 @@
   });
 
   /* ---------- numbers: fill, then count up when scrolled into view ---------- */
+  // Poppins has no fixed-width digits, so a number changes width as it counts.
+  // Only block-level numbers count up (their width never moves the layout);
+  // numbers that sit inline in a sentence or a sticker show their final value.
+  const canCount = !reduced && "IntersectionObserver" in window;
   const counters = $$("[data-stat]").map((node) => {
     const value = STATS[node.getAttribute("data-stat")];
     if (value == null) { node.textContent = "?"; return null; }
+    const animate = canCount && getComputedStyle(node).display !== "inline";
     node.setAttribute("data-target", value);
-    node.textContent = reduced || !("IntersectionObserver" in window) ? fmt(value) : "0";
-    return node;
+    node.textContent = animate ? "0" : fmt(value);
+    return animate ? node : null;
   }).filter(Boolean);
 
-  if (!reduced && "IntersectionObserver" in window) {
+  if (canCount) {
     const io = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (!entry.isIntersecting) return;
@@ -166,10 +170,25 @@
   let termRun = 0;
 
   const esc = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  // The page is set strictly in Poppins, a proportional face, so indentation
+  // cannot come from spaces: every line is a block and its leading whitespace
+  // becomes padding.
+  const INDENT = 0.62;                                   // em per leading space
+  const GUTTER = 1.3;                                    // em: column for the > + - markers
+  const lead = (s) => s.length - s.trimStart().length;
+  const ln = (html, spaces = 0, cls = "") =>
+    `<span class="ln${cls ? " " + cls : ""}" style="padding-left:${(GUTTER + spaces * INDENT).toFixed(2)}em">${html || "&nbsp;"}</span>`;
+  const mk = (ch, cls = "") => `<span class="mk${cls ? " " + cls : ""}">${ch}</span>`;
+  const BLANK = ln("");
+
   // colour key=value pairs first, then the leading function name, so the two never collide
-  const callHtml = (src) => "&gt; " + src.split("\n").map((line) => esc(line)
-    .replace(/(\w+)=("[^"]*"|true|false)/g, (_, k, v) => `<span class="t-key">${k}</span>=<span class="t-str">${v}</span>`)
-    .replace(/^(pbi_\w+)/, '<span class="t-call">$1</span>')).join("\n  ");
+  const callHtml = (src, caret) => src.split("\n").map((line, i, all) => {
+    const html = esc(line.trimStart())
+      .replace(/(\w+)=("[^"]*"|true|false)/g, (_, k, v) => `<span class="t-key">${k}</span>=<span class="t-str">${v}</span>`)
+      .replace(/^(pbi_\w+)/, '<span class="t-call">$1</span>');
+    const tail = caret && i === all.length - 1 ? '<span class="caret"></span>' : "";
+    return ln((i === 0 ? mk("&gt;", "t-dim") : "") + html + tail, i === 0 ? 0 : lead(line));
+  }).join("");
   const flip = (line) => {
     if (line.startsWith("+++") || line.startsWith("---")) return line;
     if (line.startsWith("@@")) {
@@ -182,23 +201,24 @@
   };
   const diffHtml = (diff, inverted) => diff.split("\n").filter(Boolean).map((raw) => {
     const line = inverted ? flip(raw) : raw;
-    let cls = "t-dim";
-    if (line.startsWith("@@")) cls = "t-hunk";
-    else if (line.startsWith("+++") || line.startsWith("---")) cls = "t-dim";
-    else if (line.startsWith("+")) cls = "t-add";
-    else if (line.startsWith("-")) cls = "t-del";
-    return `<span class="${cls}">${esc(line.replace(/\t/g, "    "))}</span>`;
-  }).join("\n");
-  const json = (o) => esc(JSON.stringify(o, null, 2))
-    .replace(/("[\w ]+")(:)/g, '<span class="t-key">$1</span>$2')
-    .replace(/: ("[^"]*")/g, ': <span class="t-str">$1</span>');
+    if (line.startsWith("@@")) return ln(esc(line), 0, "t-hunk");
+    if (line.startsWith("+++") || line.startsWith("---")) return ln(esc(line), 0, "t-dim");
+    const mark = "+-".includes(line[0]) ? line[0] : "";
+    const body = line.slice(1).replace(/\t/g, "    ");
+    const cls = mark === "+" ? "t-add" : mark === "-" ? "t-del" : "t-dim";
+    return ln((mark ? mk(mark) : "") + esc(body.trimStart()), lead(body), cls);
+  }).join("");
+  const json = (o) => JSON.stringify(o, null, 2).split("\n").map((line) => ln(
+    esc(line.trimStart())
+      .replace(/^("[\w ]+")(:)/, '<span class="t-key">$1</span>$2')
+      .replace(/: ("[^"]*")/, ': <span class="t-str">$1</span>'), lead(line))).join("");
 
   function stepBody(step) {
     const o = step.output || {};
-    if (step.id === "preview") return json({ dry_run: o.dry_run, result: o.result, changes: o.changes }) + "\n\n" + diffHtml(o.diff || "", false);
+    if (step.id === "preview") return json({ dry_run: o.dry_run, result: o.result, changes: o.changes }) + BLANK + diffHtml(o.diff || "", false);
     if (step.id === "undo") {
       const prev = (DEMO.steps[0] && DEMO.steps[0].output && DEMO.steps[0].output.diff) || "";
-      return json(o) + '\n\n<span class="t-dim"># what the undo put back:</span>\n' + diffHtml(prev, true);
+      return json(o) + BLANK + ln("# what the undo put back:", 0, "t-dim") + diffHtml(prev, true);
     }
     return json(o);
   }
@@ -213,13 +233,13 @@
       for (const ch of step.call) {
         if (me !== termRun) return;
         typed += ch;
-        out.innerHTML = callHtml(typed) + '<span class="caret"></span>';
+        out.innerHTML = callHtml(typed, true);
         if (ch !== " ") await sleep(9);
       }
       await sleep(260);
     }
     if (me !== termRun) return;
-    out.innerHTML = callHtml(step.call) + "\n\n" + stepBody(step);
+    out.innerHTML = callHtml(step.call) + BLANK + stepBody(step);
   }
 
   if (stepsBox && DEMO.steps.length) {
